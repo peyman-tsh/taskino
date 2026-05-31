@@ -1,6 +1,7 @@
-import { IsString, IsNotEmpty, IsArray, IsOptional, IsEnum, IsDate, IsBoolean } from 'class-validator';
+import { IsString, IsNotEmpty, IsArray, IsOptional, IsEnum, IsDate, IsBoolean, IsDateString } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProjectStatus } from '../project.schema';
+import { Type } from 'class-transformer';
 
 export class CreateProjectDto {
   @ApiProperty({ description: 'Title of the project', example: 'New Website Redesign' })
@@ -31,13 +32,14 @@ export class CreateProjectDto {
 
   @ApiPropertyOptional({ description: 'Start date of the project', example: '2024-01-01' })
   @IsOptional()
-  @IsDate()
-  startDate?: Date;
+  @IsDateString()
+  startDate?: string;
 
   @ApiPropertyOptional({ description: 'End date of the project', example: '2024-12-31' })
   @IsOptional()
-  @IsDate()
-  endDate?: Date;
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
 
   @ApiPropertyOptional({ description: 'Whether the project is archived', example: false })
   @IsOptional()
