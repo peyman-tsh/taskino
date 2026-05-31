@@ -35,11 +35,10 @@ export class User {
   password: string;
 
   @Prop({
-    type: [String],
-    enum: UserRole,
-    default: [UserRole.SPECIALIST],
+    type: String,
+    default: UserRole.SPECIALIST,
   })
-  roles: UserRole[];
+  roles: string;
   
   @Prop({type:Boolean,default:false})
   isActive:boolean;

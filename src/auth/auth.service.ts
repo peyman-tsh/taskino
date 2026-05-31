@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import { UserService } from '../user/user.service';
-import { UserDocument } from '../user/schemas/user.schema';
+import { UserDocument, UserRole } from '../user/schemas/user.schema';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
@@ -91,12 +91,13 @@ export class AuthService {
    * Generate JWT access token
    */
   private generateToken(user: UserDocument): string {
-    const payload = {
-      sub: user._id.toString(),
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-    };
+const payload = {
+  sub: user._id.toString(),
+  email: user.email,
+  firstName: user.firstName,
+  lastName: user.lastName,
+  role: user.roles || UserRole.SPECIALIST,
+};
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return this.jwtService.sign(payload, {

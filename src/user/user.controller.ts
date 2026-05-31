@@ -9,6 +9,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -21,6 +22,10 @@ import {
   ApiBearerAuth,
   ApiQuery,
 } from '@nestjs/swagger';
+import { Roles } from './roles.decorator';
+import { RolesGuard } from './roles.guard';
+import { UserRole } from './schemas/user.schema';
+import { JwtAuthGuard } from 'src/auth/guard/jwt.guard';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -103,4 +108,10 @@ export class UserController {
   remove(@Param('id') id: string) {
     return this.userService.delete(id);
   }
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Patch(':id/approve')
+ @Roles(UserRole.MANAGER)
+ async approveUser(@Param('id') id: string) {
+   return await this.userService.approveExpert(id);
+ }
 }

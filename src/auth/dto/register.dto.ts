@@ -28,9 +28,7 @@ export class RegisterDto {
   password: string;
 
  @ApiProperty({ description: 'Role of the user', example: 'Specialist' })
- @IsArray()
- @ArrayNotEmpty()
  @IsOptional()
- @IsEnum(UserRole)
- roles?: UserRole[];
+ @IsString()
+ roles?:string;
 }

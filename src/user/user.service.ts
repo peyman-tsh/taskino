@@ -158,4 +158,31 @@ export class UserService {
       throw new NotFoundException('User not found');
     }
   }
+
+
+async approveExpert(userId: string) {
+  console.log('in');
+  
+  const user = await this.userModel.findById(userId);
+  console.log(user);
+  
+  if (!user) {
+    throw new NotFoundException('User not found');
+  }
+
+  if (user.isActive) {
+    return {
+      message: 'User is already approved',
+      user,
+    };
+  }
+
+  user.isActive = true;
+  await user.save();
+
+  return {
+    message: 'User approved successfully',
+    user,
+  };
+}
 }
