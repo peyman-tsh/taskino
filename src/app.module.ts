@@ -10,6 +10,7 @@ import { AuthModule } from './auth/auth.module';
 import { TaskModule } from './task/task.module';
 import { ProjectModule } from './project/project.module';
 import { ProjectMemberModule } from './projectMember/projectMember.module';
+import { LeaveRequestModule } from './LeaveRequest/LeaveRequest.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { ProjectMemberModule } from './projectMember/projectMember.module';
     TaskModule,
     ProjectModule,
     ProjectMemberModule,
+    LeaveRequestModule,
   ],
   controllers: [AppController],
   providers: [AppService],

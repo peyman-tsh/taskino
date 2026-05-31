@@ -46,7 +46,7 @@ export class ProjectMemberService {
       user: new Types.ObjectId(user),
     });
 
-    return createdProjectMember.save();
+    return await createdProjectMember.save();
   }
 
   /**
@@ -116,7 +116,7 @@ export class ProjectMemberService {
 
     const projectMember = await this.projectMemberModel
       .findById(id)
-      .populate('project', 'title description status')
+      .populate('project', 'title status')
       .populate('user', 'firstName lastName email mobile')
       .exec();
 
