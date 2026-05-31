@@ -1,0 +1,34 @@
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { HydratedDocument, Types } from 'mongoose';
+import { User } from '../user/schemas/user.schema';
+
+export enum TaskStatus {
+  TODO = 'todo',
+  IN_PROGRESS = 'in_progress',
+  DONE = 'done',
+}
+
+@Schema({ timestamps: true })
+export class Task {
+  @Prop({ required: true })
+  title: string;
+
+  // 👇 کسی که تسک رو ساخته (Manager)
+  @Prop({ type: Types.ObjectId, ref: User.name, required: true })
+  createdBy: Types.ObjectId;
+
+  // 👇 کسانی که تسک بهشون داده شده (Specialist / Supervisor)
+  @Prop({ type: [{ type: Types.ObjectId, ref: User.name }], default: [] })
+  assignedTo: Types.ObjectId[];
+
+  @Prop({
+    type: String,
+    enum: TaskStatus,
+    default: TaskStatus.TODO,
+  })
+  status: TaskStatus;
+}
+
+export type TaskDocument = HydratedDocument<Task>;
+
+export const TaskSchema = SchemaFactory.createForClass(Task);
