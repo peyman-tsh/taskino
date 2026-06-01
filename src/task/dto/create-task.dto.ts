@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsArray, IsOptional, IsEnum } from 'class-validator';
+import { IsString, IsNotEmpty, IsArray, IsOptional, IsEnum, Allow } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskStatus } from '../task.schema';
 
@@ -15,11 +15,22 @@ export class CreateTaskDto {
 
   @ApiPropertyOptional({ description: 'Array of user IDs to assign the task to (Specialists/Supervisors)', example: ['64a7b1c2d3e4f5a6b7c8d9e1', '64a7b1c2d3e4f5a6b7c8d9e2'] })
   @IsOptional()
-  @IsArray()
-  assignedTo?: string[];
+  @IsString()
+  assignedTo?: string | string[];
 
   @ApiPropertyOptional({ description: 'Status of the task', enum: TaskStatus, example: TaskStatus.TODO })
   @IsOptional()
   @IsEnum(TaskStatus)
   status?: TaskStatus;
+
+  @ApiPropertyOptional({ description: 'Description of the task', example: 'The login feature should support email and password authentication.' })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+
+  @ApiPropertyOptional({ description: 'Comments related to the task', example: 'This task is high priority.' })
+  @IsOptional()
+  @IsString()
+  taskComment?: string;
 }

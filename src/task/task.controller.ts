@@ -9,6 +9,9 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseInterceptors,
+  UploadedFile,
+  ValidationPipe,
 } from '@nestjs/common';
 import { TaskService } from './task.service';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -20,7 +23,9 @@ import {
   ApiResponse,
   ApiParam,
   ApiQuery,
+  ApiConsumes,
 } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Tasks')
 @Controller('tasks')
@@ -35,8 +40,19 @@ export class TaskController {
   })
   @ApiResponse({ status: 201, description: 'Task created successfully' })
   @ApiResponse({ status: 400, description: 'Validation failed' })
-  create(@Body() createTaskDto: CreateTaskDto) {
-    return this.taskService.create(createTaskDto);
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('file'))
+  create(
+    @Body(new ValidationPipe({
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
+      whitelist: true,
+      forbidNonWhitelisted: false,
+    })) createTaskDto: CreateTaskDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    console.log('createTaskDto:', createTaskDto);
+    return this.taskService.create(createTaskDto, file);
   }
 
   @Get()

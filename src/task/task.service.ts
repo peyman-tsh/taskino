@@ -4,28 +4,44 @@ import { Model, Types } from 'mongoose';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { Task, TaskDocument, TaskStatus, TaskSchema } from './task.schema';
+import { ExcelService } from 'src/excel/excel.service';
+import { ExcelFile, ExcelDocument, ExcelType } from 'src/excel/excel.schema';
 
 @Injectable()
 export class TaskService {
   constructor(
     @InjectModel(Task.name)
     private readonly taskModel: Model<TaskDocument>,
+    private readonly excelService: ExcelService,
   ) {}
 
   /**
    * Create a new task
    */
-  async create(createTaskDto: CreateTaskDto): Promise<TaskDocument> {
+  async create(createTaskDto: CreateTaskDto, file?: Express.Multer.File): Promise<TaskDocument | {
+    task: TaskDocument;
+    excelUpload: ExcelFile;
+  }> {
+    let excelUpload: ExcelFile;
+
     const { createdBy, assignedTo, ...rest } = createTaskDto;
+    
 
     // Validate createdBy is a valid ObjectId
     if (!Types.ObjectId.isValid(createdBy)) {
       throw new BadRequestException('Invalid createdBy user ID');
     }
 
+    // Normalize assignedTo to always be an array of strings
+    const assignedToArray: string[] = Array.isArray(assignedTo) 
+      ? assignedTo 
+      : assignedTo 
+        ? [assignedTo] 
+        : [];
+
     // Validate assignedTo IDs if provided
-    if (assignedTo && assignedTo.length > 0) {
-      const invalidIds = assignedTo.filter((id) => !Types.ObjectId.isValid(id));
+    if (assignedToArray.length > 0) {
+      const invalidIds = assignedToArray.filter((userId: string) => !Types.ObjectId.isValid(userId));
       if (invalidIds.length > 0) {
         throw new BadRequestException('Invalid assignedTo user IDs');
       }
@@ -34,8 +50,19 @@ export class TaskService {
     const createdTask = new this.taskModel({
       ...rest,
       createdBy: new Types.ObjectId(createdBy),
-      assignedTo: assignedTo?.map((id) => new Types.ObjectId(id)) || [],
+      assignedTo: assignedToArray.map((userId: string) => new Types.ObjectId(userId)),
     });
+
+    if(file){
+    const type='import' as ExcelType
+    excelUpload = await this.excelService.uploadFile(file,createdBy,type);
+    createdTask.file=excelUpload.fileName
+     return{
+      task: await createdTask.save(),
+
+      excelUpload
+     }
+    }
 
     return createdTask.save();
   }
