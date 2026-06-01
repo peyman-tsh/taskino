@@ -11,6 +11,7 @@ import { TaskModule } from './task/task.module';
 import { ProjectModule } from './project/project.module';
 import { ProjectMemberModule } from './projectMember/projectMember.module';
 import { LeaveRequestModule } from './LeaveRequest/LeaveRequest.module';
+import { ExcelModule } from './excel/excel.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { LeaveRequestModule } from './LeaveRequest/LeaveRequest.module';
     ProjectModule,
     ProjectMemberModule,
     LeaveRequestModule,
+    ExcelModule,
   ],
   controllers: [AppController],
   providers: [AppService],
