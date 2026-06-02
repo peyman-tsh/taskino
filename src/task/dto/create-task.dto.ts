@@ -13,10 +13,11 @@ export class CreateTaskDto {
   @IsNotEmpty()
   createdBy: string;
 
+
   @ApiPropertyOptional({ description: 'Array of user IDs to assign the task to (Specialists/Supervisors)', example: ['64a7b1c2d3e4f5a6b7c8d9e1', '64a7b1c2d3e4f5a6b7c8d9e2'] })
   @IsOptional()
   @IsString()
-  assignedTo?: string | string[];
+  assignedTo?: string[];
 
   @ApiPropertyOptional({ description: 'Status of the task', enum: TaskStatus, example: TaskStatus.TODO })
   @IsOptional()
@@ -33,4 +34,14 @@ export class CreateTaskDto {
   @IsOptional()
   @IsString()
   taskComment?: string;
+
+  @ApiPropertyOptional({description: 'start date of task', example: '2026-06-02T10:45:30.123Z'})
+  @IsOptional()
+  @IsString()
+  startDate?: string;
+
+  @ApiPropertyOptional({description: 'due date of task', example: '2026-06-02T10:45:30.123Z'})
+  @IsOptional()
+  @IsString()
+  dueDate?: string;
 }

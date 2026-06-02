@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 import { User } from '../user/schemas/user.schema';
+import { Project } from 'src/project/project.schema';
 
 export enum TaskStatus {
   TODO = 'todo',
@@ -19,7 +20,12 @@ export class Task {
 
   // 👇 کسانی که تسک بهشون داده شده (Specialist / Supervisor)
   @Prop({ type: [{ type: Types.ObjectId, ref: User.name }], default: [] })
-  assignedTo: Types.ObjectId;
+  assignedTo: [Types.ObjectId];
+
+    @Prop({
+    type: { type: Types.ObjectId, ref: Project.name },
+  })
+  projectId: Types.ObjectId;
 
   @Prop({
     type: String,
@@ -33,13 +39,19 @@ export class Task {
   file?:string;
 
   @Prop({type:String,default:null})
-  taskComment:string;
+  taskComment?:string;
 
   @Prop({ type: String, default: '' })
   description?: string;
 
   @Prop({type:Boolean,default:false})
   isPublic:boolean;
+
+  @Prop({ type:Date, default: Date.now })
+  startDate: Date;
+
+  @Prop({ type:Date, default: Date.now })
+  dueDate: Date;
 }
 
 export type TaskDocument = HydratedDocument<Task>;

@@ -16,6 +16,7 @@ import {
 import { TaskService } from './task.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
+import { TaskCompletionStatsDto } from './dto/task-count.dto';
 import { TaskStatus } from './task.schema';
 import {
   ApiTags,
@@ -150,5 +151,17 @@ export class TaskController {
   @ApiResponse({ status: 400, description: 'Invalid status value' })
   updateStatus(@Param('id') id: string, @Body('status') status: TaskStatus) {
     return this.taskService.updateStatus(id, status);
+  }
+
+  @Post('completion-stats')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get task completion statistics',
+    description: 'Returns the number of completed and pending tasks that a manager assigned to an expert',
+  })
+  @ApiResponse({ status: 200, description: 'Task completion statistics retrieved successfully' })
+  @ApiResponse({ status: 400, description: 'Validation failed' })
+  getTaskCompletionStats(@Body() statsDto: TaskCompletionStatsDto) {
+    return this.taskService.getTaskCompletionStats(statsDto);
   }
 }

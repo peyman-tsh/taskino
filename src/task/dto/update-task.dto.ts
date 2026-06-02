@@ -17,4 +17,8 @@ export class UpdateTaskDto {
   @IsOptional()
   @IsEnum(TaskStatus)
   status?: TaskStatus;
+
+  @ApiPropertyOptional({description:"task comment for user"})
+  @IsOptional()
+  taskComment?:string
 }

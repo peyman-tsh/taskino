@@ -57,7 +57,7 @@ export class Project {
   isArchived: boolean;
 
   @Prop({
-    type: [{ type: Types.ObjectId, ref: Task.name }],
+    type: [{ type: Types.ObjectId, ref: 'Task' }],
     default: [],
   })
   tasks: Types.ObjectId[];
