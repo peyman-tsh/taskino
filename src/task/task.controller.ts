@@ -17,6 +17,7 @@ import { TaskService } from './task.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TaskCompletionStatsDto } from './dto/task-count.dto';
+import { DateCountDto } from './dto/dateCount.dto';
 import { TaskStatus } from './task.schema';
 import {
   ApiTags,
@@ -163,5 +164,17 @@ export class TaskController {
   @ApiResponse({ status: 400, description: 'Validation failed' })
   getTaskCompletionStats(@Body() statsDto: TaskCompletionStatsDto) {
     return this.taskService.getTaskCompletionStats(statsDto);
+  }
+
+  @Post('date-count')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get task count by project and date range',
+    description: 'Returns task statistics for a user in a project within a date range',
+  })
+  @ApiResponse({ status: 200, description: 'Task count retrieved successfully' })
+  @ApiResponse({ status: 400, description: 'Validation failed' })
+  findTasksByProjectAndCount(@Body() dateCountDto: DateCountDto) {
+    return this.taskService.findTasksByProjectAndCount(dateCountDto);
   }
 }

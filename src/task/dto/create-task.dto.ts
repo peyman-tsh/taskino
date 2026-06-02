@@ -14,6 +14,12 @@ export class CreateTaskDto {
   createdBy: string;
 
 
+  @ApiPropertyOptional({ description: 'ID of the project this task belongs to', example: '64a7b1c2d3e4f5a6b7c8d9e0' })
+  @IsOptional()
+  @IsString()
+  projectId?: string;
+
+
   @ApiPropertyOptional({ description: 'Array of user IDs to assign the task to (Specialists/Supervisors)', example: ['64a7b1c2d3e4f5a6b7c8d9e1', '64a7b1c2d3e4f5a6b7c8d9e2'] })
   @IsOptional()
   @IsString()

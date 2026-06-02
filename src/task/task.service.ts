@@ -7,6 +7,7 @@ import { TaskCompletionStatsDto } from './dto/task-count.dto';
 import { Task, TaskDocument, TaskStatus, TaskSchema } from './task.schema';
 import { ExcelService } from 'src/excel/excel.service';
 import { ExcelFile, ExcelDocument, ExcelType } from 'src/excel/excel.schema';
+import { DateCountDto } from './dto/dateCount.dto';
 
 @Injectable()
 export class TaskService {
@@ -26,7 +27,6 @@ export class TaskService {
     let excelUpload: ExcelFile;
 
     const { createdBy, assignedTo, ...rest } = createTaskDto;
-    
 
     // Validate createdBy is a valid ObjectId
     if (!Types.ObjectId.isValid(createdBy)) {
@@ -55,7 +55,7 @@ export class TaskService {
       createdBy: new Types.ObjectId(createdBy),
       assignedTo: assignedToArray.map((userId: string) => new Types.ObjectId(userId)),
     });
-
+    console.log('createdTask before save:', createdTask);
     if(file){
     const type='import' as ExcelType
     excelUpload = await this.excelService.uploadFile(file,createdBy,type);
@@ -299,6 +299,61 @@ export class TaskService {
       completedByStatus: {
         done: completedTasks,
       },
+    };
+  }
+
+  /**
+   * Find tasks by project and user within a date range and return count statistics
+   * A task overlaps with the date range if:
+   * - task.startDate <= range.end AND task.dueDate >= range.start
+   */
+  async findTasksByProjectAndCount(dateCountDto: DateCountDto): Promise<{
+    projectId: string;
+    userId: string;
+    startDate: string;
+    todoTask:number;
+    endDate: string;
+    totalTasks: number;
+    completedTasks: number;
+    pendingTasks: number;
+  }> {
+    if (!Types.ObjectId.isValid(dateCountDto.projectId) || !Types.ObjectId.isValid(dateCountDto.userId)) {
+      throw new BadRequestException('Invalid project ID or user ID');
+    }
+    const userObjectId = new Types.ObjectId(dateCountDto.userId);
+
+
+    // First, find all tasks for this project and user (without date filter)
+
+
+    // Find tasks that overlap with the date range
+    // Task overlaps if: task.startDate <= range end AND task.dueDate >= range start
+    const tasks = await this.taskModel.find({
+      projectId: dateCountDto.projectId,
+      assignedTo: { $in: [userObjectId] },
+      dueDate: { $gt: dateCountDto.enddate }
+    } as any);
+    console.log(tasks);
+    
+    console.log('Tasks matching date range query:', tasks.length);
+    
+    const totalTasks = tasks.length;
+    const completedTasks = tasks.filter((task) => task.status === TaskStatus.DONE).length;
+    if(completedTasks===totalTasks){
+      
+    }
+    const todoTasks = tasks.filter((task) => task.status === TaskStatus.TODO).length;
+    const pendingTasks = totalTasks - completedTasks;
+
+    return {
+      projectId: dateCountDto.projectId,
+      userId: dateCountDto.userId,
+      startDate: dateCountDto.startdate,
+      endDate: dateCountDto.enddate,
+      todoTask:todoTasks,
+      totalTasks,
+      completedTasks,
+      pendingTasks,
     };
   }
 }

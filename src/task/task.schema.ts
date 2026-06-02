@@ -21,11 +21,11 @@ export class Task {
   // 👇 کسانی که تسک بهشون داده شده (Specialist / Supervisor)
   @Prop({ type: [{ type: Types.ObjectId, ref: User.name }], default: [] })
   assignedTo: [Types.ObjectId];
-
-    @Prop({
-    type: { type: Types.ObjectId, ref: Project.name },
-  })
-  projectId: Types.ObjectId;
+@Prop({
+  type: Types.ObjectId,
+  ref: Project.name
+})
+projectId: Types.ObjectId;
 
   @Prop({
     type: String,
@@ -47,11 +47,11 @@ export class Task {
   @Prop({type:Boolean,default:false})
   isPublic:boolean;
 
-  @Prop({ type:Date, default: Date.now })
-  startDate: Date;
+  @Prop({ type:String, default: null })
+  startDate: string;
 
-  @Prop({ type:Date, default: Date.now })
-  dueDate: Date;
+  @Prop({ type:String, default: null})
+  dueDate: string;
 }
 
 export type TaskDocument = HydratedDocument<Task>;

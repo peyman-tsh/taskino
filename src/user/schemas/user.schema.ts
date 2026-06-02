@@ -39,6 +39,9 @@ export class User {
     default: UserRole.SPECIALIST,
   })
   roles: string;
+
+  @Prop({type:Number,required:false})
+  score:number;
   
   @Prop({type:Boolean,default:false})
   isActive:boolean;
