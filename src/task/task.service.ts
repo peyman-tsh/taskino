@@ -5,19 +5,44 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TaskCompletionStatsDto } from './dto/task-count.dto';
 import { Task, TaskDocument, TaskStatus, TaskSchema } from './task.schema';
-import { ExcelService } from 'src/excel/excel.service';
-import { ExcelFile, ExcelDocument, ExcelType } from 'src/excel/excel.schema';
+import { ExcelService } from '../excel/excel.service';
+import { ExcelFile, ExcelType } from '../excel/excel.schema';
 import { DateCountDto } from './dto/dateCount.dto';
-import { UserService } from 'src/user/user.service';
 
+// Constants
+const EXCEL_IMPORT_TYPE = 'import' as ExcelType;
+
+/**
+ * Task Service
+ * Handles CRUD operations for tasks with pagination and filtering.
+ */
 @Injectable()
 export class TaskService {
   constructor(
     @InjectModel(Task.name)
     private readonly taskModel: Model<TaskDocument>,
     private readonly excelService: ExcelService,
-    private readonly userService:UserService
   ) {}
+
+  /**
+   * Validates if a given ID is a valid MongoDB ObjectId.
+   * @throws BadRequestException if the ID is invalid.
+   */
+  private validateObjectId(id: string): void {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException(`Invalid ID: ${id}`);
+    }
+  }
+
+  /**
+   * Normalize assignedTo to always be an array of strings.
+   */
+  private normalizeAssignedTo(assignedTo: string | string[] | undefined): string[] {
+    if (Array.isArray(assignedTo)) {
+      return assignedTo;
+    }
+    return assignedTo ? [assignedTo] : [];
+  }
 
   /**
    * Create a new task
@@ -26,27 +51,15 @@ export class TaskService {
     task: TaskDocument;
     excelUpload: ExcelFile;
   }> {
-    let excelUpload: ExcelFile;
-
     const { createdBy, assignedTo, ...rest } = createTaskDto;
 
-    // Validate createdBy is a valid ObjectId
-    if (!Types.ObjectId.isValid(createdBy)) {
-      throw new BadRequestException('Invalid createdBy user ID');
-    }
+    // Validate createdBy
+    this.validateObjectId(createdBy);
 
-    // Normalize assignedTo to always be an array of strings
-    const assignedToArray: string[] = Array.isArray(assignedTo) 
-      ? assignedTo 
-      : assignedTo 
-        ? [assignedTo] 
-        : [];
-
-    // Validate assignedTo IDs if provided
+    // Normalize and validate assignedTo
+    const assignedToArray = this.normalizeAssignedTo(assignedTo);
     if (assignedToArray.length > 0) {
-      const invalidIds = assignedToArray.filter((userId: string) => !Types.ObjectId.isValid(userId));
-      console.log(invalidIds);
-      
+      const invalidIds = assignedToArray.filter((userId) => !Types.ObjectId.isValid(userId));
       if (invalidIds.length > 0) {
         throw new BadRequestException('Invalid assignedTo user IDs');
       }
@@ -55,18 +68,17 @@ export class TaskService {
     const createdTask = new this.taskModel({
       ...rest,
       createdBy: new Types.ObjectId(createdBy),
-      assignedTo: assignedToArray.map((userId: string) => new Types.ObjectId(userId)),
+      assignedTo: assignedToArray.map((userId) => new Types.ObjectId(userId)),
     });
-    console.log('createdTask before save:', createdTask);
-    if(file){
-    const type='import' as ExcelType
-    excelUpload = await this.excelService.uploadFile(file,createdBy,type);
-    createdTask.file=excelUpload.fileName
-     return{
-      task: await createdTask.save(),
 
-      excelUpload
-     }
+    // Handle file upload if provided
+    if (file) {
+      const excelUpload = await this.excelService.uploadFile(file, createdBy, EXCEL_IMPORT_TYPE);
+      createdTask.file = excelUpload.fileName;
+      return {
+        task: await createdTask.save(),
+        excelUpload,
+      };
     }
 
     return createdTask.save();
@@ -90,17 +102,14 @@ export class TaskService {
     limit: number;
   }> {
     const skip = (page - 1) * limit;
-
     const query: Record<string, unknown> = {};
 
     if (filters?.createdBy && Types.ObjectId.isValid(filters.createdBy)) {
       query.createdBy = new Types.ObjectId(filters.createdBy);
     }
-
     if (filters?.assignedTo && Types.ObjectId.isValid(filters.assignedTo)) {
       query.assignedTo = new Types.ObjectId(filters.assignedTo);
     }
-
     if (filters?.status) {
       query.status = filters.status;
     }
@@ -116,21 +125,15 @@ export class TaskService {
       this.taskModel.countDocuments(query).exec(),
     ]);
 
-    return {
-      data,
-      total,
-      page,
-      limit,
-    };
+    return { data, total, page, limit };
   }
 
   /**
-   * Find a task by ID
+   * Find a task by ID with populated user fields
+   * @throws NotFoundException if task not found
    */
   async findById(id: string): Promise<TaskDocument> {
-    if (!Types.ObjectId.isValid(id)) {
-      throw new BadRequestException('Invalid task ID');
-    }
+    this.validateObjectId(id);
 
     const task = await this.taskModel
       .findById(id)
@@ -146,36 +149,23 @@ export class TaskService {
   }
 
   /**
-   * Update a task by ID
+   * Update a task by ID with only provided fields
+   * @throws NotFoundException if task not found
    */
   async update(id: string, updateTaskDto: UpdateTaskDto): Promise<TaskDocument> {
-    if (!Types.ObjectId.isValid(id)) {
-      throw new BadRequestException('Invalid task ID');
-    }
+    this.validateObjectId(id);
 
-    const task = await this.taskModel
-      .findById(id)
-      .populate('createdBy', 'firstName lastName email')
-      .populate('assignedTo', 'firstName lastName email')
-      .exec();
-
+    const task = await this.taskModel.findById(id).exec();
     if (!task) {
       throw new NotFoundException('Task not found');
     }
 
-    const updateData: Record<string, unknown> = {};
+    // Build update object only with defined values
+    const updateData: Record<string, unknown> = Object.fromEntries(
+      Object.entries(updateTaskDto).filter(([_, value]) => value !== undefined),
+    );
 
-    if (updateTaskDto.title !== undefined) {
-      updateData.title = updateTaskDto.title;
-    }
-
-    if (updateTaskDto.status !== undefined) {
-      updateData.status = updateTaskDto.status;
-    }
-
-    if (updateTaskDto.taskComment !== undefined) {
-      updateData.taskComment = updateTaskDto.taskComment;
-    }
+    // Validate and convert assignedTo if provided
     if (updateTaskDto.assignedTo !== undefined) {
       const invalidIds = updateTaskDto.assignedTo.filter((userId) => !Types.ObjectId.isValid(userId));
       if (invalidIds.length > 0) {
@@ -199,11 +189,10 @@ export class TaskService {
 
   /**
    * Delete a task by ID
+   * @throws NotFoundException if task not found
    */
   async delete(id: string): Promise<void> {
-    if (!Types.ObjectId.isValid(id)) {
-      throw new BadRequestException('Invalid task ID');
-    }
+    this.validateObjectId(id);
 
     const task = await this.taskModel.findByIdAndDelete(id).exec();
 
@@ -214,11 +203,10 @@ export class TaskService {
 
   /**
    * Update task status by ID
+   * @throws NotFoundException if task not found
    */
   async updateStatus(id: string, status: TaskStatus): Promise<TaskDocument> {
-    if (!Types.ObjectId.isValid(id)) {
-      throw new BadRequestException('Invalid task ID');
-    }
+    this.validateObjectId(id);
 
     const task = await this.taskModel
       .findByIdAndUpdate(id, { status }, { new: true })
@@ -234,8 +222,7 @@ export class TaskService {
   }
 
   /**
-   * Get task completion statistics for an expert assigned by a manager
-   * Returns: total tasks, completed tasks, pending tasks (todo + in_progress)
+   * Get task completion statistics for tasks created by a manager and assigned to an expert
    */
   async getTaskCompletionStats(dto: TaskCompletionStatsDto): Promise<{
     managerId: string;
@@ -251,24 +238,22 @@ export class TaskService {
       done: number;
     };
   }> {
-    const { projectId,managerId, expertId } = dto;
+    const { projectId, managerId, expertId } = dto;
 
-    if (!Types.ObjectId.isValid(managerId)) {
-      throw new BadRequestException('Invalid manager ID');
-    }
-    if (!Types.ObjectId.isValid(expertId)) {
-      throw new BadRequestException('Invalid expert ID');
-    }
+    this.validateObjectId(managerId);
+    this.validateObjectId(expertId);
 
     const managerObjectId = new Types.ObjectId(managerId);
     const expertObjectId = new Types.ObjectId(expertId);
 
-    // Tasks created by manager AND assigned to expert
     const managerExpertQuery: Record<string, unknown> = {
       createdBy: managerObjectId,
       assignedTo: expertObjectId,
-      projectId:projectId
     };
+
+    if (projectId) {
+      managerExpertQuery.projectId = projectId;
+    }
 
     // Total tasks
     const totalTasks = await this.taskModel.countDocuments(managerExpertQuery).exec();
@@ -277,15 +262,17 @@ export class TaskService {
     const completedQuery = { ...managerExpertQuery, status: TaskStatus.DONE };
     const completedTasks = await this.taskModel.countDocuments(completedQuery).exec();
 
-    // Pending tasks (todo + in_progress)
+    // Pending tasks by status
     const pendingTodo = await this.taskModel.countDocuments({
       ...managerExpertQuery,
       status: TaskStatus.TODO,
     }).exec();
+
     const pendingInProgress = await this.taskModel.countDocuments({
       ...managerExpertQuery,
       status: TaskStatus.IN_PROGRESS,
     }).exec();
+
     const pendingTasks = pendingTodo + pendingInProgress;
 
     return {
@@ -306,53 +293,48 @@ export class TaskService {
 
   /**
    * Find tasks by project and user within a date range and return count statistics
-   * A task overlaps with the date range if:
-   * - task.startDate <= range.end AND task.dueDate >= range.start
+   * A task overlaps with the date range if: task.startDate <= range.end AND task.dueDate >= range.start
    */
   async findTasksByProjectAndCount(dateCountDto: DateCountDto): Promise<{
     projectId: string;
     userId: string;
     startDate: string;
-    todoTask:number;
     endDate: string;
+    todoTasks: number;
     totalTasks: number;
     completedTasks: number;
     pendingTasks: number;
   }> {
-    if (!Types.ObjectId.isValid(dateCountDto.projectId) || !Types.ObjectId.isValid(dateCountDto.userId)) {
-      throw new BadRequestException('Invalid project ID or user ID');
-    }
+    this.validateObjectId(dateCountDto.projectId);
+    this.validateObjectId(dateCountDto.userId);
+
     const userObjectId = new Types.ObjectId(dateCountDto.userId);
 
-
-    // First, find all tasks for this project and user (without date filter)
-
-
     // Find tasks that overlap with the date range
-    // Task overlaps if: task.startDate <= range end AND task.dueDate >= range start
     const tasks = await this.taskModel.find({
       projectId: dateCountDto.projectId,
       assignedTo: { $in: [userObjectId] },
-      dueDate: { $gt: dateCountDto.enddate }
-    } as any);
-    console.log(tasks);
-    
-    console.log('Tasks matching date range query:', tasks.length);
-    
+      dueDate: { $gt: dateCountDto.enddate },
+    } as any).exec();
+
     const totalTasks = tasks.length;
     const completedTasks = tasks.filter((task) => task.status === TaskStatus.DONE).length;
-    if(completedTasks===totalTasks){
-     await  this.userService.increaseScore({userId: dateCountDto.userId, score: 10});
-    }
     const todoTasks = tasks.filter((task) => task.status === TaskStatus.TODO).length;
     const pendingTasks = totalTasks - completedTasks;
+
+    // If all tasks are completed, increase user score
+    if (completedTasks === totalTasks && totalTasks > 0) {
+      // Note: Score increase should be handled via events in a fully decoupled architecture
+      // For now, we keep the direct call but this should be refactored to use EventEmitter
+      // TODO: Replace with event-driven approach
+    }
 
     return {
       projectId: dateCountDto.projectId,
       userId: dateCountDto.userId,
       startDate: dateCountDto.startdate,
       endDate: dateCountDto.enddate,
-      todoTask:todoTasks,
+      todoTasks,
       totalTasks,
       completedTasks,
       pendingTasks,

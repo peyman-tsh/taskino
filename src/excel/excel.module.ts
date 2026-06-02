@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ExcelService } from './excel.service';
 import { ExcelController } from './excel.controller';
 import { ExcelFile, ExcelSchema } from './excel.schema';
+import { NodeFileSystem } from './file-system.provider';
 
 @Module({
   imports: [
@@ -11,7 +12,13 @@ import { ExcelFile, ExcelSchema } from './excel.schema';
     ]),
   ],
   controllers: [ExcelController],
-  providers: [ExcelService],
+  providers: [
+    ExcelService,
+    {
+      provide: NodeFileSystem.name,
+      useClass: NodeFileSystem,
+    },
+  ],
   exports: [ExcelService],
 })
 export class ExcelModule {}

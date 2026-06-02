@@ -1,21 +1,53 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import * as ExcelJS from 'exceljs';
+import { join } from 'path';
 import { CreateExcelDto } from './dto/create-excel.dto';
 import { UpdateExcelDto } from './dto/update-excel.dto';
 import { ExcelFile, ExcelDocument, ExcelType, ExcelStatus } from './excel.schema';
-import { unlink } from 'fs/promises';
-import { join } from 'path';
+import { NodeFileSystem } from './file-system.provider';
+import type { IFileSystem } from './file-system.provider';
 
+// Constants
+const FIRST_SHEET_INDEX = 1;
+const DEFAULT_SHEET_NAME = 'Sheet1';
+const UPLOAD_DIR_SEGMENT = 'excel';
+
+// Allowed MIME types for Excel files
+const ALLOWED_MIME_TYPES = [
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+  'application/vnd.ms-excel', // .xls
+  'application/csv',
+  'text/csv',
+];
+
+/**
+ * Excel Service
+ * Handles Excel file uploads, exports, and processing operations.
+ */
 @Injectable()
 export class ExcelService {
-  private readonly uploadDir = join(process.cwd(), 'uploads', 'excel');
+  private readonly uploadDir: string;
 
   constructor(
     @InjectModel(ExcelFile.name)
     private readonly excelModel: Model<ExcelDocument>,
-  ) {}
+    @Inject(NodeFileSystem.name)
+    private readonly fileSystem: IFileSystem,
+  ) {
+    this.uploadDir = join(process.cwd(), 'uploads', UPLOAD_DIR_SEGMENT);
+  }
+
+  /**
+   * Validates if a given ID is a valid MongoDB ObjectId.
+   * @throws BadRequestException if the ID is invalid.
+   */
+  private validateObjectId(id: string): void {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException(`Invalid ID: ${id}`);
+    }
+  }
 
   /**
    * Create a new Excel record
@@ -70,12 +102,11 @@ export class ExcelService {
   }
 
   /**
-   * Find Excel record by ID
+   * Find Excel record by ID with populated createdBy
+   * @throws NotFoundException if record not found
    */
   async findById(id: string): Promise<ExcelDocument> {
-    if (!Types.ObjectId.isValid(id)) {
-      throw new BadRequestException('Invalid Excel record ID');
-    }
+    this.validateObjectId(id);
 
     const excelFile = await this.excelModel
       .findById(id)
@@ -90,43 +121,32 @@ export class ExcelService {
   }
 
   /**
-   * Update Excel record
+   * Update Excel record with only provided fields
    */
   async update(id: string, updateExcelDto: UpdateExcelDto): Promise<ExcelFile> {
-    if (!Types.ObjectId.isValid(id)) {
-      throw new BadRequestException('Invalid Excel record ID');
-    }
+    this.validateObjectId(id);
 
     const excelFile = await this.excelModel.findById(id).exec();
     if (!excelFile) {
       throw new NotFoundException('Excel record not found');
     }
 
-    const updateData: Record<string, unknown> = {};
+    // Build update object only with defined values
+    const updateData: Record<string, unknown> = Object.fromEntries(
+      Object.entries(updateExcelDto).filter(([_, value]) => value !== undefined),
+    );
 
-    if (updateExcelDto.filePath !== undefined) updateData.filePath = updateExcelDto.filePath;
-    if (updateExcelDto.mimeType !== undefined) updateData.mimeType = updateExcelDto.mimeType;
-    if (updateExcelDto.fileSize !== undefined) updateData.fileSize = updateExcelDto.fileSize;
-    if (updateExcelDto.status !== undefined) updateData.status = updateExcelDto.status;
-    if (updateExcelDto.sheetName !== undefined) updateData.sheetName = updateExcelDto.sheetName;
-    if (updateExcelDto.totalRows !== undefined) updateData.totalRows = updateExcelDto.totalRows;
-    if (updateExcelDto.successRows !== undefined) updateData.successRows = updateExcelDto.successRows;
-    if (updateExcelDto.errorRows !== undefined) updateData.errorRows = updateExcelDto.errorRows;
-    if (updateExcelDto.errorMessage !== undefined) updateData.errorMessage = updateExcelDto.errorMessage;
-    if (updateExcelDto.columns !== undefined) updateData.columns = updateExcelDto.columns;
-
-    return this.excelModel.findByIdAndUpdate(id, updateData, { new: true })
+    return this.excelModel
+      .findByIdAndUpdate(id, updateData, { new: true })
       .populate('createdBy', 'firstName lastName email')
       .exec() as Promise<ExcelFile>;
   }
 
   /**
-   * Delete Excel record and file
+   * Delete Excel record and its physical file
    */
   async delete(id: string): Promise<void> {
-    if (!Types.ObjectId.isValid(id)) {
-      throw new BadRequestException('Invalid Excel record ID');
-    }
+    this.validateObjectId(id);
 
     const excelFile = await this.excelModel.findById(id).exec();
     if (!excelFile) {
@@ -136,9 +156,9 @@ export class ExcelService {
     // Delete physical file if exists
     if (excelFile.filePath) {
       try {
-        await unlink(excelFile.filePath);
-      } catch (err) {
-        // Ignore file deletion errors
+        await this.fileSystem.unlink(excelFile.filePath);
+      } catch {
+        // Ignore file deletion errors (file may already be deleted)
       }
     }
 
@@ -146,54 +166,47 @@ export class ExcelService {
   }
 
   /**
-   * Upload Excel file and create record
+   * Ensure the upload directory exists
    */
-  async uploadFile(file: any, createdBy: string, type: ExcelType = ExcelType.IMPORT): Promise<ExcelFile> {
+  private async ensureUploadDir(): Promise<void> {
+    await this.fileSystem.mkdir(this.uploadDir, { recursive: true });
+  }
+
+  /**
+   * Upload Excel file and create a database record
+   * @throws BadRequestException if file type is invalid or missing
+   */
+  async uploadFile(
+    file: any,
+    createdBy: string,
+    type: ExcelType = ExcelType.IMPORT,
+  ): Promise<ExcelFile> {
     if (!file) {
       throw new BadRequestException('No file provided');
     }
 
-    const allowedMimeTypes = [
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-      'application/vnd.ms-excel', // .xls
-      'application/csv',
-      'text/csv',
-    ];
-
-    if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException('Invalid file type. Only Excel files are allowed.');
+    if (!Types.ObjectId.isValid(createdBy)) {
+      throw new BadRequestException('Invalid createdBy user ID');
     }
 
-    // Create upload directory if not exists
-    const fs = require('fs');
-    if (!fs.existsSync(this.uploadDir)) {
-      fs.mkdirSync(this.uploadDir, { recursive: true });
+    // Validate file type
+    if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+      throw new BadRequestException(
+        'Invalid file type. Only Excel files (.xlsx, .xls, .csv) are allowed.',
+      );
     }
+
+    // Ensure upload directory exists
+    await this.ensureUploadDir();
 
     const fileName = `${Date.now()}-${file.originalname}`;
     const filePath = join(this.uploadDir, fileName);
 
-    // Save file
-    fs.writeFileSync(filePath, file.buffer);
+    // Save file asynchronously via file system abstraction
+    await this.fileSystem.writeFile(filePath, file.buffer);
 
-    // Read columns from Excel
-    let columns: string[] = [];
-    let totalRows = 0;
-
-    if (file.mimetype.includes('spreadsheet') || file.mimetype.includes('excel')) {
-      const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(file.buffer as any);
-      const worksheet = workbook.getWorksheet(1);
-      if (worksheet) {
-        columns = [];
-        worksheet.getRow(1).eachCell((cell) => {
-          if (cell.value) {
-            columns.push(String(cell.value));
-          }
-        });
-        totalRows = worksheet.rowCount - 1; // Exclude header row
-      }
-    }
+    // Extract columns and row count from Excel file
+    const { columns, totalRows } = this.extractExcelMetadata(file.buffer);
 
     const excelRecord = new this.excelModel({
       createdBy: new Types.ObjectId(createdBy),
@@ -204,23 +217,54 @@ export class ExcelService {
       fileSize: file.size,
       type,
       status: ExcelStatus.COMPLETED,
-      sheetName: 'Sheet1',
+      sheetName: DEFAULT_SHEET_NAME,
       totalRows,
       successRows: totalRows,
       errorRows: 0,
       columns,
     });
 
-    return excelRecord.save() as Promise<ExcelFile>;
+    return excelRecord.save();
   }
 
   /**
-   * Get Excel file for download
+   * Extract column headers and row count from Excel file buffer
+   */
+  private extractExcelMetadata(buffer: Buffer | Buffer[]): { columns: string[]; totalRows: number } {
+    let columns: string[] = [];
+    let totalRows = 0;
+
+    try {
+      const workbook = new ExcelJS.Workbook();
+      workbook.xlsx.load(buffer as any);
+      const worksheet = workbook.getWorksheet(FIRST_SHEET_INDEX);
+
+      if (worksheet) {
+        worksheet.getRow(1).eachCell((cell) => {
+          if (cell.value) {
+            columns.push(String(cell.value));
+          }
+        });
+        totalRows = worksheet.rowCount - 1; // Exclude header row
+      }
+    } catch {
+      // If parsing fails, return empty metadata
+      return { columns: [], totalRows: 0 };
+    }
+
+    return { columns, totalRows };
+  }
+
+  /**
+   * Get Excel file document for download
+   * @throws NotFoundException if file doesn't exist on server
    */
   async getFile(id: string): Promise<ExcelFile> {
     const excelFile = await this.findById(id);
 
-    if (!excelFile.filePath || !require('fs').existsSync(excelFile.filePath)) {
+    const fileExists = await this.fileSystem.access(excelFile.filePath);
+
+    if (!fileExists) {
       throw new NotFoundException('File not found on server');
     }
 
@@ -228,57 +272,57 @@ export class ExcelService {
   }
 
   /**
-   * Generate Excel file buffer from data
+   * Generate Excel file buffer from 2D array data
    */
   async generateExcelBuffer(
     data: any[][],
-    sheetName: string = 'Sheet1',
+    sheetName: string = DEFAULT_SHEET_NAME,
   ): Promise<Buffer> {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet(sheetName);
 
-    // Add header row
     if (data.length > 0) {
+      // First row is header
       worksheet.addRow(data[0]);
-      // Add data rows
+      // Remaining rows are data
       for (let i = 1; i < data.length; i++) {
         worksheet.addRow(data[i]);
       }
     }
 
-    // Generate buffer
-    const buffer = await workbook.xlsx.writeBuffer();
-    return Buffer.from(buffer as any);
+    return Buffer.from(await workbook.xlsx.writeBuffer());
   }
 
   /**
    * Generate Excel file buffer from array of objects
+   * @param objects Array of objects to convert to Excel rows
+   * @param columns Optional array of column keys; auto-detected if not provided
+   * @param sheetName Name of the worksheet
    */
   async generateExcelFromObjects(
     objects: Record<string, any>[],
     columns?: string[],
-    sheetName: string = 'Sheet1',
+    sheetName: string = DEFAULT_SHEET_NAME,
   ): Promise<Buffer> {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet(sheetName);
 
-    const cols = columns || (objects.length > 0 ? Object.keys(objects[0]) : []);
+    const columnKeys = columns || (objects.length > 0 ? Object.keys(objects[0]) : []);
 
     // Add header row
-    worksheet.addRow(cols);
+    worksheet.addRow(columnKeys);
 
     // Add data rows
     objects.forEach((obj) => {
-      const row = cols.map((col) => obj[col]);
-      worksheet.addRow(row);
+      worksheet.addRow(columnKeys.map((col) => obj[col]));
     });
 
-    const buffer = await workbook.xlsx.writeBuffer();
-    return Buffer.from(buffer as any);
+    return Buffer.from(await workbook.xlsx.writeBuffer());
   }
 
   /**
-   * Process imported Excel data
+   * Process an imported Excel file and count valid/empty rows
+   * @throws BadRequestException if the file is not an import type
    */
   async processImport(excelId: string): Promise<ExcelFile> {
     const excelFile = await this.findById(excelId);
@@ -292,10 +336,11 @@ export class ExcelService {
     await excelFile.save();
 
     try {
-      const buffer = require('fs').readFileSync(excelFile.filePath);
+      // Read file via file system abstraction
+      const buffer = await this.fileSystem.readFile(excelFile.filePath);
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(buffer as any);
-      const worksheet = workbook.getWorksheet(1);
+      const worksheet = workbook.getWorksheet(FIRST_SHEET_INDEX);
 
       if (!worksheet) {
         throw new Error('No worksheet found in file');
@@ -308,18 +353,21 @@ export class ExcelService {
       for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
         const row = worksheet.getRow(rowNumber);
         try {
-          // Process each row - collect cell values
           const rowValues: any[] = [];
           row.eachCell({ includeEmpty: true }, (cell) => {
             rowValues.push(cell.value);
           });
-          const hasData = rowValues.some((v) => v !== undefined && v !== null && v !== '');
+
+          const hasData = rowValues.some(
+            (v) => v !== undefined && v !== null && v !== '',
+          );
+
           if (hasData) {
             successCount++;
           } else {
             errorCount++;
           }
-        } catch (err) {
+        } catch {
           errorCount++;
         }
       }
@@ -328,18 +376,19 @@ export class ExcelService {
       excelFile.successRows = successCount;
       excelFile.errorRows = errorCount;
       await excelFile.save();
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
 
-      return excelFile;
-    } catch (error: any) {
       excelFile.status = ExcelStatus.FAILED;
-      excelFile.errorMessage = error?.message || 'Unknown error occurred';
+      excelFile.errorMessage = errorMessage;
       await excelFile.save();
-      return excelFile;
     }
+
+    return excelFile;
   }
 
   /**
-   * Get statistics about Excel files
+   * Get statistics about Excel files for a specific user
    */
   async getStatistics(userId: string): Promise<{
     totalImports: number;
@@ -348,9 +397,9 @@ export class ExcelService {
     failedImports: number;
     totalFiles: number;
   }> {
-    const query = Types.ObjectId.isValid(userId)
-      ? { createdBy: new Types.ObjectId(userId) }
-      : {};
+    this.validateObjectId(userId);
+
+    const query = { createdBy: new Types.ObjectId(userId) };
 
     const [total, imports, exports, completed, failed] = await Promise.all([
       this.excelModel.countDocuments(query),
