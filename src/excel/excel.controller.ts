@@ -28,10 +28,12 @@ import {
   ApiParam,
   ApiQuery,
   ApiConsumes,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import * as multer from 'multer';
 
 @ApiTags('Excel')
+@ApiBearerAuth()
 @Controller('excel')
 export class ExcelController {
   constructor(private readonly excelService: ExcelService) {}

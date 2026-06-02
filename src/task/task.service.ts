@@ -8,6 +8,7 @@ import { Task, TaskDocument, TaskStatus, TaskSchema } from './task.schema';
 import { ExcelService } from 'src/excel/excel.service';
 import { ExcelFile, ExcelDocument, ExcelType } from 'src/excel/excel.schema';
 import { DateCountDto } from './dto/dateCount.dto';
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class TaskService {
@@ -15,6 +16,7 @@ export class TaskService {
     @InjectModel(Task.name)
     private readonly taskModel: Model<TaskDocument>,
     private readonly excelService: ExcelService,
+    private readonly userService:UserService
   ) {}
 
   /**
@@ -340,7 +342,7 @@ export class TaskService {
     const totalTasks = tasks.length;
     const completedTasks = tasks.filter((task) => task.status === TaskStatus.DONE).length;
     if(completedTasks===totalTasks){
-      
+     await  this.userService.increaseScore({userId: dateCountDto.userId, score: 10});
     }
     const todoTasks = tasks.filter((task) => task.status === TaskStatus.TODO).length;
     const pendingTasks = totalTasks - completedTasks;

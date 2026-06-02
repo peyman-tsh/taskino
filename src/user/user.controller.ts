@@ -14,6 +14,7 @@ import {
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { IncreaseScoreDto } from './dto/increase-score.dto';
 import {
   ApiTags,
   ApiOperation,
@@ -114,4 +115,18 @@ export class UserController {
  async approveUser(@Param('id') id: string) {
    return await this.userService.approveExpert(id);
  }
+
+  @Post('increase-score')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Increase user score',
+    description: 'Increases a user score by the specified amount',
+  })
+  @ApiBearerAuth()
+  @ApiResponse({ status: 200, description: 'Score increased successfully' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 400, description: 'Invalid input' })
+  async increaseScore(@Body() increaseScoreDto: IncreaseScoreDto) {
+    return await this.userService.increaseScore(increaseScoreDto);
+  }
 }

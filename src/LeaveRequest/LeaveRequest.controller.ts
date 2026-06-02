@@ -20,9 +20,11 @@ import {
   ApiResponse,
   ApiParam,
   ApiQuery,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 
 @ApiTags('Leave Requests')
+@ApiBearerAuth()
 @Controller('leave-requests')
 export class LeaveRequestController {
   constructor(private readonly leaveRequestService: LeaveRequestService) {}

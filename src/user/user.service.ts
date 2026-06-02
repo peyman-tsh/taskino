@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { IncreaseScoreDto } from './dto/increase-score.dto';
 import { User, UserDocument } from './schemas/user.schema';
 import * as bcrypt from 'bcryptjs';
 
@@ -160,31 +161,51 @@ export class UserService {
   }
 
 
-async approveExpert(userId: string) {
-  console.log('in');
-  
-  const user = await this.userModel.findById(userId);
-  console.log(user);
-  
-  if (!user) {
-    throw new NotFoundException('User not found');
-  }
+  async approveExpert(userId: string) {
+    console.log('in');
+    
+    const user = await this.userModel.findById(userId);
+    console.log(user);
+    
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
-  if (user.isActive) {
+    if (user.isActive) {
+      return {
+        message: 'User is already approved',
+        user,
+      };
+    }
+
+    user.isActive = true;
+    await user.save();
+
     return {
-      message: 'User is already approved',
+      message: 'User approved successfully',
       user,
     };
   }
 
-  user.isActive = true;
-  await user.save();
+  /**
+   * Increase user score by a specified amount
+   */
+  async increaseScore(dto: IncreaseScoreDto): Promise<UserDocument> {
+    const { userId, score } = dto;
 
-  return {
-    message: 'User approved successfully',
-    user,
-  };
-}
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new NotFoundException('Invalid user ID');
+    }
 
+    const user = await this.userModel.findById(userId).exec();
 
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    user.score = (user.score || 0) + score;
+    await user.save();
+
+    return user;
+  }
 }

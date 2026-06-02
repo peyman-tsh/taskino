@@ -20,9 +20,11 @@ import {
   ApiResponse,
   ApiParam,
   ApiQuery,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 
 @ApiTags('Projects')
+@ApiBearerAuth()
 @Controller('projects')
 export class ProjectController {
   constructor(private readonly projectService: ProjectService) {}
