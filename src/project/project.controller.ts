@@ -198,4 +198,17 @@ export class ProjectController {
   removeTask(@Param('id') id: string, @Param('taskId') taskId: string) {
     return this.projectService.removeTask(id, taskId);
   }
+
+  @Get(':id/progress')
+  @ApiOperation({
+    summary: 'Get project progress',
+    description: 'Returns the progress percentage of a project based on task completion',
+  })
+  @ApiParam({ name: 'id', description: 'Project ID' })
+  @ApiResponse({ status: 200, description: 'Project progress retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Project not found' })
+  @ApiResponse({ status: 400, description: 'Invalid project ID' })
+  getProgress(@Param('id') id: string) {
+    return this.projectService.getProgress(id);
+  }
 }

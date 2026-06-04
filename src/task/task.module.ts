@@ -4,9 +4,11 @@ import { TaskController } from './task.controller';
 import { TaskService } from './task.service';
 import { Task, TaskSchema } from './task.schema';
 import { ExcelModule } from '../excel/excel.module';
+import { UserModule } from 'src/user/user.module';
 
 @Module({
   imports: [
+    UserModule,
     ExcelModule,
     MongooseModule.forFeature([{ name: Task.name, schema: TaskSchema }]),
   ],

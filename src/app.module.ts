@@ -13,6 +13,7 @@ import { ProjectMemberModule } from './projectMember/projectMember.module';
 import { LeaveRequestModule } from './LeaveRequest/LeaveRequest.module';
 import { ExcelModule } from './excel/excel.module';
 import { NotificationModule } from './notification/notification.module';
+import { ManagerModule } from './manager/manager.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { NotificationModule } from './notification/notification.module';
     LeaveRequestModule,
     ExcelModule,
     NotificationModule,
+    ManagerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

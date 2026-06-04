@@ -4,12 +4,15 @@ import { Model, Types } from 'mongoose';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { Project, ProjectDocument, ProjectStatus } from './project.schema';
+import { TaskStatus } from '../task/task.schema';
+import { TaskService } from 'src/task/task.service';
 
 @Injectable()
 export class ProjectService {
   constructor(
     @InjectModel(Project.name)
     private readonly projectModel: Model<ProjectDocument>,
+    private readonly taskService: TaskService,
   ) {}
 
   /**
@@ -96,6 +99,15 @@ export class ProjectService {
       page,
       limit,
     };
+  }
+
+  async countActiveProjects(): Promise<number> {
+    return this.projectModel
+      .countDocuments({
+        isArchived: false,
+        status: { $ne: ProjectStatus.COMPLETED },
+      })
+      .exec();
   }
 
   /**
@@ -196,6 +208,18 @@ export class ProjectService {
     }
 
     return updatedProject;
+  }
+
+  async setActivation(projectId: string, isActive: boolean): Promise<{
+    message: string;
+    project: ProjectDocument;
+  }> {
+    const project = await this.update(projectId, { isArchived: !isActive });
+
+    return {
+      message: isActive ? 'Project activated successfully' : 'Project deactivated successfully',
+      project,
+    };
   }
 
   /**
@@ -319,5 +343,47 @@ export class ProjectService {
     );
 
     return project.save();
+  }
+
+  /**
+   * Get project progress percentage based on task completion
+   */
+  async getProgress(projectId: string): Promise<{
+    projectId: string;
+    projectName: string;
+    totalTasks: number;
+    completedTasks: number;
+    inProgressTasks: number;
+    pendingTasks: number;
+    progressPercentage: number;
+  }> {
+    if (!Types.ObjectId.isValid(projectId)) {
+      throw new BadRequestException('Invalid project ID');
+    }
+
+    const project = await this.projectModel
+      .findById(projectId)
+      .populate('tasks')
+      .exec();
+    const tasks=await this.taskService.findTaskByProjectId(projectId);
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+
+    const totalTasks = tasks.length;
+    const completedTasks = tasks.filter((task) => task.status === TaskStatus.DONE).length;
+    const inProgressTasks = tasks.filter((task) => task.status === TaskStatus.IN_PROGRESS).length;
+    const pendingTasks = tasks.filter((task) => task.status === TaskStatus.TODO).length;
+    const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+    return {
+      projectId: project._id.toString(),
+      projectName: project.title,
+      totalTasks,
+      completedTasks,
+      inProgressTasks,
+      pendingTasks,
+      progressPercentage,
+    };
   }
 }

@@ -142,6 +142,18 @@ export class ProjectMemberService {
       .exec();
   }
 
+  async findAllByProject(projectId: string): Promise<ProjectMemberDocument[]> {
+    if (!Types.ObjectId.isValid(projectId)) {
+      throw new BadRequestException('Invalid project ID');
+    }
+
+    return this.projectMemberModel
+      .find({ project: new Types.ObjectId(projectId) })
+      .populate('project', 'title description status')
+      .populate('user', 'firstName lastName email mobile roles isActive')
+      .exec();
+  }
+
   /**
    * Find project members by user ID
    */

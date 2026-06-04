@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { IncreaseScoreDto } from './dto/increase-score.dto';
-import { User, UserDocument } from './schemas/user.schema';
+import { User, UserDocument, UserRole } from './schemas/user.schema';
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
@@ -55,6 +55,47 @@ export class UserService {
     const [data, total] = await Promise.all([
       this.userModel.find().skip(skip).limit(limit).exec(),
       this.userModel.countDocuments().exec(),
+    ]);
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+    };
+  }
+
+  async countActiveUsers(): Promise<number> {
+    return this.userModel.countDocuments({ isActive: true }).exec();
+  }
+
+  async findForManager(
+    page: number = 1,
+    limit: number = 10,
+    filters?: {
+      isActive?: boolean;
+      role?: UserRole;
+    },
+  ): Promise<{
+    data: Omit<UserDocument, 'password'>[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const skip = (page - 1) * limit;
+    const query: Record<string, unknown> = {};
+
+    if (filters?.isActive !== undefined) {
+      query.isActive = filters.isActive;
+    }
+
+    if (filters?.role) {
+      query.roles = filters.role;
+    }
+
+    const [data, total] = await Promise.all([
+      this.userModel.find(query).skip(skip).limit(limit).sort({ createdAt: -1 }).exec(),
+      this.userModel.countDocuments(query).exec(),
     ]);
 
     return {
@@ -147,6 +188,25 @@ export class UserService {
 
       console.log(updateData.mobile,updatedUser.mobile);
     return updatedUser;
+  }
+
+  async updateRole(id: string, role: UserRole | string): Promise<Omit<UserDocument, 'password'>> {
+    const user = await this.userModel
+      .findByIdAndUpdate(
+        id,
+        {
+          roles: role,
+          updatedAt: new Date(),
+        },
+        { new: true },
+      )
+      .exec();
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
   }
 
   /**

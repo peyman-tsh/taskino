@@ -8,6 +8,7 @@ import { Task, TaskDocument, TaskStatus, TaskSchema } from './task.schema';
 import { ExcelService } from '../excel/excel.service';
 import { ExcelFile, ExcelType } from '../excel/excel.schema';
 import { DateCountDto } from './dto/dateCount.dto';
+import { UserService } from 'src/user/user.service';
 
 // Constants
 const EXCEL_IMPORT_TYPE = 'import' as ExcelType;
@@ -22,6 +23,7 @@ export class TaskService {
     @InjectModel(Task.name)
     private readonly taskModel: Model<TaskDocument>,
     private readonly excelService: ExcelService,
+    private readonly userService: UserService,
   ) {}
 
   /**
@@ -274,7 +276,7 @@ export class TaskService {
     }).exec();
 
     const pendingTasks = pendingTodo + pendingInProgress;
-
+    
     return {
       managerId,
       expertId,
@@ -322,12 +324,8 @@ export class TaskService {
     const todoTasks = tasks.filter((task) => task.status === TaskStatus.TODO).length;
     const pendingTasks = totalTasks - completedTasks;
 
-    // If all tasks are completed, increase user score
-    if (completedTasks === totalTasks && totalTasks > 0) {
-      // Note: Score increase should be handled via events in a fully decoupled architecture
-      // For now, we keep the direct call but this should be refactored to use EventEmitter
-      // TODO: Replace with event-driven approach
-    }
+    // Adjust user score based on task performance
+    // await this.adjustUserScore(dateCountDto.userId, tasks);
 
     return {
       projectId: dateCountDto.projectId,
@@ -340,4 +338,39 @@ export class TaskService {
       pendingTasks,
     };
   }
+
+  /**
+   * Adjusts the user's score according to task completion timing.
+   * +10 if all tasks are completed on or before the current date.
+   * -10 if any task is overdue (dueDate passed and not DONE) or not all tasks are completed by due date.
+   */
+  // private async adjustUserScore(userId: string, tasks: TaskDocument[]): Promise<void> {
+  //   if (!tasks.length) return;
+  //   const now = new Date();
+  //   const allCompletedOnTime = tasks.every(
+  //     (t) => t.status === TaskStatus.DONE && new Date(t.dueDate) >= now,
+  //   );
+  //   const anyOverdue = tasks.some(
+  //     (t) => t.status !== TaskStatus.DONE && new Date(t.dueDate) < now,
+  //   );
+  //   if (allCompletedOnTime) {
+  //     await this.userService.increaseScore({ userId, score: 10 });
+  //   } else if (anyOverdue) {
+  //     await this.userService.increaseScore({ userId, score: -10 });
+  //   }
+  // }
+
+ async findTaskByProjectId(projectId: string): Promise<TaskDocument[]> {
+    return this.taskModel.find({ projectId }).exec();
+  }
+
+  async countOpenTasks(): Promise<number> {
+    return this.taskModel
+      .countDocuments({
+        status: { $in: [TaskStatus.TODO, TaskStatus.IN_PROGRESS] },
+      })
+      .exec();
+  }
+
+
 }
