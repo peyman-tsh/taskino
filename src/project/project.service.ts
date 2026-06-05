@@ -386,4 +386,31 @@ export class ProjectService {
       progressPercentage,
     };
   }
+
+  async getProgressList(page: number = 1, limit: number = 10): Promise<{
+    data: Array<{
+      projectId: string;
+      projectName: string;
+      totalTasks: number;
+      completedTasks: number;
+      inProgressTasks: number;
+      pendingTasks: number;
+      progressPercentage: number;
+    }>;
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const projects = await this.findAll(page, limit);
+    const data = await Promise.all(
+      projects.data.map((project) => this.getProgress(project._id.toString())),
+    );
+
+    return {
+      data,
+      total: projects.total,
+      page: projects.page,
+      limit: projects.limit,
+    };
+  }
 }

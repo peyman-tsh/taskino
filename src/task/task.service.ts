@@ -372,5 +372,206 @@ export class TaskService {
       .exec();
   }
 
+  async getTaskStatusOverview(projectId?: string): Promise<{
+    totalTasks: number;
+    todoTasks: number;
+    inProgressTasks: number;
+    doneTasks: number;
+  }> {
+    const match: Record<string, unknown> = {};
+
+    if (projectId) {
+      this.validateObjectId(projectId);
+      match.projectId = new Types.ObjectId(projectId);
+    }
+
+    const statusCounts = await this.taskModel
+      .aggregate<{ _id: TaskStatus; count: number }>([
+        { $match: match },
+        { $group: { _id: '$status', count: { $sum: 1 } } },
+      ])
+      .exec();
+
+    const counts = statusCounts.reduce(
+      (result, item) => ({
+        ...result,
+        [item._id]: item.count,
+      }),
+      {
+        [TaskStatus.TODO]: 0,
+        [TaskStatus.IN_PROGRESS]: 0,
+        [TaskStatus.DONE]: 0,
+      },
+    );
+
+    return {
+      totalTasks: counts[TaskStatus.TODO] + counts[TaskStatus.IN_PROGRESS] + counts[TaskStatus.DONE],
+      todoTasks: counts[TaskStatus.TODO],
+      inProgressTasks: counts[TaskStatus.IN_PROGRESS],
+      doneTasks: counts[TaskStatus.DONE],
+    };
+  }
+
+  async getTaskCountsByAssignee(projectId?: string): Promise<
+    Array<{
+      userId: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+      totalTasks: number;
+      todoTasks: number;
+      inProgressTasks: number;
+      doneTasks: number;
+    }>
+  > {
+    const match: Record<string, unknown> = {};
+
+    if (projectId) {
+      this.validateObjectId(projectId);
+      match.projectId = new Types.ObjectId(projectId);
+    }
+
+    return this.taskModel
+      .aggregate([
+        { $match: match },
+        { $unwind: '$assignedTo' },
+        {
+          $group: {
+            _id: '$assignedTo',
+            totalTasks: { $sum: 1 },
+            todoTasks: {
+              $sum: { $cond: [{ $eq: ['$status', TaskStatus.TODO] }, 1, 0] },
+            },
+            inProgressTasks: {
+              $sum: { $cond: [{ $eq: ['$status', TaskStatus.IN_PROGRESS] }, 1, 0] },
+            },
+            doneTasks: {
+              $sum: { $cond: [{ $eq: ['$status', TaskStatus.DONE] }, 1, 0] },
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: 'users',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'user',
+          },
+        },
+        { $unwind: '$user' },
+        {
+          $project: {
+            _id: 0,
+            userId: { $toString: '$_id' },
+            firstName: '$user.firstName',
+            lastName: '$user.lastName',
+            email: '$user.email',
+            totalTasks: 1,
+            todoTasks: 1,
+            inProgressTasks: 1,
+            doneTasks: 1,
+          },
+        },
+        { $sort: { totalTasks: -1, doneTasks: -1 } },
+      ])
+      .exec();
+  }
+
+  async getMonthlyUserPerformance(query: {
+    month: number;
+    year: number;
+    projectId?: string;
+  }): Promise<{
+    month: number;
+    year: number;
+    projectId?: string;
+    users: Array<{
+      userId: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+      score: number;
+      totalTasks: number;
+      completedTasks: number;
+      inProgressTasks: number;
+      pendingTasks: number;
+      completionRate: number;
+    }>;
+  }> {
+    const startDate = new Date(query.year, query.month - 1, 1);
+    const endDate = new Date(query.year, query.month, 1);
+    const match: Record<string, unknown> = {
+      createdAt: {
+        $gte: startDate,
+        $lt: endDate,
+      },
+    };
+
+    if (query.projectId) {
+      this.validateObjectId(query.projectId);
+      match.projectId = new Types.ObjectId(query.projectId);
+    }
+
+    const users = await this.taskModel
+      .aggregate([
+        { $match: match },
+        { $unwind: '$assignedTo' },
+        {
+          $group: {
+            _id: '$assignedTo',
+            totalTasks: { $sum: 1 },
+            completedTasks: {
+              $sum: { $cond: [{ $eq: ['$status', TaskStatus.DONE] }, 1, 0] },
+            },
+            inProgressTasks: {
+              $sum: { $cond: [{ $eq: ['$status', TaskStatus.IN_PROGRESS] }, 1, 0] },
+            },
+            pendingTasks: {
+              $sum: { $cond: [{ $eq: ['$status', TaskStatus.TODO] }, 1, 0] },
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: 'users',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'user',
+          },
+        },
+        { $unwind: '$user' },
+        {
+          $project: {
+            _id: 0,
+            userId: { $toString: '$_id' },
+            firstName: '$user.firstName',
+            lastName: '$user.lastName',
+            email: '$user.email',
+            score: { $ifNull: ['$user.score', 0] },
+            totalTasks: 1,
+            completedTasks: 1,
+            inProgressTasks: 1,
+            pendingTasks: 1,
+            completionRate: {
+              $cond: [
+                { $gt: ['$totalTasks', 0] },
+                { $round: [{ $multiply: [{ $divide: ['$completedTasks', '$totalTasks'] }, 100] }, 0] },
+                0,
+              ],
+            },
+          },
+        },
+        { $sort: { completionRate: -1, score: -1, completedTasks: -1 } },
+      ])
+      .exec();
+
+    return {
+      month: query.month,
+      year: query.year,
+      projectId: query.projectId,
+      users,
+    };
+  }
+
 
 }

@@ -4,6 +4,10 @@ export default registerAs('app', () => {
   return {
     nodeEnv: process.env.NODE_ENV || 'development',
     port: parseInt(process.env.PORT || '3000', 10),
+    corsOrigins: (process.env.CORS_ORIGINS || 'http://localhost:3001')
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean),
     swaggerPath: process.env.SWAGGER_PATH || 'api/docs',
     swaggerDocsPath: process.env.SWAGGER_DOCS_PATH || 'api/docs-json',
     bcryptSaltRounds: parseInt(process.env.BCRYPT_SALT_ROUNDS || '10', 10),

@@ -38,6 +38,10 @@ export class EnvironmentVariables {
 
   @IsString()
   @IsOptional()
+  CORS_ORIGINS?: string;
+
+  @IsString()
+  @IsOptional()
   JWT_SECRET?: string;
 
   @IsString()

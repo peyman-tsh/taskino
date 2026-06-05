@@ -5,6 +5,9 @@ import { TaskService } from '../task/task.service';
 import { UserService } from '../user/user.service';
 import { BaseManagerService } from './base-manager.service';
 import { ManagerUsersQueryDto } from './dto/manager-users-query.dto';
+import { MonthlyPerformanceQueryDto } from './dto/monthly-performance-query.dto';
+import { PaginationQueryDto } from './dto/pagination-query.dto';
+import { TaskAnalyticsQueryDto } from './dto/task-analytics-query.dto';
 
 @Injectable()
 export class ManagerService extends BaseManagerService {
@@ -75,5 +78,39 @@ export class ManagerService extends BaseManagerService {
     this.toObjectId(projectId, 'project ID');
 
     return this.projectService.getProgress(projectId);
+  }
+
+  getProjectsProgress(query: PaginationQueryDto) {
+    const { page, limit } = this.getPagination(query);
+
+    return this.projectService.getProgressList(page, limit);
+  }
+
+  getTaskStatusOverview(query: TaskAnalyticsQueryDto) {
+    if (query.projectId) {
+      this.toObjectId(query.projectId, 'project ID');
+    }
+
+    return this.taskService.getTaskStatusOverview(query.projectId);
+  }
+
+  getTaskCountsByUsers(query: TaskAnalyticsQueryDto) {
+    if (query.projectId) {
+      this.toObjectId(query.projectId, 'project ID');
+    }
+
+    return this.taskService.getTaskCountsByAssignee(query.projectId);
+  }
+
+  getMonthlyUserPerformance(query: MonthlyPerformanceQueryDto) {
+    if (query.projectId) {
+      this.toObjectId(query.projectId, 'project ID');
+    }
+
+    return this.taskService.getMonthlyUserPerformance({
+      month: query.month,
+      year: query.year,
+      projectId: query.projectId,
+    });
   }
 }

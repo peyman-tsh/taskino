@@ -25,6 +25,12 @@ async function bootstrap() {
 
   // Global path prefix
   const appConfig = configService.get('app', { infer: true });
+  app.enableCors({
+    origin: appConfig.corsOrigins,
+    credentials: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
   app.setGlobalPrefix('api');
 
   app.useGlobalFilters(new AllExceptionsFilter());
@@ -49,7 +55,7 @@ async function bootstrap() {
     customCss: '.swagger-ui .topbar { display: none }',
   });
 
-  const port = appConfig.port || 3000;
+  const port = appConfig.port || 3001;
   await app.listen(port);
 
   console.log(`Application is running on: http://localhost:${port}`);
