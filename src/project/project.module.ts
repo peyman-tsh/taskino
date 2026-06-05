@@ -4,9 +4,10 @@ import { Project, ProjectSchema } from './project.schema';
 import { ProjectController } from './project.controller';
 import { ProjectService } from './project.service';
 import { TaskModule } from 'src/task/task.module';
+import { UserModule } from '../user/user.module';
 
 @Module({
-  imports: [TaskModule,MongooseModule.forFeature([{ name: Project.name, schema: ProjectSchema }])],
+  imports: [TaskModule, UserModule, MongooseModule.forFeature([{ name: Project.name, schema: ProjectSchema }])],
   controllers: [ProjectController],
   providers: [ProjectService],
   exports: [ProjectService],

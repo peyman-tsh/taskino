@@ -40,6 +40,14 @@ export class Project {
   owner: Types.ObjectId;
 
   @Prop({
+    type: Types.ObjectId,
+    ref: User.name,
+    required: true,
+    index: true,
+  })
+  supervisorId: Types.ObjectId;
+
+  @Prop({
     type: [{ type: Types.ObjectId, ref: User.name }],
     default: [],
   })

@@ -6,6 +6,8 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 import { Project, ProjectDocument, ProjectStatus } from './project.schema';
 import { TaskStatus } from '../task/task.schema';
 import { TaskService } from 'src/task/task.service';
+import { UserService } from '../user/user.service';
+import { UserRole } from '../user/schemas/user.schema';
 
 @Injectable()
 export class ProjectService {
@@ -13,13 +15,27 @@ export class ProjectService {
     @InjectModel(Project.name)
     private readonly projectModel: Model<ProjectDocument>,
     private readonly taskService: TaskService,
+    private readonly userService: UserService,
   ) {}
+
+  private async validateSupervisor(supervisorId: string): Promise<Types.ObjectId> {
+    if (!Types.ObjectId.isValid(supervisorId)) {
+      throw new BadRequestException('Invalid supervisor user ID');
+    }
+
+    const supervisor = await this.userService.findById(supervisorId);
+    if (supervisor.roles !== UserRole.SUPERVISOR) {
+      throw new BadRequestException('Selected user must have the supervisor role');
+    }
+
+    return new Types.ObjectId(supervisorId);
+  }
 
   /**
    * Create a new project
    */
   async create(createProjectDto: CreateProjectDto): Promise<ProjectDocument> {
-    const { owner, members, ...rest } = createProjectDto;
+    const { owner, supervisorId, members, ...rest } = createProjectDto;
 
     // Validate owner is a valid ObjectId
     if (!Types.ObjectId.isValid(owner)) {
@@ -34,9 +50,11 @@ export class ProjectService {
       }
     }
 
+    const supervisorObjectId = await this.validateSupervisor(supervisorId);
     const createdProject = new this.projectModel({
       ...rest,
       owner: new Types.ObjectId(owner),
+      supervisorId: supervisorObjectId,
       members: members?.map((id) => new Types.ObjectId(id)) || [],
     });
 
@@ -87,6 +105,7 @@ export class ProjectService {
         .skip(skip)
         .limit(limit)
         .populate('owner', 'firstName lastName email')
+        .populate('supervisorId', 'firstName lastName email roles')
         .populate('members', 'firstName lastName email')
         .populate('tasks')
         .exec(),
@@ -110,6 +129,107 @@ export class ProjectService {
       .exec();
   }
 
+  async findSupervisedProjectIds(supervisorId: string): Promise<string[]> {
+    if (!Types.ObjectId.isValid(supervisorId)) {
+      throw new BadRequestException('Invalid supervisor user ID');
+    }
+
+    const projectIds = await this.projectModel.distinct('_id', {
+      supervisorId: new Types.ObjectId(supervisorId),
+    });
+
+    return projectIds.map((projectId) => projectId.toString());
+  }
+
+  async findParticipatingProjectIds(userId: string): Promise<string[]> {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new BadRequestException('Invalid user ID');
+    }
+
+    const userObjectId = new Types.ObjectId(userId);
+    const projectIds = await this.projectModel.distinct('_id', {
+      $or: [{ supervisorId: userObjectId }, { members: userObjectId }],
+    });
+
+    return projectIds.map((projectId) => projectId.toString());
+  }
+
+  async findSupervisedProjects(supervisorId: string, page: number, limit: number) {
+    if (!Types.ObjectId.isValid(supervisorId)) {
+      throw new BadRequestException('Invalid supervisor user ID');
+    }
+
+    const match = { supervisorId: new Types.ObjectId(supervisorId) };
+    const skip = (page - 1) * limit;
+    const [projects, total] = await Promise.all([
+      this.projectModel
+        .find(match)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .select('title status isArchived members')
+        .lean()
+        .exec(),
+      this.projectModel.countDocuments(match).exec(),
+    ]);
+
+    return {
+      data: projects.map((project) => ({
+        projectId: project._id.toString(),
+        title: project.title,
+        status: project.status,
+        isArchived: project.isArchived,
+        membersCount: project.members.length,
+      })),
+      total,
+      page,
+      limit,
+    };
+  }
+
+  async getSupervisedProjectAccess(supervisorId: string, projectId: string) {
+    if (!Types.ObjectId.isValid(supervisorId) || !Types.ObjectId.isValid(projectId)) {
+      throw new BadRequestException('Invalid supervisor or project ID');
+    }
+
+    const project = await this.projectModel
+      .findOne({
+        _id: new Types.ObjectId(projectId),
+        supervisorId: new Types.ObjectId(supervisorId),
+      })
+      .select('title members')
+      .lean()
+      .exec();
+
+    if (!project) {
+      throw new NotFoundException('Project not found or is not supervised by the current user');
+    }
+
+    return {
+      projectId: project._id.toString(),
+      projectName: project.title,
+      memberIds: project.members.map((memberId) => memberId.toString()),
+    };
+  }
+
+  async getSupervisedTeamContext(supervisorId: string) {
+    if (!Types.ObjectId.isValid(supervisorId)) {
+      throw new BadRequestException('Invalid supervisor user ID');
+    }
+
+    const projects = await this.projectModel
+      .find({ supervisorId: new Types.ObjectId(supervisorId) })
+      .select('title members')
+      .lean()
+      .exec();
+
+    return projects.map((project) => ({
+      projectId: project._id.toString(),
+      projectName: project.title,
+      memberIds: project.members.map((memberId) => memberId.toString()),
+    }));
+  }
+
   /**
    * Find a project by ID
    */
@@ -121,6 +241,7 @@ export class ProjectService {
     const project = await this.projectModel
       .findById(id)
       .populate('owner', 'firstName lastName email')
+      .populate('supervisorId', 'firstName lastName email roles')
       .populate('members', 'firstName lastName email')
       .populate('tasks')
       .exec();
@@ -143,6 +264,7 @@ export class ProjectService {
     return this.projectModel
       .find({ owner: new Types.ObjectId(ownerId) })
       .populate('owner', 'firstName lastName email')
+      .populate('supervisorId', 'firstName lastName email roles')
       .populate('members', 'firstName lastName email')
       .populate('tasks')
       .exec();
@@ -184,6 +306,10 @@ export class ProjectService {
       updateData.members = updateProjectDto.members?.map((userId) => new Types.ObjectId(userId)) || [];
     }
 
+    if (updateProjectDto.supervisorId !== undefined) {
+      updateData.supervisorId = await this.validateSupervisor(updateProjectDto.supervisorId);
+    }
+
     if (updateProjectDto.startDate !== undefined) {
       updateData.startDate = updateProjectDto.startDate;
     }
@@ -199,6 +325,7 @@ export class ProjectService {
     const updatedProject = await this.projectModel
       .findByIdAndUpdate(id, updateData, { new: true })
       .populate('owner', 'firstName lastName email')
+      .populate('supervisorId', 'firstName lastName email roles')
       .populate('members', 'firstName lastName email')
       .populate('tasks')
       .exec();

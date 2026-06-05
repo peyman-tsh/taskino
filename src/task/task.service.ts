@@ -53,7 +53,7 @@ export class TaskService {
     task: TaskDocument;
     excelUpload: ExcelFile;
   }> {
-    const { createdBy, assignedTo, ...rest } = createTaskDto;
+    const { createdBy, assignedTo, projectId, ...rest } = createTaskDto;
 
     // Validate createdBy
     this.validateObjectId(createdBy);
@@ -67,10 +67,15 @@ export class TaskService {
       }
     }
 
+    if (projectId) {
+      this.validateObjectId(projectId);
+    }
+
     const createdTask = new this.taskModel({
       ...rest,
       createdBy: new Types.ObjectId(createdBy),
       assignedTo: assignedToArray.map((userId) => new Types.ObjectId(userId)),
+      projectId: projectId ? new Types.ObjectId(projectId) : undefined,
     });
 
     // Handle file upload if provided
@@ -218,6 +223,34 @@ export class TaskService {
 
     if (!task) {
       throw new NotFoundException('Task not found');
+    }
+
+    return task;
+  }
+
+  async updateStatusInProject(
+    taskId: string,
+    projectId: string,
+    status: TaskStatus,
+  ): Promise<TaskDocument> {
+    this.validateObjectId(taskId);
+    this.validateObjectId(projectId);
+
+    const task = await this.taskModel
+      .findOneAndUpdate(
+        {
+          _id: new Types.ObjectId(taskId),
+          $expr: { $eq: [{ $toString: '$projectId' }, projectId] },
+        },
+        { status },
+        { new: true },
+      )
+      .populate('createdBy', 'firstName lastName email')
+      .populate('assignedTo', 'firstName lastName email')
+      .exec();
+
+    if (!task) {
+      throw new NotFoundException('Task not found in the selected project');
     }
 
     return task;
@@ -372,6 +405,318 @@ export class TaskService {
       .exec();
   }
 
+  async countByProjectIdsAndStatus(projectIds: string[], status: TaskStatus): Promise<number> {
+    if (projectIds.length === 0) {
+      return 0;
+    }
+
+    projectIds.forEach((projectId) => this.validateObjectId(projectId));
+
+    return this.taskModel
+      .countDocuments({
+        $expr: { $in: [{ $toString: '$projectId' }, projectIds] },
+        status,
+      })
+      .exec();
+  }
+
+  countInProgressByProjectIds(projectIds: string[]): Promise<number> {
+    return this.countByProjectIdsAndStatus(projectIds, TaskStatus.IN_PROGRESS);
+  }
+
+  countDoneByProjectIds(projectIds: string[]): Promise<number> {
+    return this.countByProjectIdsAndStatus(projectIds, TaskStatus.DONE);
+  }
+
+  async countByAssigneeAndStatus(userId: string, status: TaskStatus): Promise<number> {
+    this.validateObjectId(userId);
+
+    return this.taskModel
+      .countDocuments({
+        assignedTo: new Types.ObjectId(userId),
+        status,
+      })
+      .exec();
+  }
+
+  countDoneByAssignee(userId: string): Promise<number> {
+    return this.countByAssigneeAndStatus(userId, TaskStatus.DONE);
+  }
+
+  async getStatusCountsByProjectIds(projectIds: string[]): Promise<
+    Array<{
+      projectId: string;
+      totalTasks: number;
+      inProgressTasks: number;
+      doneTasks: number;
+    }>
+  > {
+    if (projectIds.length === 0) {
+      return [];
+    }
+
+    projectIds.forEach((projectId) => this.validateObjectId(projectId));
+
+    return this.taskModel
+      .aggregate([
+        {
+          $match: {
+            $expr: { $in: [{ $toString: '$projectId' }, projectIds] },
+          },
+        },
+        {
+          $group: {
+            _id: '$projectId',
+            totalTasks: { $sum: 1 },
+            inProgressTasks: {
+              $sum: { $cond: [{ $eq: ['$status', TaskStatus.IN_PROGRESS] }, 1, 0] },
+            },
+            doneTasks: {
+              $sum: { $cond: [{ $eq: ['$status', TaskStatus.DONE] }, 1, 0] },
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            projectId: { $toString: '$_id' },
+            totalTasks: 1,
+            inProgressTasks: 1,
+            doneTasks: 1,
+          },
+        },
+      ])
+      .exec();
+  }
+
+  async getMemberStatusCounts(projectId: string, memberIds: string[]): Promise<
+    Array<{
+      userId: string;
+      totalTasks: number;
+      todoTasks: number;
+      inProgressTasks: number;
+      doneTasks: number;
+    }>
+  > {
+    this.validateObjectId(projectId);
+    memberIds.forEach((memberId) => this.validateObjectId(memberId));
+
+    if (memberIds.length === 0) {
+      return [];
+    }
+
+    const memberObjectIds = memberIds.map((memberId) => new Types.ObjectId(memberId));
+
+    return this.taskModel
+      .aggregate([
+        {
+          $match: {
+            $expr: { $eq: [{ $toString: '$projectId' }, projectId] },
+            assignedTo: { $in: memberObjectIds },
+          },
+        },
+        { $unwind: '$assignedTo' },
+        { $match: { assignedTo: { $in: memberObjectIds } } },
+        {
+          $group: {
+            _id: '$assignedTo',
+            totalTasks: { $sum: 1 },
+            todoTasks: { $sum: { $cond: [{ $eq: ['$status', TaskStatus.TODO] }, 1, 0] } },
+            inProgressTasks: {
+              $sum: { $cond: [{ $eq: ['$status', TaskStatus.IN_PROGRESS] }, 1, 0] },
+            },
+            doneTasks: { $sum: { $cond: [{ $eq: ['$status', TaskStatus.DONE] }, 1, 0] } },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            userId: { $toString: '$_id' },
+            totalTasks: 1,
+            todoTasks: 1,
+            inProgressTasks: 1,
+            doneTasks: 1,
+          },
+        },
+      ])
+      .exec();
+  }
+
+  async findOverdueByProjectIds(projectIds: string[], page: number, limit: number) {
+    if (projectIds.length === 0) {
+      return { data: [], total: 0, page, limit };
+    }
+
+    projectIds.forEach((projectId) => this.validateObjectId(projectId));
+    const now = new Date();
+    const match = {
+      $expr: {
+        $and: [
+          { $in: [{ $toString: '$projectId' }, projectIds] },
+          {
+            $lt: [
+              {
+                $convert: {
+                  input: '$dueDate',
+                  to: 'date',
+                  onError: null,
+                  onNull: null,
+                },
+              },
+              now,
+            ],
+          },
+        ],
+      },
+      status: { $ne: TaskStatus.DONE },
+    };
+    const skip = (page - 1) * limit;
+    const [data, total] = await Promise.all([
+      this.taskModel
+        .find(match)
+        .sort({ dueDate: 1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('assignedTo', 'firstName lastName email')
+        .populate('projectId', 'title status')
+        .exec(),
+      this.taskModel.countDocuments(match).exec(),
+    ]);
+
+    return { data, total, page, limit };
+  }
+
+  async getProjectReport(projectId: string) {
+    this.validateObjectId(projectId);
+    const now = new Date();
+
+    const [statusOverview, overdueTasks] = await Promise.all([
+      this.getTaskStatusOverview(projectId),
+      this.taskModel
+        .countDocuments({
+          $expr: {
+            $and: [
+              { $eq: [{ $toString: '$projectId' }, projectId] },
+              {
+                $lt: [
+                  {
+                    $convert: {
+                      input: '$dueDate',
+                      to: 'date',
+                      onError: null,
+                      onNull: null,
+                    },
+                  },
+                  now,
+                ],
+              },
+            ],
+          },
+          status: { $ne: TaskStatus.DONE },
+        })
+        .exec(),
+    ]);
+
+    return {
+      ...statusOverview,
+      overdueTasks,
+      completionRate:
+        statusOverview.totalTasks > 0
+          ? Math.round((statusOverview.doneTasks / statusOverview.totalTasks) * 100)
+          : 0,
+    };
+  }
+
+  async getMemberStatusCountsAcrossProjects(projectIds: string[], memberIds: string[]): Promise<
+    Array<{
+      userId: string;
+      projectIds: string[];
+      totalTasks: number;
+      todoTasks: number;
+      inProgressTasks: number;
+      doneTasks: number;
+      overdueTasks: number;
+    }>
+  > {
+    if (projectIds.length === 0 || memberIds.length === 0) {
+      return [];
+    }
+
+    projectIds.forEach((projectId) => this.validateObjectId(projectId));
+    memberIds.forEach((memberId) => this.validateObjectId(memberId));
+    const memberObjectIds = memberIds.map((memberId) => new Types.ObjectId(memberId));
+    const now = new Date();
+
+    return this.taskModel
+      .aggregate([
+        {
+          $match: {
+            $expr: { $in: [{ $toString: '$projectId' }, projectIds] },
+            assignedTo: { $in: memberObjectIds },
+          },
+        },
+        { $unwind: '$assignedTo' },
+        { $match: { assignedTo: { $in: memberObjectIds } } },
+        {
+          $group: {
+            _id: '$assignedTo',
+            projectIds: { $addToSet: '$projectId' },
+            totalTasks: { $sum: 1 },
+            todoTasks: { $sum: { $cond: [{ $eq: ['$status', TaskStatus.TODO] }, 1, 0] } },
+            inProgressTasks: {
+              $sum: { $cond: [{ $eq: ['$status', TaskStatus.IN_PROGRESS] }, 1, 0] },
+            },
+            doneTasks: { $sum: { $cond: [{ $eq: ['$status', TaskStatus.DONE] }, 1, 0] } },
+            overdueTasks: {
+              $sum: {
+                $cond: [
+                  {
+                    $and: [
+                      { $ne: ['$status', TaskStatus.DONE] },
+                      {
+                        $lt: [
+                          {
+                            $convert: {
+                              input: '$dueDate',
+                              to: 'date',
+                              onError: null,
+                              onNull: null,
+                            },
+                          },
+                          now,
+                        ],
+                      },
+                    ],
+                  },
+                  1,
+                  0,
+                ],
+              },
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            userId: { $toString: '$_id' },
+            projectIds: {
+              $map: {
+                input: '$projectIds',
+                as: 'projectId',
+                in: { $toString: '$$projectId' },
+              },
+            },
+            totalTasks: 1,
+            todoTasks: 1,
+            inProgressTasks: 1,
+            doneTasks: 1,
+            overdueTasks: 1,
+          },
+        },
+      ])
+      .exec();
+  }
+
   async getTaskStatusOverview(projectId?: string): Promise<{
     totalTasks: number;
     todoTasks: number;
@@ -382,7 +727,7 @@ export class TaskService {
 
     if (projectId) {
       this.validateObjectId(projectId);
-      match.projectId = new Types.ObjectId(projectId);
+      match.$expr = { $eq: [{ $toString: '$projectId' }, projectId] };
     }
 
     const statusCounts = await this.taskModel

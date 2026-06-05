@@ -69,6 +69,29 @@ export class UserService {
     return this.userModel.countDocuments({ isActive: true }).exec();
   }
 
+  async findProfilesByIds(userIds: string[]) {
+    const validUserIds = userIds.filter((userId) => Types.ObjectId.isValid(userId));
+    if (validUserIds.length === 0) {
+      return [];
+    }
+
+    const users = await this.userModel
+      .find({ _id: { $in: validUserIds.map((userId) => new Types.ObjectId(userId)) } })
+      .select('firstName lastName email mobile isActive score')
+      .lean()
+      .exec();
+
+    return users.map((user) => ({
+      userId: user._id.toString(),
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      mobile: user.mobile,
+      isActive: user.isActive,
+      score: user.score ?? 0,
+    }));
+  }
+
   async findForManager(
     page: number = 1,
     limit: number = 10,

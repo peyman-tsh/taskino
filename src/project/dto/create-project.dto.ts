@@ -1,7 +1,6 @@
-import { IsString, IsNotEmpty, IsArray, IsOptional, IsEnum, IsDate, IsBoolean, IsDateString } from 'class-validator';
+import { IsString, IsNotEmpty, IsArray, IsOptional, IsEnum, IsBoolean, IsDateString, IsMongoId } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProjectStatus } from '../project.schema';
-import { Type } from 'class-transformer';
 
 export class CreateProjectDto {
   @ApiProperty({ description: 'Title of the project', example: 'New Website Redesign' })
@@ -20,14 +19,20 @@ export class CreateProjectDto {
   status?: ProjectStatus;
 
   @ApiProperty({ description: 'ID of the user who owns the project', example: '64a7b1c2d3e4f5a6b7c8d9e0' })
-  @IsString()
-  @IsNotEmpty()
+  @IsMongoId()
   owner: string;
+
+  @ApiProperty({
+    description: 'ID of the supervisor responsible for the project. The user must have the supervisor role.',
+    example: '64a7b1c2d3e4f5a6b7c8d9e1',
+  })
+  @IsMongoId()
+  supervisorId: string;
 
   @ApiPropertyOptional({ description: 'Array of user IDs to add as members', example: ['64a7b1c2d3e4f5a6b7c8d9e1', '64a7b1c2d3e4f5a6b7c8d9e2'] })
   @IsOptional()
   @IsArray()
-  @IsString({ each: true })
+  @IsMongoId({ each: true })
   members?: string[];
 
   @ApiPropertyOptional({ description: 'Start date of the project', example: '2024-01-01' })
@@ -36,7 +41,6 @@ export class CreateProjectDto {
   startDate?: string;
 
   @ApiPropertyOptional({ description: 'End date of the project', example: '2024-12-31' })
-  @IsOptional()
   @IsOptional()
   @IsDateString()
   endDate?: string;

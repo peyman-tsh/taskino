@@ -14,6 +14,7 @@ import { LeaveRequestModule } from './LeaveRequest/LeaveRequest.module';
 import { ExcelModule } from './excel/excel.module';
 import { NotificationModule } from './notification/notification.module';
 import { ManagerModule } from './manager/manager.module';
+import { SupervisorModule } from './supervisor/supervisor.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { ManagerModule } from './manager/manager.module';
     ExcelModule,
     NotificationModule,
     ManagerModule,
+    SupervisorModule,
   ],
   controllers: [AppController],
   providers: [AppService],

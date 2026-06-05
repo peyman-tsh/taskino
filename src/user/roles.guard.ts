@@ -7,7 +7,6 @@ import {
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from './roles.decorator';
 import { UserRole } from './schemas/user.schema';
-import { log } from 'console';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -29,7 +28,6 @@ export class RolesGuard implements CanActivate {
     if (!user) {
       throw new UnauthorizedException('User not found in request');
     }
-  log(user.role)
-return requiredRoles.includes(user.role);
+    return requiredRoles.includes(user.role);
   }
 }
