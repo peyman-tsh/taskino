@@ -19,8 +19,15 @@ export class Task {
   createdBy: Types.ObjectId;
 
   // 👇 کسانی که تسک بهشون داده شده (Specialist / Supervisor)
-  @Prop({ type: [{ type: Types.ObjectId, ref: User.name }], default: [] })
-  assignedTo: [Types.ObjectId];
+  @Prop({
+    type: [{ type: Types.ObjectId, ref: User.name }],
+    default: [],
+    validate: {
+      validator: (assignedTo: Types.ObjectId[]) => assignedTo.length <= 1,
+      message: 'A task can currently be assigned to only one user',
+    },
+  })
+  assignedTo: Types.ObjectId[];
 @Prop({
   type: Types.ObjectId,
   ref: Project.name
@@ -33,6 +40,9 @@ projectId: Types.ObjectId;
     default: TaskStatus.TODO,
   })
   status: TaskStatus;
+
+  @Prop({ type: Types.ObjectId, ref: 'FixedTaskTemplate', index: true })
+  fixedTaskTemplateId?: Types.ObjectId;
   
 
   @Prop({default:null,type:String})

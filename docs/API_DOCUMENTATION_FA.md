@@ -45,6 +45,7 @@ Authorization: Bearer <accessToken>
 | حوزه کاری | `it`, `human_resources`, `finance`, `sales`, `operations` |
 | وضعیت پروژه | `pending`, `in_progress`, `completed` |
 | وضعیت تسک | `todo`, `in_progress`, `done` |
+| توالی الگوی وظیفه ثابت | `daily`, `weekly`, `monthly` |
 | وضعیت مرخصی | `pending`, `approved`, `rejected` |
 | نقش ProjectMember | `manager`, `member`, `viewer` |
 | نوع Excel | `import`, `export` |
@@ -266,7 +267,7 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 
 ## توضیح کلی
 
-ساخت و مدیریت تسک‌ها، تخصیص افراد، وضعیت، آمار و گزارش بازه تاریخی. تمام APIهای این ماژول نیازمند JWT هستند.
+ساخت و مدیریت اجرای واقعی تسک‌ها، تخصیص افراد، وضعیت، آمار و گزارش بازه تاریخی. تمام APIهای این ماژول نیازمند JWT هستند. اگر تسک توسط زمان‌بند از یک الگوی ثابت تولید شود، فیلد `fixedTaskTemplateId` آن را به الگوی اصلی متصل می‌کند.
 
 ## قوانین ساخت تسک
 
@@ -283,7 +284,7 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 | `title` | string | بله | عنوان |
 | `createdBy` | string | در DTO وجود دارد | در Controller با شناسه JWT جایگزین می‌شود |
 | `projectId` | string | خیر | پروژه مربوط |
-| `assignedTo` | string[] | خیر | کاربران مسئول |
+| `assignedTo` | string[] | خیر | برای توسعه آینده آرایه است، اما فعلاً حداکثر یک کاربر مسئول می‌پذیرد |
 | `status` | TaskStatus | خیر | پیش‌فرض todo |
 | `description` | string | خیر | توضیحات |
 | `taskComment` | string | خیر | نظر |
@@ -317,6 +318,39 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
   "completedByStatus": { "done": 1 }
 }
 ```
+
+---
+
+# ماژول FixedTask
+
+## توضیح کلی
+
+این ماژول جدول مستقل تعریف وظایف ثابت را نگه می‌دارد. هر رکورد فقط یک‌بار تعریف می‌شود و در آینده زمان‌بند سیستم می‌تواند بر اساس `recurrence` بارها از روی آن Task واقعی تولید کند.
+
+## مدل FixedTaskTemplate
+
+| فیلد | توضیح |
+|---|---|
+| `title` | عنوان یا ورودی فرایند |
+| `assignedTo` | مسئول ثابت وظیفه؛ یک کاربر |
+| `createdBy` | مدیر سازنده الگو |
+| `projectId` | پروژه اختیاری |
+| `recurrence` | `daily`, `weekly`, `monthly` |
+| `description` | توضیحات |
+| `isActive` | فعال یا متوقف بودن تولید دوره‌ای |
+| `lastGeneratedAt` | آخرین زمان تولید Task واقعی |
+| `nextRunAt` | زمان بعدی تولید |
+| `sourceExcel`, `sourceSheet`, `sourceRow` | اطلاعات منبع Excel برای جلوگیری از داده تکراری |
+
+تمام APIهای این ماژول نیازمند JWT و نقش `manager` هستند. مدیر و مسئول Template مستقل باید هم‌حوزه باشند؛ اگر `projectId` ارسال شود، مدیر باید مالک پروژه و مسئول باید عضو یا سرپرست همان پروژه باشد.
+
+| متد | مسیر | توضیح |
+|---|---|---|
+| POST | `/api/fixed-tasks` | ساخت Template جدید |
+| GET | `/api/fixed-tasks` | لیست با pagination و فیلترهای `assignedTo`, `projectId`, `recurrence`, `isActive` |
+| GET | `/api/fixed-tasks/:id` | دریافت یک Template |
+| PATCH | `/api/fixed-tasks/:id` | ویرایش Template |
+| DELETE | `/api/fixed-tasks/:id` | حذف Template با خروجی `204` |
 
 ---
 
@@ -521,3 +555,17 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 4. شناسه‌های `userId`, `projectId`, `taskId` را در متغیرهای محیطی ذخیره کنید.
 5. برای تست قوانین حوزه کاری، کاربران و پروژه را با `workField` یکسان بسازید.
 
+# Seed تسک‌های ثابت از Excel
+
+برای فایل‌هایی که هر Sheet متعلق به یک شخص است و ستون‌های `ورودی فرایند` و `توالي` دارند:
+
+```bash
+npm run seed:fixed-tasks -- "C:\path\to\fixed-tasks.xlsx"
+```
+
+- مقدار `ورودی فرایند` به عنوان `title` ذخیره می‌شود.
+- مقدار فارسی `روزانه`، `هفتگي/هفتگی` و `ماهانه` به‌ترتیب به `daily`، `weekly` و `monthly` تبدیل می‌شود.
+- تمام ردیف‌ها داخل جدول مستقل `FixedTaskTemplate` ذخیره می‌شوند و هیچ Task واقعی هنگام seed ساخته نمی‌شود.
+- فایل فیزیکی داخل `uploads/excel` کپی و رکورد آن در کالکشن Excel ذخیره می‌شود.
+- برای Sheetهایی که کاربر متناظر ندارند، کاربران seed با حوزه کاری `operations` ساخته می‌شوند.
+- Seed تکرارپذیر است و اجرای مجدد، Template تکراری ایجاد نمی‌کند.

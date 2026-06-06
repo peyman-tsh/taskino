@@ -88,6 +88,12 @@ export class TaskService {
     return assignedTo ? [assignedTo] : [];
   }
 
+  private assertSingleAssignee(assignedTo: string[]): void {
+    if (assignedTo.length > 1) {
+      throw new BadRequestException('A task can currently be assigned to only one user');
+    }
+  }
+
   private async assertStandaloneTaskParticipants(
     creatorId: string,
     assigneeIds: string[],
@@ -127,6 +133,7 @@ export class TaskService {
 
     // Normalize and validate assignedTo
     const assignedToArray = this.normalizeAssignedTo(assignedTo);
+    this.assertSingleAssignee(assignedToArray);
     if (assignedToArray.length > 0) {
       const invalidIds = assignedToArray.filter((userId) => !Types.ObjectId.isValid(userId));
       if (invalidIds.length > 0) {
@@ -248,6 +255,7 @@ export class TaskService {
 
     // Validate and convert assignedTo if provided
     if (updateTaskDto.assignedTo !== undefined) {
+      this.assertSingleAssignee(updateTaskDto.assignedTo);
       const invalidIds = updateTaskDto.assignedTo.filter((userId) => !Types.ObjectId.isValid(userId));
       if (invalidIds.length > 0) {
         throw new BadRequestException('Invalid assignedTo user IDs');

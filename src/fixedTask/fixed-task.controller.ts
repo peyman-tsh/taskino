@@ -1,0 +1,70 @@
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+import { CurrentUserId } from '../auth/decorators/current-user-id.decorator';
+import { JwtAuthGuard } from '../auth/guard/jwt.guard';
+import { Roles } from '../user/roles.decorator';
+import { RolesGuard } from '../user/roles.guard';
+import { UserRole } from '../user/schemas/user.schema';
+import { CreateFixedTaskDto } from './dto/create-fixed-task.dto';
+import { FixedTaskParamDto } from './dto/fixed-task-param.dto';
+import { QueryFixedTaskDto } from './dto/query-fixed-task.dto';
+import { UpdateFixedTaskDto } from './dto/update-fixed-task.dto';
+import { FixedTaskService } from './fixed-task.service';
+
+@ApiTags('Fixed Tasks')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.MANAGER)
+@Controller('fixed-tasks')
+export class FixedTaskController {
+  constructor(private readonly fixedTaskService: FixedTaskService) {}
+
+  @Post()
+  @ApiOperation({ summary: 'Create a fixed task template' })
+  @ApiCreatedResponse({ description: 'Fixed task template created successfully' })
+  create(@CurrentUserId() creatorId: string, @Body() dto: CreateFixedTaskDto) {
+    return this.fixedTaskService.create(creatorId, dto);
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Get fixed task templates with filters and pagination' })
+  @ApiOkResponse({ description: 'Fixed task templates retrieved successfully' })
+  findAll(@Query() query: QueryFixedTaskDto) {
+    return this.fixedTaskService.findAll(query);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get one fixed task template' })
+  @ApiOkResponse({ description: 'Fixed task template retrieved successfully' })
+  @ApiNotFoundResponse({ description: 'Fixed task template not found' })
+  findOne(@Param() params: FixedTaskParamDto) {
+    return this.fixedTaskService.findById(params.id);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update a fixed task template' })
+  @ApiOkResponse({ description: 'Fixed task template updated successfully' })
+  update(
+    @CurrentUserId() creatorId: string,
+    @Param() params: FixedTaskParamDto,
+    @Body() dto: UpdateFixedTaskDto,
+  ) {
+    return this.fixedTaskService.update(params.id, creatorId, dto);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete a fixed task template' })
+  @ApiNoContentResponse({ description: 'Fixed task template deleted successfully' })
+  delete(@Param() params: FixedTaskParamDto) {
+    return this.fixedTaskService.delete(params.id);
+  }
+}

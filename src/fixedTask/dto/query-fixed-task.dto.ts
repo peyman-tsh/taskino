@@ -1,0 +1,42 @@
+import { Type } from 'class-transformer';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsBoolean, IsEnum, IsInt, IsMongoId, IsOptional, Max, Min } from 'class-validator';
+import { FixedTaskRecurrence } from '../fixed-task.schema';
+
+export class QueryFixedTaskDto {
+  @ApiPropertyOptional({ default: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page = 1;
+
+  @ApiPropertyOptional({ default: 10, maximum: 100 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit = 10;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsMongoId()
+  assignedTo?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsMongoId()
+  projectId?: string;
+
+  @ApiPropertyOptional({ enum: FixedTaskRecurrence })
+  @IsOptional()
+  @IsEnum(FixedTaskRecurrence)
+  recurrence?: FixedTaskRecurrence;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  isActive?: boolean;
+}

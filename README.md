@@ -101,3 +101,9 @@ Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
 ## مستندات
 
 - [مستند جامع فارسی APIها](docs/API_DOCUMENTATION_FA.md)
+
+### Seed تسک‌های ثابت
+
+```bash
+npm run seed:fixed-tasks -- "C:\path\to\fixed-tasks.xlsx"
+```

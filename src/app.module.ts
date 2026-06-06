@@ -16,6 +16,7 @@ import { NotificationModule } from './notification/notification.module';
 import { ManagerModule } from './manager/manager.module';
 import { SupervisorModule } from './supervisor/supervisor.module';
 import { InternalEventBusModule } from './common/events/internal-event-bus.module';
+import { FixedTaskModule } from './fixedTask/fixed-task.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { InternalEventBusModule } from './common/events/internal-event-bus.modul
     NotificationModule,
     ManagerModule,
     SupervisorModule,
+    FixedTaskModule,
   ],
   controllers: [AppController],
   providers: [AppService],
