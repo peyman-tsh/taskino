@@ -1,4 +1,4 @@
-import { ArrayMaxSize, IsString, IsOptional, IsArray, IsEnum } from 'class-validator';
+import { ArrayMaxSize, ArrayMinSize, IsString, IsOptional, IsArray, IsEnum } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskStatus } from '../task.schema';
 
@@ -14,6 +14,7 @@ export class UpdateTaskDto {
   })
   @IsOptional()
   @IsArray()
+  @ArrayMinSize(1, { message: 'A task must be assigned to exactly one user' })
   @ArrayMaxSize(1, { message: 'A task can currently be assigned to only one user' })
   @IsString({ each: true })
   assignedTo?: string[];

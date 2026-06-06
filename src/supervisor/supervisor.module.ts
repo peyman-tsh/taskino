@@ -3,11 +3,12 @@ import { ProjectModule } from '../project/project.module';
 import { TaskModule } from '../task/task.module';
 import { UserModule } from '../user/user.module';
 import { RolesGuard } from '../user/roles.guard';
+import { FixedTaskModule } from '../fixedTask/fixed-task.module';
 import { SupervisorController } from './supervisor.controller';
 import { SupervisorService } from './supervisor.service';
 
 @Module({
-  imports: [ProjectModule, TaskModule, UserModule],
+  imports: [ProjectModule, TaskModule, UserModule, FixedTaskModule],
   controllers: [SupervisorController],
   providers: [SupervisorService, RolesGuard],
 })

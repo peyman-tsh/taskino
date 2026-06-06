@@ -30,6 +30,7 @@ import {
   SupervisorTaskParamDto,
   UpdateSupervisedTaskStatusDto,
 } from './dto/update-supervised-task-status.dto';
+import { AssignProjectSpecialistDto } from './dto/assign-project-specialist.dto';
 
 @ApiTags('Supervisor')
 @ApiBearerAuth()
@@ -64,6 +65,28 @@ export class SupervisorController {
     @Query() query: SupervisorPaginationQueryDto,
   ) {
     return this.supervisorService.getProjects(supervisorId, query);
+  }
+
+  @Patch('projects/:projectId/assignee')
+  @ApiOperation({
+    summary: 'Assign or replace the specialist responsible for a supervised project',
+    description:
+      'Changes the project specialist and transfers every normal and fixed task of the project to that specialist.',
+  })
+  @ApiParam({ name: 'projectId', description: 'Supervised project MongoDB object ID' })
+  @ApiOkResponse({ description: 'Project specialist and all project tasks reassigned successfully' })
+  @ApiBadRequestResponse({ description: 'Invalid specialist or work-field mismatch' })
+  @ApiNotFoundResponse({ description: 'Project not found or is not supervised by the current user' })
+  assignProjectSpecialist(
+    @CurrentUserId() supervisorId: string,
+    @Param() params: SupervisorProjectParamDto,
+    @Body() dto: AssignProjectSpecialistDto,
+  ) {
+    return this.supervisorService.assignProjectSpecialist(
+      supervisorId,
+      params.projectId,
+      dto.assigneeId,
+    );
   }
 
   @Get('projects/:projectId/members')

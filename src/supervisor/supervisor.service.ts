@@ -4,6 +4,7 @@ import { TaskService } from '../task/task.service';
 import { UserService } from '../user/user.service';
 import { SupervisorPaginationQueryDto } from './dto/supervisor-pagination-query.dto';
 import { UpdateSupervisedTaskStatusDto } from './dto/update-supervised-task-status.dto';
+import { FixedTaskService } from '../fixedTask/fixed-task.service';
 
 @Injectable()
 export class SupervisorService {
@@ -11,7 +12,32 @@ export class SupervisorService {
     private readonly projectService: ProjectService,
     private readonly taskService: TaskService,
     private readonly userService: UserService,
+    private readonly fixedTaskService: FixedTaskService,
   ) {}
+
+  async assignProjectSpecialist(
+    supervisorId: string,
+    projectId: string,
+    assigneeId: string,
+  ) {
+    const assignment = await this.projectService.assignSpecialistBySupervisor(
+      supervisorId,
+      projectId,
+      assigneeId,
+    );
+    const [reassignedTasks, reassignedFixedTasks] = await Promise.all([
+      this.taskService.reassignProjectTasks(projectId, assigneeId),
+      this.fixedTaskService.reassignProjectTemplates(projectId, assigneeId),
+    ]);
+
+    return {
+      project: assignment.project,
+      previousAssigneeId: assignment.previousAssigneeId,
+      assigneeId,
+      reassignedTasks,
+      reassignedFixedTasks,
+    };
+  }
 
   async getStatistics(supervisorId: string) {
     const [supervisedProjectIds, participatingProjectIds] = await Promise.all([

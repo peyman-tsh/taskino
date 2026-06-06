@@ -21,10 +21,10 @@ export class Task {
   // 👇 کسانی که تسک بهشون داده شده (Specialist / Supervisor)
   @Prop({
     type: [{ type: Types.ObjectId, ref: User.name }],
-    default: [],
+    required: true,
     validate: {
-      validator: (assignedTo: Types.ObjectId[]) => assignedTo.length <= 1,
-      message: 'A task can currently be assigned to only one user',
+      validator: (assignedTo: Types.ObjectId[]) => assignedTo.length === 1,
+      message: 'A task must be assigned to exactly one user',
     },
   })
   assignedTo: Types.ObjectId[];

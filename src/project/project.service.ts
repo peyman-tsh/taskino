@@ -30,18 +30,19 @@ export class ProjectService {
     workField: WorkField,
     ownerId: string,
     supervisorId: string,
-    memberIds: string[],
+    assigneeId?: string,
   ): Promise<void> {
     const participants = await this.userService.findProjectParticipantsByIds([
       ownerId,
       supervisorId,
-      ...memberIds,
+      ...(assigneeId ? [assigneeId] : []),
     ]);
     const participantsById = new Map(
       participants.map((participant) => [participant.userId, participant]),
     );
     const owner = participantsById.get(ownerId);
     const supervisor = participantsById.get(supervisorId);
+    const assignee = assigneeId ? participantsById.get(assigneeId) : undefined;
 
     if (owner?.role !== UserRole.MANAGER) {
       throw new BadRequestException('Project owner must have the manager role');
@@ -51,14 +52,35 @@ export class ProjectService {
       throw new BadRequestException('Selected user must have the supervisor role');
     }
 
+    if (assigneeId && assignee?.role !== UserRole.SPECIALIST) {
+      throw new BadRequestException('Project assignee must have the specialist role');
+    }
+
+    if (assigneeId && !assignee?.isActive) {
+      throw new BadRequestException('Project assignee must be active');
+    }
+
     const mismatchedParticipants = participants.filter(
       (participant) => participant.workField !== workField,
     );
     if (mismatchedParticipants.length > 0) {
       throw new BadRequestException(
-        'Project owner, supervisor, and members must have the same work field as the project',
+        'Project owner, supervisor, and assignee must have the same work field as the project',
       );
     }
+  }
+
+  private getProjectAssigneeId(project: { assigneeId?: Types.ObjectId }): string | undefined {
+    return project.assigneeId?.toString();
+  }
+
+  private requireProjectAssigneeId(project: { assigneeId?: Types.ObjectId }): string {
+    const assigneeId = this.getProjectAssigneeId(project);
+    if (!assigneeId) {
+      throw new BadRequestException('Project does not have an assigned specialist');
+    }
+
+    return assigneeId;
   }
 
   async assertMemberMatchesProjectWorkField(projectId: string, userId: string): Promise<WorkField> {
@@ -94,7 +116,7 @@ export class ProjectService {
 
     const project = await this.projectModel
       .findById(projectId)
-      .select('owner supervisorId members workField')
+      .select('owner supervisorId assigneeId workField')
       .lean()
       .exec();
 
@@ -111,31 +133,29 @@ export class ProjectService {
     );
     const creator = participantsById.get(creatorId);
 
-    if (creator?.role !== UserRole.MANAGER) {
-      throw new BadRequestException('Task creator must have the manager role');
+    const isOwner =
+      creator?.role === UserRole.MANAGER && project.owner.toString() === creatorId;
+    const isSupervisor =
+      creator?.role === UserRole.SUPERVISOR && project.supervisorId.toString() === creatorId;
+
+    if (!isOwner && !isSupervisor) {
+      throw new BadRequestException('Task creator must be the project owner or supervisor');
     }
 
-    if (project.owner.toString() !== creatorId) {
-      throw new BadRequestException('Task creator must be the project owner');
+    if (assigneeIds.length !== 1) {
+      throw new BadRequestException('A project task must be assigned to exactly one user');
     }
 
-    const allowedAssigneeIds = new Set([
-      project.supervisorId.toString(),
-      ...project.members.map((memberId) => memberId.toString()),
-    ]);
-
-    const invalidAssignee = assigneeIds.find((assigneeId) => {
-      const participant = participantsById.get(assigneeId);
-      return (
-        !allowedAssigneeIds.has(assigneeId) ||
-        participant?.workField !== project.workField ||
-        ![UserRole.SPECIALIST, UserRole.SUPERVISOR].includes(participant?.role as UserRole)
-      );
-    });
+    const projectAssigneeId = this.requireProjectAssigneeId(project);
+    const assignee = participantsById.get(assigneeIds[0]);
+    const invalidAssignee =
+      assigneeIds[0] !== projectAssigneeId ||
+      assignee?.workField !== project.workField ||
+      assignee?.role !== UserRole.SPECIALIST;
 
     if (invalidAssignee) {
       throw new BadRequestException(
-        'Task assignees must be project members or its supervisor and match the project work field',
+        'Every project task must be assigned to the specialist responsible for that project',
       );
     }
   }
@@ -144,27 +164,22 @@ export class ProjectService {
    * Create a new project
    */
   async create(createProjectDto: CreateProjectDto): Promise<ProjectDocument> {
-    const { owner, supervisorId, members = [], ...rest } = createProjectDto;
+    const { owner, supervisorId, ...rest } = createProjectDto;
 
     // Validate owner is a valid ObjectId
     if (!Types.ObjectId.isValid(owner)) {
       throw new BadRequestException('Invalid owner user ID');
     }
 
-    // Validate members IDs if provided
-    if (members.length > 0) {
-      const invalidIds = members.filter((id) => !Types.ObjectId.isValid(id));
-      if (invalidIds.length > 0) {
-        throw new BadRequestException('Invalid member user IDs');
-      }
-    }
-
-    await this.validateProjectParticipants(createProjectDto.workField, owner, supervisorId, members);
+    await this.validateProjectParticipants(
+      createProjectDto.workField,
+      owner,
+      supervisorId,
+    );
     const createdProject = new this.projectModel({
       ...rest,
       owner: new Types.ObjectId(owner),
       supervisorId: new Types.ObjectId(supervisorId),
-      members: members.map((id) => new Types.ObjectId(id)),
     });
 
     return createdProject.save();
@@ -197,7 +212,7 @@ export class ProjectService {
     }
 
     if (filters?.member && Types.ObjectId.isValid(filters.member)) {
-      query.members = new Types.ObjectId(filters.member);
+      query.assigneeId = new Types.ObjectId(filters.member);
     }
 
     if (filters?.status) {
@@ -215,7 +230,7 @@ export class ProjectService {
         .limit(limit)
         .populate('owner', 'firstName lastName email workField')
         .populate('supervisorId', 'firstName lastName email roles workField')
-        .populate('members', 'firstName lastName email roles isActive workField')
+        .populate('assigneeId', 'firstName lastName email roles isActive workField')
         .populate('tasks')
         .exec(),
       this.projectModel.countDocuments(query).exec(),
@@ -257,7 +272,7 @@ export class ProjectService {
 
     const userObjectId = new Types.ObjectId(userId);
     const projectIds = await this.projectModel.distinct('_id', {
-      $or: [{ supervisorId: userObjectId }, { members: userObjectId }],
+      $or: [{ supervisorId: userObjectId }, { assigneeId: userObjectId }],
     });
 
     return projectIds.map((projectId) => projectId.toString());
@@ -276,7 +291,7 @@ export class ProjectService {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        .select('title status isArchived members')
+        .select('title status isArchived assigneeId')
         .lean()
         .exec(),
       this.projectModel.countDocuments(match).exec(),
@@ -288,7 +303,7 @@ export class ProjectService {
         title: project.title,
         status: project.status,
         isArchived: project.isArchived,
-        membersCount: project.members.length,
+        membersCount: this.getProjectAssigneeId(project) ? 1 : 0,
       })),
       total,
       page,
@@ -306,7 +321,7 @@ export class ProjectService {
         _id: new Types.ObjectId(projectId),
         supervisorId: new Types.ObjectId(supervisorId),
       })
-      .select('title members')
+      .select('title assigneeId')
       .lean()
       .exec();
 
@@ -317,7 +332,52 @@ export class ProjectService {
     return {
       projectId: project._id.toString(),
       projectName: project.title,
-      memberIds: project.members.map((memberId) => memberId.toString()),
+      memberIds: this.getProjectAssigneeId(project) ? [this.getProjectAssigneeId(project)!] : [],
+    };
+  }
+
+  async assignSpecialistBySupervisor(
+    supervisorId: string,
+    projectId: string,
+    assigneeId: string,
+  ): Promise<{ project: ProjectDocument; previousAssigneeId?: string }> {
+    if (
+      !Types.ObjectId.isValid(supervisorId) ||
+      !Types.ObjectId.isValid(projectId) ||
+      !Types.ObjectId.isValid(assigneeId)
+    ) {
+      throw new BadRequestException('Invalid supervisor, project, or assignee ID');
+    }
+
+    const project = await this.projectModel
+      .findOne({
+        _id: new Types.ObjectId(projectId),
+        supervisorId: new Types.ObjectId(supervisorId),
+      })
+      .exec();
+
+    if (!project) {
+      throw new NotFoundException('Project not found or is not supervised by the current user');
+    }
+
+    const [assignee] = await this.userService.findProjectParticipantsByIds([assigneeId]);
+    if (assignee.role !== UserRole.SPECIALIST) {
+      throw new BadRequestException('Project assignee must have the specialist role');
+    }
+    if (!assignee.isActive) {
+      throw new BadRequestException('Project assignee must be active');
+    }
+    if (assignee.workField !== project.workField) {
+      throw new BadRequestException('Project assignee work field must match the project work field');
+    }
+
+    const previousAssigneeId = this.getProjectAssigneeId(project);
+    project.assigneeId = new Types.ObjectId(assigneeId);
+    await project.save();
+
+    return {
+      project: await this.findById(projectId),
+      previousAssigneeId,
     };
   }
 
@@ -328,14 +388,14 @@ export class ProjectService {
 
     const projects = await this.projectModel
       .find({ supervisorId: new Types.ObjectId(supervisorId) })
-      .select('title members')
+      .select('title assigneeId')
       .lean()
       .exec();
 
     return projects.map((project) => ({
       projectId: project._id.toString(),
       projectName: project.title,
-      memberIds: project.members.map((memberId) => memberId.toString()),
+      memberIds: this.getProjectAssigneeId(project) ? [this.getProjectAssigneeId(project)!] : [],
     }));
   }
 
@@ -351,7 +411,7 @@ export class ProjectService {
       .findById(id)
       .populate('owner', 'firstName lastName email workField')
       .populate('supervisorId', 'firstName lastName email roles workField')
-      .populate('members', 'firstName lastName email roles isActive workField')
+      .populate('assigneeId', 'firstName lastName email roles isActive workField')
       .populate('tasks')
       .exec();
 
@@ -374,7 +434,7 @@ export class ProjectService {
       .find({ owner: new Types.ObjectId(ownerId) })
       .populate('owner', 'firstName lastName email workField')
       .populate('supervisorId', 'firstName lastName email roles workField')
-      .populate('members', 'firstName lastName email roles isActive workField')
+      .populate('assigneeId', 'firstName lastName email roles isActive workField')
       .populate('tasks')
       .exec();
   }
@@ -405,21 +465,6 @@ export class ProjectService {
 
     if (updateProjectDto.status !== undefined) {
       updateData.status = updateProjectDto.status;
-    }
-
-    if (updateProjectDto.members !== undefined) {
-      if (!project.workField) {
-        throw new BadRequestException('Project work field must be configured before updating members');
-      }
-      const invalidIds = updateProjectDto.members?.filter((userId) => !Types.ObjectId.isValid(userId)) || [];
-      if (invalidIds.length > 0) {
-        throw new BadRequestException('Invalid member user IDs');
-      }
-      const participants = await this.userService.findProjectParticipantsByIds(updateProjectDto.members);
-      if (participants.some((participant) => participant.workField !== project.workField)) {
-        throw new BadRequestException('All project members must have the same work field as the project');
-      }
-      updateData.members = updateProjectDto.members?.map((userId) => new Types.ObjectId(userId)) || [];
     }
 
     if (updateProjectDto.supervisorId !== undefined) {
@@ -454,7 +499,7 @@ export class ProjectService {
       .findByIdAndUpdate(id, updateData, { new: true })
       .populate('owner', 'firstName lastName email workField')
       .populate('supervisorId', 'firstName lastName email roles workField')
-      .populate('members', 'firstName lastName email roles isActive workField')
+      .populate('assigneeId', 'firstName lastName email roles isActive workField')
       .populate('tasks')
       .exec();
 
@@ -492,60 +537,6 @@ export class ProjectService {
     }
 
     return project;
-  }
-
-  /**
-   * Add a member to a project
-   */
-  async addMember(projectId: string, memberId: string): Promise<ProjectDocument> {
-    if (!Types.ObjectId.isValid(projectId)) {
-      throw new BadRequestException('Invalid project ID');
-    }
-
-    if (!Types.ObjectId.isValid(memberId)) {
-      throw new BadRequestException('Invalid member user ID');
-    }
-
-    const project = await this.projectModel.findById(projectId).exec();
-
-    if (!project) {
-      throw new NotFoundException('Project not found');
-    }
-
-    // Check if member already exists
-    if (project.members.some((m) => m.equals(new Types.ObjectId(memberId)))) {
-      throw new BadRequestException('Member already exists in the project');
-    }
-
-    await this.assertMemberMatchesProjectWorkField(projectId, memberId);
-    project.members.push(new Types.ObjectId(memberId));
-
-    return project.save();
-  }
-
-  /**
-   * Remove a member from a project
-   */
-  async removeMember(projectId: string, memberId: string): Promise<ProjectDocument> {
-    if (!Types.ObjectId.isValid(projectId)) {
-      throw new BadRequestException('Invalid project ID');
-    }
-
-    if (!Types.ObjectId.isValid(memberId)) {
-      throw new BadRequestException('Invalid member user ID');
-    }
-
-    const project = await this.projectModel.findById(projectId).exec();
-
-    if (!project) {
-      throw new NotFoundException('Project not found');
-    }
-
-    project.members = project.members.filter(
-      (m) => !m.equals(new Types.ObjectId(memberId)),
-    );
-
-    return project.save();
   }
 
   /**

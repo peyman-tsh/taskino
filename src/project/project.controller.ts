@@ -68,7 +68,7 @@ export class ProjectController {
     name: 'member',
     required: false,
     type: String,
-    description: 'Filter by member user ID',
+    description: 'Filter by assigned specialist user ID',
   })
   @ApiQuery({
     name: 'status',
@@ -141,34 +141,6 @@ export class ProjectController {
   @ApiResponse({ status: 404, description: 'Project not found' })
   remove(@Param('id') id: string) {
     return this.projectService.delete(id);
-  }
-
-  @Patch(':id/members/:memberId')
-  @ApiOperation({
-    summary: 'Add member to project',
-    description: 'Adds a user as a member to the project',
-  })
-  @ApiParam({ name: 'id', description: 'Project ID' })
-  @ApiParam({ name: 'memberId', description: 'Member user ID' })
-  @ApiResponse({ status: 200, description: 'Member added successfully' })
-  @ApiResponse({ status: 404, description: 'Project not found' })
-  @ApiResponse({ status: 400, description: 'Validation failed' })
-  addMember(@Param('id') id: string, @Param('memberId') memberId: string) {
-    return this.projectService.addMember(id, memberId);
-  }
-
-  @Delete(':id/members/:memberId')
-  @ApiOperation({
-    summary: 'Remove member from project',
-    description: 'Removes a user from the project members',
-  })
-  @ApiParam({ name: 'id', description: 'Project ID' })
-  @ApiParam({ name: 'memberId', description: 'Member user ID' })
-  @ApiResponse({ status: 200, description: 'Member removed successfully' })
-  @ApiResponse({ status: 404, description: 'Project not found' })
-  @ApiResponse({ status: 400, description: 'Validation failed' })
-  removeMember(@Param('id') id: string, @Param('memberId') memberId: string) {
-    return this.projectService.removeMember(id, memberId);
   }
 
   @Patch(':id/tasks/:taskId')

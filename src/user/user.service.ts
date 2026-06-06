@@ -101,7 +101,7 @@ export class UserService {
 
     const users = await this.userModel
       .find({ _id: { $in: uniqueUserIds.map((userId) => new Types.ObjectId(userId)) } })
-      .select('roles workField')
+      .select('roles workField isActive')
       .lean()
       .exec();
 
@@ -113,6 +113,7 @@ export class UserService {
       userId: user._id.toString(),
       role: user.roles,
       workField: user.workField,
+      isActive: user.isActive,
     }));
   }
 

@@ -69,7 +69,8 @@ export class ManagerService extends BaseManagerService {
     this.toObjectId(projectId, 'project ID');
 
     const project = await this.projectService.findById(projectId);
-    const projectMembers = project.members as unknown as PopulatedProjectMember[];
+    const populatedAssignee = project.assigneeId as unknown as PopulatedProjectMember | undefined;
+    const projectMembers = populatedAssignee ? [populatedAssignee] : [];
 
     return {
       projectId: project._id.toString(),

@@ -173,4 +173,19 @@ export class FixedTaskService {
   findActiveTemplates() {
     return this.populateTemplate(this.fixedTaskModel.find({ isActive: true })).exec();
   }
+
+  async reassignProjectTemplates(projectId: string, assigneeId: string): Promise<number> {
+    const projectObjectId = this.toObjectId(projectId, 'project ID');
+    const assigneeObjectId = this.toObjectId(assigneeId, 'assigned user ID');
+
+    const result = await this.fixedTaskModel
+      .updateMany(
+        { projectId: projectObjectId },
+        { $set: { assignedTo: assigneeObjectId } },
+        { runValidators: true },
+      )
+      .exec();
+
+    return result.modifiedCount;
+  }
 }

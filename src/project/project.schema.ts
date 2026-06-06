@@ -57,10 +57,11 @@ export class Project {
   supervisorId: Types.ObjectId;
 
   @Prop({
-    type: [{ type: Types.ObjectId, ref: User.name }],
-    default: [],
+    type: Types.ObjectId,
+    ref: User.name,
+    index: true,
   })
-  members: Types.ObjectId[];
+  assigneeId?: Types.ObjectId;
 
   @Prop()
   startDate?: Date;

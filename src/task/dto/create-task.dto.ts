@@ -1,4 +1,4 @@
-import { ArrayMaxSize, IsString, IsNotEmpty, IsArray, IsOptional, IsEnum } from 'class-validator';
+import { ArrayMaxSize, ArrayMinSize, IsString, IsNotEmpty, IsArray, IsOptional, IsEnum } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskStatus } from '../task.schema';
 
@@ -20,15 +20,15 @@ export class CreateTaskDto {
   projectId?: string;
 
 
-  @ApiPropertyOptional({
-    description: 'Array kept for future multi-assignee support; currently accepts at most one user ID',
+  @ApiProperty({
+    description: 'Exactly one responsible user ID. The array shape is retained for future compatibility.',
     example: ['64a7b1c2d3e4f5a6b7c8d9e1'],
   })
-  @IsOptional()
   @IsArray()
+  @ArrayMinSize(1, { message: 'A task must be assigned to exactly one user' })
   @ArrayMaxSize(1, { message: 'A task can currently be assigned to only one user' })
   @IsString({ each: true })
-  assignedTo?: string[];
+  assignedTo: string[];
   @ApiPropertyOptional({ description: 'Status of the task', enum: TaskStatus, example: TaskStatus.TODO })
   @IsOptional()
   @IsEnum(TaskStatus)

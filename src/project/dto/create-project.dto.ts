@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsArray, IsOptional, IsEnum, IsBoolean, IsDateString, IsMongoId } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEnum, IsBoolean, IsDateString, IsMongoId } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProjectStatus } from '../project.schema';
 import { WorkField } from '../../common/enums/work-field.enum';
@@ -20,7 +20,7 @@ export class CreateProjectDto {
   status?: ProjectStatus;
 
   @ApiProperty({
-    description: 'Project work field. Owner, supervisor, and all members must have the same work field.',
+    description: 'Project work field. Owner, supervisor, and assigned specialist must have the same work field.',
     enum: WorkField,
     example: WorkField.IT,
   })
@@ -37,12 +37,6 @@ export class CreateProjectDto {
   })
   @IsMongoId()
   supervisorId: string;
-
-  @ApiPropertyOptional({ description: 'Array of user IDs to add as members', example: ['64a7b1c2d3e4f5a6b7c8d9e1', '64a7b1c2d3e4f5a6b7c8d9e2'] })
-  @IsOptional()
-  @IsArray()
-  @IsMongoId({ each: true })
-  members?: string[];
 
   @ApiPropertyOptional({ description: 'Start date of the project', example: '2024-01-01' })
   @IsOptional()

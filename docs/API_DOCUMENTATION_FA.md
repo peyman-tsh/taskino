@@ -47,7 +47,6 @@ Authorization: Bearer <accessToken>
 | وضعیت تسک | `todo`, `in_progress`, `done` |
 | توالی الگوی وظیفه ثابت | `daily`, `weekly`, `monthly` |
 | وضعیت مرخصی | `pending`, `approved`, `rejected` |
-| نقش ProjectMember | `manager`, `member`, `viewer` |
 | نوع Excel | `import`, `export` |
 | وضعیت Excel | `pending`, `processing`, `completed`, `failed` |
 | نوع اعلان | `task_assigned`, `task_completed`, `task_completion_stats`, `date_count`, `leave_request`, `leave_approved`, `leave_rejected`, `project_member_added` |
@@ -59,7 +58,6 @@ Authorization: Bearer <accessToken>
 | Auth | عمومی |
 | User | بیشتر APIها عمومی؛ فقط approve نیازمند JWT مدیر است |
 | Project | عمومی |
-| ProjectMember | عمومی |
 | Task | نیازمند JWT |
 | LeaveRequest | عمومی |
 | Excel | عمومی؛ وجود `ApiBearerAuth` فقط برای Swagger است |
@@ -176,13 +174,15 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 
 ## توضیح کلی
 
-مدیریت پروژه، مالک مدیر، سرپرست، اعضا، تسک‌های متصل و محاسبه پیشرفت پروژه.
+مدیریت پروژه، مالک مدیر، سرپرست، متخصص مسئول، تسک‌های متصل و محاسبه پیشرفت پروژه.
 
 ## قوانین دامنه پروژه
 
 - مالک پروژه باید نقش `manager` داشته باشد.
 - `supervisorId` باید متعلق به کاربری با نقش `supervisor` باشد.
-- مالک، سرپرست و اعضا باید با `workField` پروژه یکسان باشند.
+- هر پروژه حداکثر یک متخصص مسئول در فیلد `assigneeId` دارد.
+- متخصص مسئول باید فعال، دارای نقش `specialist` و هم‌حوزه با پروژه باشد.
+- مالک، سرپرست و متخصص مسئول باید با `workField` پروژه یکسان باشند.
 - پیشرفت پروژه بر اساس تسک‌هایی محاسبه می‌شود که `projectId` آن‌ها برابر شناسه پروژه است.
 
 ## ورودی ساخت پروژه
@@ -195,7 +195,6 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 | `workField` | WorkField | بله | حوزه کاری |
 | `owner` | MongoId | بله | شناسه مدیر مالک |
 | `supervisorId` | MongoId | بله | شناسه سرپرست |
-| `members` | MongoId[] | خیر | اعضای پروژه |
 | `startDate` | ISO date | خیر | تاریخ شروع |
 | `endDate` | ISO date | خیر | تاریخ پایان |
 | `isArchived` | boolean | خیر | آرشیو بودن پروژه |
@@ -205,13 +204,11 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 | متد | مسیر | ورودی | خروجی/عملکرد |
 |---|---|---|---|
 | POST | `/api/projects` | CreateProjectDto | ساخت پروژه |
-| GET | `/api/projects` | `page`, `limit`, `owner?`, `member?`, `status?`, `isArchived?` | لیست پروژه‌ها |
-| GET | `/api/projects/:id` | شناسه پروژه | پروژه با owner، supervisor، members و tasks |
+| GET | `/api/projects` | `page`, `limit`, `owner?`, `member?`, `status?`, `isArchived?` | لیست پروژه‌ها؛ `member` شناسه متخصص مسئول است |
+| GET | `/api/projects/:id` | شناسه پروژه | پروژه با owner، supervisor، assigneeId و tasks |
 | GET | `/api/projects/owner/:ownerId` | شناسه مالک | پروژه‌های مالک |
 | PATCH | `/api/projects/:id` | فیلدهای قابل ویرایش پروژه | ویرایش پروژه |
 | DELETE | `/api/projects/:id` | شناسه پروژه | حذف پروژه |
-| PATCH | `/api/projects/:id/members/:memberId` | شناسه پروژه و کاربر | افزودن عضو هم‌حوزه |
-| DELETE | `/api/projects/:id/members/:memberId` | شناسه پروژه و کاربر | حذف عضو |
 | PATCH | `/api/projects/:id/tasks/:taskId` | شناسه پروژه و تسک | افزودن شناسه تسک به آرایه tasks |
 | DELETE | `/api/projects/:id/tasks/:taskId` | شناسه پروژه و تسک | حذف شناسه تسک از آرایه tasks |
 | GET | `/api/projects/:id/progress` | شناسه پروژه | آمار و درصد پیشرفت |
@@ -232,37 +229,6 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 
 ---
 
-# ماژول ProjectMember
-
-## توضیح کلی
-
-این ماژول یک کالکشن مستقل برای عضویت پروژه دارد و شامل نقش داخلی پروژه و فعال/غیرفعال بودن عضویت است. این داده با آرایه `Project.members` متفاوت است.
-
-## مدل ورودی
-
-| فیلد | نوع | توضیح |
-|---|---|---|
-| `project` | MongoId | پروژه |
-| `user` | MongoId | کاربر هم‌حوزه با پروژه |
-| `role` | `manager/member/viewer` | نقش داخلی، پیش‌فرض member |
-| `isActive` | boolean | وضعیت عضویت |
-
-## APIها
-
-| متد | مسیر | توضیح |
-|---|---|---|
-| POST | `/api/project-members` | ساخت عضویت جدید |
-| GET | `/api/project-members` | لیست با فیلترهای `project`, `user`, `role`, `isActive` و pagination |
-| GET | `/api/project-members/:id` | دریافت عضویت با شناسه |
-| GET | `/api/project-members/project/:projectId` | عضویت‌های فعال یک پروژه |
-| GET | `/api/project-members/user/:userId` | پروژه‌های فعال یک کاربر |
-| PATCH | `/api/project-members/:id` | تغییر `role` یا `isActive` |
-| DELETE | `/api/project-members/:id` | حذف کامل عضویت |
-| DELETE | `/api/project-members/:projectId/members/:userId` | حذف نرم با `isActive=false` |
-| GET | `/api/project-members/:projectId/members/:userId/role` | دریافت نقش کاربر در پروژه |
-
----
-
 # ماژول Task
 
 ## توضیح کلی
@@ -272,9 +238,10 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 ## قوانین ساخت تسک
 
 - سازنده واقعی از JWT دریافت می‌شود؛ مقدار `createdBy` بدنه قابل جعل نیست.
-- سازنده باید مدیر و مالک پروژه باشد.
+- سازنده تسک پروژه باید مدیر مالک پروژه یا سرپرست همان پروژه باشد.
 - پروژه باید وجود داشته باشد.
-- افراد تخصیص‌یافته باید عضو یا سرپرست همان پروژه، هم‌حوزه و دارای نقش specialist/supervisor باشند.
+- هر تسک باید دقیقاً یک مسئول داشته باشد.
+- تسک پروژه فقط به متخصص مسئول ثبت‌شده در `Project.assigneeId` تخصیص داده می‌شود.
 - ساخت و تغییر تخصیص باعث تولید اعلان داخلی می‌شود.
 
 ## ورودی ساخت
@@ -284,7 +251,7 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 | `title` | string | بله | عنوان |
 | `createdBy` | string | در DTO وجود دارد | در Controller با شناسه JWT جایگزین می‌شود |
 | `projectId` | string | خیر | پروژه مربوط |
-| `assignedTo` | string[] | خیر | برای توسعه آینده آرایه است، اما فعلاً حداکثر یک کاربر مسئول می‌پذیرد |
+| `assignedTo` | string[] | بله | آرایه‌ای شامل دقیقاً شناسه یک کاربر مسئول |
 | `status` | TaskStatus | خیر | پیش‌فرض todo |
 | `description` | string | خیر | توضیحات |
 | `taskComment` | string | خیر | نظر |
@@ -342,7 +309,7 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 | `nextRunAt` | زمان بعدی تولید |
 | `sourceExcel`, `sourceSheet`, `sourceRow` | اطلاعات منبع Excel برای جلوگیری از داده تکراری |
 
-تمام APIهای این ماژول نیازمند JWT و نقش `manager` هستند. مدیر و مسئول Template مستقل باید هم‌حوزه باشند؛ اگر `projectId` ارسال شود، مدیر باید مالک پروژه و مسئول باید عضو یا سرپرست همان پروژه باشد.
+تمام APIهای این ماژول نیازمند JWT و نقش `manager` هستند. در Template مستقل، مسئول باید با مدیر هم‌حوزه و دارای نقش `specialist` یا `supervisor` باشد. اگر `projectId` ارسال شود، مدیر باید مالک همان پروژه باشد و مسئول فقط متخصص ثبت‌شده در `Project.assigneeId` است.
 
 | متد | مسیر | توضیح |
 |---|---|---|
@@ -471,7 +438,7 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 | PATCH | `/api/manager/users/:id/role` | `{ "role": "supervisor" }` | تغییر نقش کاربر |
 | PATCH | `/api/manager/projects/:id/activation` | `{ "isActive": true }` | فعال/آرشیو کردن پروژه |
 | GET | `/api/manager/projects/progress` | pagination | پیشرفت تمام پروژه‌ها |
-| GET | `/api/manager/projects/:id/members` | شناسه پروژه | اعضای واقعی `Project.members` همراه نقش و وضعیت |
+| GET | `/api/manager/projects/:id/members` | شناسه پروژه | متخصص مسئول پروژه همراه نقش و وضعیت؛ نام مسیر برای سازگاری حفظ شده است |
 | GET | `/api/manager/projects/:id/progress` | شناسه پروژه | پیشرفت پروژه |
 | GET | `/api/manager/tasks/status?projectId=:id` | projectId اختیاری | تعداد تسک بر اساس وضعیت |
 | GET | `/api/manager/tasks/users/counts?projectId=:id` | projectId اختیاری | تعداد تسک هر کاربر |
@@ -493,7 +460,7 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 
 ## توضیح کلی
 
-داشبورد سرپرست، پروژه‌های تحت نظارت، اعضا، عملکرد تیم، تسک‌های معوق و تغییر وضعیت تسک. تمام APIها نیازمند JWT و نقش `supervisor` هستند. سرپرست فقط به پروژه‌هایی دسترسی دارد که `supervisorId` آن‌ها برابر شناسه خودش باشد.
+داشبورد سرپرست، پروژه‌های تحت نظارت، متخصصان مسئول، عملکرد تیم، تسک‌های معوق و تغییر وضعیت تسک. تمام APIها نیازمند JWT و نقش `supervisor` هستند. سرپرست فقط به پروژه‌هایی دسترسی دارد که `supervisorId` آن‌ها برابر شناسه خودش باشد.
 
 ## APIها
 
@@ -501,12 +468,23 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 |---|---|---|
 | GET | `/api/supervisor/statistics` | آمار پروژه‌ها و تسک‌های سرپرست |
 | GET | `/api/supervisor/projects?page=1&limit=10` | پروژه‌های تحت نظارت با آمار تسک |
-| GET | `/api/supervisor/projects/:projectId/members` | اعضای پروژه تحت نظارت |
-| GET | `/api/supervisor/projects/:projectId/members/performance` | عملکرد اعضا |
+| PATCH | `/api/supervisor/projects/:projectId/assignee` | تخصیص یا جایگزینی متخصص مسئول و انتقال تمام تسک‌ها و وظایف ثابت پروژه به او |
+| GET | `/api/supervisor/projects/:projectId/members` | متخصص مسئول پروژه؛ نام مسیر برای سازگاری حفظ شده است |
+| GET | `/api/supervisor/projects/:projectId/members/performance` | عملکرد متخصص مسئول |
 | PATCH | `/api/supervisor/projects/:projectId/tasks/:taskId/status` | تغییر وضعیت تسک پروژه تحت نظارت |
 | GET | `/api/supervisor/tasks/overdue?page=1&limit=10` | تسک‌های معوق تمام پروژه‌های تحت نظارت |
 | GET | `/api/supervisor/projects/:projectId/report` | گزارش کامل پروژه |
-| GET | `/api/supervisor/team/performance` | عملکرد تجمیعی تمام اعضای تیم |
+| GET | `/api/supervisor/team/performance` | عملکرد تجمیعی متخصصان مسئول پروژه‌های تحت نظارت |
+
+### ورودی تخصیص متخصص پروژه
+
+متخصص باید فعال، دارای نقش `specialist` و دارای `workField` یکسان با پروژه باشد.
+
+```json
+{
+  "assigneeId": "64a7b1c2d3e4f5a6b7c8d9e1"
+}
+```
 
 ### ورودی تغییر وضعیت
 
@@ -522,7 +500,7 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 {
   "projectId": "...",
   "projectName": "Taskino",
-  "membersCount": 2,
+  "membersCount": 1,
   "totalTasks": 4,
   "todoTasks": 2,
   "inProgressTasks": 1,

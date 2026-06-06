@@ -89,8 +89,8 @@ export class TaskService {
   }
 
   private assertSingleAssignee(assignedTo: string[]): void {
-    if (assignedTo.length > 1) {
-      throw new BadRequestException('A task can currently be assigned to only one user');
+    if (assignedTo.length !== 1) {
+      throw new BadRequestException('A task must be assigned to exactly one user');
     }
   }
 
@@ -267,7 +267,10 @@ export class TaskService {
           updateTaskDto.assignedTo,
         );
       } else {
-        await this.userService.assertUsersExist(updateTaskDto.assignedTo);
+        await this.assertStandaloneTaskParticipants(
+          task.createdBy.toString(),
+          updateTaskDto.assignedTo,
+        );
       }
       updateData.assignedTo = updateTaskDto.assignedTo.map((userId) => new Types.ObjectId(userId));
     }
@@ -576,6 +579,21 @@ export class TaskService {
         status: { $in: [TaskStatus.TODO, TaskStatus.IN_PROGRESS] },
       })
       .exec();
+  }
+
+  async reassignProjectTasks(projectId: string, assigneeId: string): Promise<number> {
+    this.validateObjectId(projectId);
+    this.validateObjectId(assigneeId);
+
+    const result = await this.taskModel
+      .updateMany(
+        { projectId: new Types.ObjectId(projectId) },
+        { $set: { assignedTo: [new Types.ObjectId(assigneeId)] } },
+        { runValidators: true },
+      )
+      .exec();
+
+    return result.modifiedCount;
   }
 
   async countByProjectIdsAndStatus(projectIds: string[], status: TaskStatus): Promise<number> {
