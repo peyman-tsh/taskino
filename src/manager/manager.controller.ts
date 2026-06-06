@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Query, UseGuards } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -18,9 +18,14 @@ import { SetProjectActivationDto } from './dto/set-project-activation.dto';
 import { TaskAnalyticsQueryDto } from './dto/task-analytics-query.dto';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 import { UserRole } from '../user/schemas/user.schema';
+import { JwtAuthGuard } from '../auth/guard/jwt.guard';
+import { RolesGuard } from '../user/roles.guard';
+import { Roles } from '../user/roles.decorator';
 
 @ApiTags('Manager')
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.MANAGER)
 @Controller('manager')
 export class ManagerController {
   constructor(private readonly managerService: ManagerService) {}

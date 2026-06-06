@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { ProjectService } from '../project/project.service';
-import { ProjectMemberService } from '../projectMember/projectMember.service';
 import { TaskService } from '../task/task.service';
 import { UserService } from '../user/user.service';
 import { BaseManagerService } from './base-manager.service';
@@ -8,6 +7,18 @@ import { ManagerUsersQueryDto } from './dto/manager-users-query.dto';
 import { MonthlyPerformanceQueryDto } from './dto/monthly-performance-query.dto';
 import { PaginationQueryDto } from './dto/pagination-query.dto';
 import { TaskAnalyticsQueryDto } from './dto/task-analytics-query.dto';
+import { Types } from 'mongoose';
+import { UserRole } from '../user/schemas/user.schema';
+
+type PopulatedProjectMember = {
+  _id: Types.ObjectId;
+  firstName: string;
+  lastName: string;
+  email: string;
+  roles: UserRole;
+  isActive: boolean;
+  workField: string;
+};
 
 @Injectable()
 export class ManagerService extends BaseManagerService {
@@ -15,7 +26,6 @@ export class ManagerService extends BaseManagerService {
     private readonly userService: UserService,
     private readonly projectService: ProjectService,
     private readonly taskService: TaskService,
-    private readonly projectMemberService: ProjectMemberService,
   ) {
     super();
   }
@@ -58,17 +68,21 @@ export class ManagerService extends BaseManagerService {
   async getProjectMembers(projectId: string) {
     this.toObjectId(projectId, 'project ID');
 
-    const [project, projectMembers] = await Promise.all([
-      this.projectService.findById(projectId),
-      this.projectMemberService.findAllByProject(projectId),
-    ]);
+    const project = await this.projectService.findById(projectId);
+    const projectMembers = project.members as unknown as PopulatedProjectMember[];
 
     return {
       projectId: project._id.toString(),
       projectName: project.title,
       members: projectMembers.map((projectMember) => ({
-        user: projectMember.user,
-        role: projectMember.role,
+        user: {
+          userId: projectMember._id.toString(),
+          firstName: projectMember.firstName,
+          lastName: projectMember.lastName,
+          email: projectMember.email,
+          workField: projectMember.workField,
+        },
+        role: projectMember.roles,
         isActive: projectMember.isActive,
       })),
     };

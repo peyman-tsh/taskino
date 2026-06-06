@@ -12,6 +12,8 @@ import {
   UseInterceptors,
   UploadedFile,
   ValidationPipe,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
 import { TaskService } from './task.service';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -26,10 +28,15 @@ import {
   ApiParam,
   ApiQuery,
   ApiConsumes,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { JwtAuthGuard } from '../auth/guard/jwt.guard';
+import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
 
 @ApiTags('Tasks')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('tasks')
 export class TaskController {
   constructor(private readonly taskService: TaskService) {}
@@ -52,9 +59,15 @@ export class TaskController {
       forbidNonWhitelisted: false,
     })) createTaskDto: CreateTaskDto,
     @UploadedFile() file?: Express.Multer.File,
+    @Request() request?: { user: { userId: string } },
   ) {
-    console.log('createTaskDto:', createTaskDto);
-    return this.taskService.create(createTaskDto, file);
+    return this.taskService.create(
+      {
+        ...createTaskDto,
+        createdBy: request!.user.userId,
+      },
+      file,
+    );
   }
 
   @Get()
@@ -150,8 +163,8 @@ export class TaskController {
   @ApiResponse({ status: 200, description: 'Task status updated successfully' })
   @ApiResponse({ status: 404, description: 'Task not found' })
   @ApiResponse({ status: 400, description: 'Invalid status value' })
-  updateStatus(@Param('id') id: string, @Body('status') status: TaskStatus) {
-    return this.taskService.updateStatus(id, status);
+  updateStatus(@Param('id') id: string, @Body() updateTaskStatusDto: UpdateTaskStatusDto) {
+    return this.taskService.updateStatus(id, updateTaskStatusDto.status);
   }
 
   @Post('completion-stats')

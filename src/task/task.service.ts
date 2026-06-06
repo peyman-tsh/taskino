@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, BadRequestException, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -15,6 +15,8 @@ import {
   TaskAssignedNotificationEvent,
   TaskCompletedNotificationEvent,
 } from '../notification/events/notification.events';
+import { ProjectService } from '../project/project.service';
+import { UserRole } from '../user/schemas/user.schema';
 
 // Constants
 const EXCEL_IMPORT_TYPE = 'import' as ExcelType;
@@ -31,6 +33,8 @@ export class TaskService {
     private readonly excelService: ExcelService,
     private readonly userService: UserService,
     private readonly eventBus: InternalEventBus,
+    @Inject(forwardRef(() => ProjectService))
+    private readonly projectService: ProjectService,
   ) {}
 
   private notifyAssignedUsers(
@@ -84,6 +88,31 @@ export class TaskService {
     return assignedTo ? [assignedTo] : [];
   }
 
+  private async assertStandaloneTaskParticipants(
+    creatorId: string,
+    assigneeIds: string[],
+  ): Promise<void> {
+    const participants = await this.userService.findProjectParticipantsByIds([
+      creatorId,
+      ...assigneeIds,
+    ]);
+    const creator = participants.find((participant) => participant.userId === creatorId);
+
+    if (creator?.role !== UserRole.MANAGER) {
+      throw new BadRequestException('Task creator must have the manager role');
+    }
+
+    const invalidAssignee = participants.find(
+      (participant) =>
+        participant.userId !== creatorId &&
+        ![UserRole.SPECIALIST, UserRole.SUPERVISOR].includes(participant.role as UserRole),
+    );
+
+    if (invalidAssignee) {
+      throw new BadRequestException('Task assignees must have the specialist or supervisor role');
+    }
+  }
+
   /**
    * Create a new task
    */
@@ -105,10 +134,11 @@ export class TaskService {
       }
     }
 
-    await this.userService.assertUsersExist([createdBy, ...assignedToArray]);
-
     if (projectId) {
       this.validateObjectId(projectId);
+      await this.projectService.assertTaskParticipants(projectId, createdBy, assignedToArray);
+    } else {
+      await this.assertStandaloneTaskParticipants(createdBy, assignedToArray);
     }
 
     const createdTask = new this.taskModel({
@@ -222,7 +252,15 @@ export class TaskService {
       if (invalidIds.length > 0) {
         throw new BadRequestException('Invalid assignedTo user IDs');
       }
-      await this.userService.assertUsersExist(updateTaskDto.assignedTo);
+      if (task.projectId) {
+        await this.projectService.assertTaskParticipants(
+          task.projectId.toString(),
+          task.createdBy.toString(),
+          updateTaskDto.assignedTo,
+        );
+      } else {
+        await this.userService.assertUsersExist(updateTaskDto.assignedTo);
+      }
       updateData.assignedTo = updateTaskDto.assignedTo.map((userId) => new Types.ObjectId(userId));
     }
 
@@ -379,7 +417,8 @@ export class TaskService {
     };
 
     if (projectId) {
-      managerExpertQuery.projectId = projectId;
+      this.validateObjectId(projectId);
+      managerExpertQuery.projectId = new Types.ObjectId(projectId);
     }
 
     // Total tasks
@@ -438,11 +477,44 @@ export class TaskService {
     const userObjectId = new Types.ObjectId(dateCountDto.userId);
 
     // Find tasks that overlap with the date range
+    const rangeStart = new Date(dateCountDto.startdate);
+    const rangeEnd = new Date(dateCountDto.enddate);
+    rangeEnd.setUTCHours(23, 59, 59, 999);
+
     const tasks = await this.taskModel.find({
-      projectId: dateCountDto.projectId,
-      assignedTo: { $in: [userObjectId] },
-      dueDate: { $gt: dateCountDto.enddate },
-    } as any).exec();
+      projectId: new Types.ObjectId(dateCountDto.projectId),
+      assignedTo: userObjectId,
+      $expr: {
+        $and: [
+          {
+            $lte: [
+              {
+                $convert: {
+                  input: '$startDate',
+                  to: 'date',
+                  onError: null,
+                  onNull: null,
+                },
+              },
+              rangeEnd,
+            ],
+          },
+          {
+            $gte: [
+              {
+                $convert: {
+                  input: '$dueDate',
+                  to: 'date',
+                  onError: null,
+                  onNull: null,
+                },
+              },
+              rangeStart,
+            ],
+          },
+        ],
+      },
+    }).exec();
 
     const totalTasks = tasks.length;
     const completedTasks = tasks.filter((task) => task.status === TaskStatus.DONE).length;
@@ -486,7 +558,8 @@ export class TaskService {
   // }
 
  async findTaskByProjectId(projectId: string): Promise<TaskDocument[]> {
-    return this.taskModel.find({ projectId }).exec();
+    this.validateObjectId(projectId);
+    return this.taskModel.find({ projectId: new Types.ObjectId(projectId) }).exec();
   }
 
   async countOpenTasks(): Promise<number> {

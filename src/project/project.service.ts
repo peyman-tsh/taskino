@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { CreateProjectDto } from './dto/create-project.dto';
@@ -15,6 +21,7 @@ export class ProjectService {
   constructor(
     @InjectModel(Project.name)
     private readonly projectModel: Model<ProjectDocument>,
+    @Inject(forwardRef(() => TaskService))
     private readonly taskService: TaskService,
     private readonly userService: UserService,
   ) {}
@@ -74,6 +81,63 @@ export class ProjectService {
     }
 
     return project.workField;
+  }
+
+  async assertTaskParticipants(
+    projectId: string,
+    creatorId: string,
+    assigneeIds: string[],
+  ): Promise<void> {
+    if (!Types.ObjectId.isValid(projectId)) {
+      throw new BadRequestException('Invalid project ID');
+    }
+
+    const project = await this.projectModel
+      .findById(projectId)
+      .select('owner supervisorId members workField')
+      .lean()
+      .exec();
+
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+
+    const participants = await this.userService.findProjectParticipantsByIds([
+      creatorId,
+      ...assigneeIds,
+    ]);
+    const participantsById = new Map(
+      participants.map((participant) => [participant.userId, participant]),
+    );
+    const creator = participantsById.get(creatorId);
+
+    if (creator?.role !== UserRole.MANAGER) {
+      throw new BadRequestException('Task creator must have the manager role');
+    }
+
+    if (project.owner.toString() !== creatorId) {
+      throw new BadRequestException('Task creator must be the project owner');
+    }
+
+    const allowedAssigneeIds = new Set([
+      project.supervisorId.toString(),
+      ...project.members.map((memberId) => memberId.toString()),
+    ]);
+
+    const invalidAssignee = assigneeIds.find((assigneeId) => {
+      const participant = participantsById.get(assigneeId);
+      return (
+        !allowedAssigneeIds.has(assigneeId) ||
+        participant?.workField !== project.workField ||
+        ![UserRole.SPECIALIST, UserRole.SUPERVISOR].includes(participant?.role as UserRole)
+      );
+    });
+
+    if (invalidAssignee) {
+      throw new BadRequestException(
+        'Task assignees must be project members or its supervisor and match the project work field',
+      );
+    }
   }
 
   /**
@@ -151,7 +215,7 @@ export class ProjectService {
         .limit(limit)
         .populate('owner', 'firstName lastName email workField')
         .populate('supervisorId', 'firstName lastName email roles workField')
-        .populate('members', 'firstName lastName email workField')
+        .populate('members', 'firstName lastName email roles isActive workField')
         .populate('tasks')
         .exec(),
       this.projectModel.countDocuments(query).exec(),
@@ -287,7 +351,7 @@ export class ProjectService {
       .findById(id)
       .populate('owner', 'firstName lastName email workField')
       .populate('supervisorId', 'firstName lastName email roles workField')
-      .populate('members', 'firstName lastName email workField')
+      .populate('members', 'firstName lastName email roles isActive workField')
       .populate('tasks')
       .exec();
 
@@ -310,7 +374,7 @@ export class ProjectService {
       .find({ owner: new Types.ObjectId(ownerId) })
       .populate('owner', 'firstName lastName email workField')
       .populate('supervisorId', 'firstName lastName email roles workField')
-      .populate('members', 'firstName lastName email workField')
+      .populate('members', 'firstName lastName email roles isActive workField')
       .populate('tasks')
       .exec();
   }
@@ -390,7 +454,7 @@ export class ProjectService {
       .findByIdAndUpdate(id, updateData, { new: true })
       .populate('owner', 'firstName lastName email workField')
       .populate('supervisorId', 'firstName lastName email roles workField')
-      .populate('members', 'firstName lastName email workField')
+      .populate('members', 'firstName lastName email roles isActive workField')
       .populate('tasks')
       .exec();
 
