@@ -4,12 +4,14 @@ import { Model, Types } from 'mongoose';
 import { CreateProjectMemberDto } from './dto/create-project-member.dto';
 import { UpdateProjectMemberDto } from './dto/update-project-member.dto';
 import { ProjectMember, ProjectMemberDocument, ProjectMemberRole } from './member.schema';
+import { ProjectService } from '../project/project.service';
 
 @Injectable()
 export class ProjectMemberService {
   constructor(
     @InjectModel(ProjectMember.name)
     private readonly projectMemberModel: Model<ProjectMemberDocument>,
+    private readonly projectService: ProjectService,
   ) {}
 
   /**
@@ -40,10 +42,12 @@ export class ProjectMemberService {
       throw new BadRequestException('User is already a member of this project');
     }
 
+    const workField = await this.projectService.assertMemberMatchesProjectWorkField(project, user);
     const createdProjectMember = new this.projectMemberModel({
       ...rest,
       project: new Types.ObjectId(project),
       user: new Types.ObjectId(user),
+      workField,
     });
 
     return await createdProjectMember.save();
@@ -92,8 +96,8 @@ export class ProjectMemberService {
         .find(query)
         .skip(skip)
         .limit(limit)
-        .populate('project', 'title description status')
-        .populate('user', 'firstName lastName email mobile')
+        .populate('project', 'title description status workField')
+        .populate('user', 'firstName lastName email mobile workField')
         .exec(),
       this.projectMemberModel.countDocuments(query).exec(),
     ]);
@@ -116,8 +120,8 @@ export class ProjectMemberService {
 
     const projectMember = await this.projectMemberModel
       .findById(id)
-      .populate('project', 'title status')
-      .populate('user', 'firstName lastName email mobile')
+      .populate('project', 'title status workField')
+      .populate('user', 'firstName lastName email mobile workField')
       .exec();
 
     if (!projectMember) {
@@ -137,8 +141,8 @@ export class ProjectMemberService {
 
     return this.projectMemberModel
       .find({ project: new Types.ObjectId(projectId), isActive: true })
-      .populate('project', 'title description status')
-      .populate('user', 'firstName lastName email mobile')
+      .populate('project', 'title description status workField')
+      .populate('user', 'firstName lastName email mobile workField')
       .exec();
   }
 
@@ -149,8 +153,8 @@ export class ProjectMemberService {
 
     return this.projectMemberModel
       .find({ project: new Types.ObjectId(projectId) })
-      .populate('project', 'title description status')
-      .populate('user', 'firstName lastName email mobile roles isActive')
+      .populate('project', 'title description status workField')
+      .populate('user', 'firstName lastName email mobile roles isActive workField')
       .exec();
   }
 

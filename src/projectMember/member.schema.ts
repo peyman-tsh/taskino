@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 import { Project } from 'src/project/project.schema';
 import { User } from 'src/user/schemas/user.schema';
+import { WorkField } from '../common/enums/work-field.enum';
 
 export type ProjectMemberDocument = HydratedDocument<ProjectMember>;
 
@@ -28,6 +29,14 @@ export class ProjectMember {
     required: true,
   })
   user: Types.ObjectId;
+
+  @Prop({
+    type: String,
+    enum: WorkField,
+    required: true,
+    index: true,
+  })
+  workField: WorkField;
 
   @Prop({
     enum: ProjectMemberRole,

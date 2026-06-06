@@ -9,6 +9,12 @@ import { ExcelService } from '../excel/excel.service';
 import { ExcelFile, ExcelType } from '../excel/excel.schema';
 import { DateCountDto } from './dto/dateCount.dto';
 import { UserService } from 'src/user/user.service';
+import { InternalEventBus } from '../common/events/internal-event-bus.service';
+import {
+  NotificationEvents,
+  TaskAssignedNotificationEvent,
+  TaskCompletedNotificationEvent,
+} from '../notification/events/notification.events';
 
 // Constants
 const EXCEL_IMPORT_TYPE = 'import' as ExcelType;
@@ -24,7 +30,39 @@ export class TaskService {
     private readonly taskModel: Model<TaskDocument>,
     private readonly excelService: ExcelService,
     private readonly userService: UserService,
+    private readonly eventBus: InternalEventBus,
   ) {}
+
+  private notifyAssignedUsers(
+    userIds: string[],
+    taskId: string,
+    taskTitle: string,
+  ): void {
+    if (userIds.length === 0) {
+      return;
+    }
+
+    this.eventBus.publish(
+      NotificationEvents.TASK_ASSIGNED,
+      new TaskAssignedNotificationEvent(userIds, taskId, taskTitle),
+    );
+  }
+
+  private notifyCreatorWhenCompleted(
+    creatorId: string,
+    taskId: string,
+    taskTitle: string,
+  ): void {
+    this.eventBus.publish(
+      NotificationEvents.TASK_COMPLETED,
+      new TaskCompletedNotificationEvent(
+        creatorId,
+        taskId,
+        taskTitle,
+        'an assigned user',
+      ),
+    );
+  }
 
   /**
    * Validates if a given ID is a valid MongoDB ObjectId.
@@ -67,6 +105,8 @@ export class TaskService {
       }
     }
 
+    await this.userService.assertUsersExist([createdBy, ...assignedToArray]);
+
     if (projectId) {
       this.validateObjectId(projectId);
     }
@@ -82,13 +122,17 @@ export class TaskService {
     if (file) {
       const excelUpload = await this.excelService.uploadFile(file, createdBy, EXCEL_IMPORT_TYPE);
       createdTask.file = excelUpload.fileName;
+      const savedTask = await createdTask.save();
+      this.notifyAssignedUsers(assignedToArray, savedTask._id.toString(), savedTask.title);
       return {
-        task: await createdTask.save(),
+        task: savedTask,
         excelUpload,
       };
     }
 
-    return createdTask.save();
+    const savedTask = await createdTask.save();
+    this.notifyAssignedUsers(assignedToArray, savedTask._id.toString(), savedTask.title);
+    return savedTask;
   }
 
   /**
@@ -178,8 +222,15 @@ export class TaskService {
       if (invalidIds.length > 0) {
         throw new BadRequestException('Invalid assignedTo user IDs');
       }
+      await this.userService.assertUsersExist(updateTaskDto.assignedTo);
       updateData.assignedTo = updateTaskDto.assignedTo.map((userId) => new Types.ObjectId(userId));
     }
+
+    const previousAssigneeIds = task.assignedTo.map((userId) => userId.toString());
+    const newlyAssignedUserIds =
+      updateTaskDto.assignedTo?.filter((userId) => !previousAssigneeIds.includes(userId)) ?? [];
+    const changedToDone =
+      updateTaskDto.status === TaskStatus.DONE && task.status !== TaskStatus.DONE;
 
     const updatedTask = await this.taskModel
       .findByIdAndUpdate(id, updateData, { new: true })
@@ -189,6 +240,15 @@ export class TaskService {
 
     if (!updatedTask) {
       throw new NotFoundException('Task not found');
+    }
+
+    this.notifyAssignedUsers(newlyAssignedUserIds, updatedTask._id.toString(), updatedTask.title);
+    if (changedToDone) {
+      this.notifyCreatorWhenCompleted(
+        task.createdBy.toString(),
+        updatedTask._id.toString(),
+        updatedTask.title,
+      );
     }
 
     return updatedTask;
@@ -215,6 +275,11 @@ export class TaskService {
   async updateStatus(id: string, status: TaskStatus): Promise<TaskDocument> {
     this.validateObjectId(id);
 
+    const existingTask = await this.taskModel.findById(id).exec();
+    if (!existingTask) {
+      throw new NotFoundException('Task not found');
+    }
+
     const task = await this.taskModel
       .findByIdAndUpdate(id, { status }, { new: true })
       .populate('createdBy', 'firstName lastName email')
@@ -223,6 +288,14 @@ export class TaskService {
 
     if (!task) {
       throw new NotFoundException('Task not found');
+    }
+
+    if (status === TaskStatus.DONE && existingTask.status !== TaskStatus.DONE) {
+      this.notifyCreatorWhenCompleted(
+        existingTask.createdBy.toString(),
+        task._id.toString(),
+        task.title,
+      );
     }
 
     return task;
@@ -235,6 +308,17 @@ export class TaskService {
   ): Promise<TaskDocument> {
     this.validateObjectId(taskId);
     this.validateObjectId(projectId);
+
+    const existingTask = await this.taskModel
+      .findOne({
+        _id: new Types.ObjectId(taskId),
+        $expr: { $eq: [{ $toString: '$projectId' }, projectId] },
+      })
+      .exec();
+
+    if (!existingTask) {
+      throw new NotFoundException('Task not found in the selected project');
+    }
 
     const task = await this.taskModel
       .findOneAndUpdate(
@@ -251,6 +335,14 @@ export class TaskService {
 
     if (!task) {
       throw new NotFoundException('Task not found in the selected project');
+    }
+
+    if (status === TaskStatus.DONE && existingTask.status !== TaskStatus.DONE) {
+      this.notifyCreatorWhenCompleted(
+        existingTask.createdBy.toString(),
+        task._id.toString(),
+        task.title,
+      );
     }
 
     return task;

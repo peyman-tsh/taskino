@@ -1,5 +1,6 @@
-import { IsString, IsEmail, IsOptional, MinLength, Matches } from 'class-validator';
+import { IsString, IsEmail, IsOptional, MinLength, Matches, IsEnum } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { WorkField } from '../../common/enums/work-field.enum';
 
 export class CreateUserDto {
   @ApiProperty({ description: 'First name of the user', example: 'John' })
@@ -25,4 +26,8 @@ export class CreateUserDto {
   @IsString()
   @MinLength(6)
   password: string;
+
+  @ApiProperty({ description: 'User work field', enum: WorkField, example: WorkField.IT })
+  @IsEnum(WorkField)
+  workField: WorkField;
 }

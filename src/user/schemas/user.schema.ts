@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { WorkField } from '../../common/enums/work-field.enum';
 
 export type UserDocument = HydratedDocument<User>;
 
@@ -39,6 +40,14 @@ export class User {
     default: UserRole.SPECIALIST,
   })
   roles: string;
+
+  @Prop({
+    type: String,
+    enum: WorkField,
+    required: true,
+    index: true,
+  })
+  workField: WorkField;
 
   @Prop({type:Number,required:false})
   score:number;

@@ -1,6 +1,7 @@
-import { IsString, IsEmail, MinLength, Matches, IsOptional, IsEnum, ArrayNotEmpty, IsArray } from 'class-validator';
+import { IsString, IsEmail, MinLength, Matches, IsOptional, IsEnum } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { UserRole } from 'src/user/schemas/user.schema';
+import { WorkField } from '../../common/enums/work-field.enum';
+import { UserRole } from '../../user/schemas/user.schema';
 
 export class RegisterDto {
   @ApiProperty({ description: 'First name of the user', example: 'John' })
@@ -27,8 +28,12 @@ export class RegisterDto {
   @MinLength(6)
   password: string;
 
- @ApiProperty({ description: 'Role of the user', example: 'Specialist' })
+ @ApiPropertyOptional({ description: 'Role of the user', enum: UserRole, example: UserRole.SPECIALIST })
  @IsOptional()
- @IsString()
- roles?:string;
+ @IsEnum(UserRole)
+ roles?: UserRole;
+
+ @ApiProperty({ description: 'User work field', enum: WorkField, example: WorkField.IT })
+ @IsEnum(WorkField)
+ workField: WorkField;
 }

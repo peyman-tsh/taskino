@@ -1,18 +1,22 @@
-import { IsOptional, IsString, IsEnum, IsBoolean } from 'class-validator';
+import { IsOptional, IsString, IsEnum, IsBoolean, IsMongoId, MaxLength, MinLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { NotificationType } from '../notification.schema';
 
 export class CreateNotificationDto {
   @ApiProperty({ example: '60d21b4667590e1234567890', description: 'User ID' })
-  @IsString()
+  @IsMongoId()
   user!: string;
 
   @ApiProperty({ example: 'Task Assigned', description: 'Notification title' })
   @IsString()
+  @MinLength(1)
+  @MaxLength(150)
   title!: string;
 
   @ApiProperty({ example: 'You have been assigned a new task', description: 'Notification message' })
   @IsString()
+  @MinLength(1)
+  @MaxLength(1000)
   message!: string;
 
   @ApiProperty({ enum: NotificationType, description: 'Notification type' })
@@ -27,5 +31,6 @@ export class CreateNotificationDto {
   @ApiPropertyOptional({ example: '/tasks/123', description: 'Link to related resource' })
   @IsOptional()
   @IsString()
+  @MaxLength(500)
   link?: string;
 }

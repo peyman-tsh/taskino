@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
@@ -90,6 +90,48 @@ export class UserService {
       isActive: user.isActive,
       score: user.score ?? 0,
     }));
+  }
+
+  async findProjectParticipantsByIds(userIds: string[]) {
+    const uniqueUserIds = [...new Set(userIds)];
+    const invalidUserIds = uniqueUserIds.filter((userId) => !Types.ObjectId.isValid(userId));
+    if (invalidUserIds.length > 0) {
+      throw new BadRequestException('Invalid project participant user IDs');
+    }
+
+    const users = await this.userModel
+      .find({ _id: { $in: uniqueUserIds.map((userId) => new Types.ObjectId(userId)) } })
+      .select('roles workField')
+      .lean()
+      .exec();
+
+    if (users.length !== uniqueUserIds.length) {
+      throw new NotFoundException('One or more project participants were not found');
+    }
+
+    return users.map((user) => ({
+      userId: user._id.toString(),
+      role: user.roles,
+      workField: user.workField,
+    }));
+  }
+
+  async assertUsersExist(userIds: string[]): Promise<void> {
+    const uniqueUserIds = [...new Set(userIds)];
+    const invalidUserIds = uniqueUserIds.filter((userId) => !Types.ObjectId.isValid(userId));
+    if (invalidUserIds.length > 0) {
+      throw new BadRequestException('Invalid user IDs');
+    }
+
+    const existingUsersCount = await this.userModel
+      .countDocuments({
+        _id: { $in: uniqueUserIds.map((userId) => new Types.ObjectId(userId)) },
+      })
+      .exec();
+
+    if (existingUsersCount !== uniqueUserIds.length) {
+      throw new NotFoundException('One or more users were not found');
+    }
   }
 
   async findForManager(

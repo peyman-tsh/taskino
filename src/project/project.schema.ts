@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 import { Task } from 'src/task/task.schema';
 import { User } from 'src/user/schemas/user.schema';
+import { WorkField } from '../common/enums/work-field.enum';
 
 export type ProjectDocument = HydratedDocument<Project>;
 
@@ -31,6 +32,14 @@ export class Project {
     default: ProjectStatus.PENDING,
   })
   status: ProjectStatus;
+
+  @Prop({
+    type: String,
+    enum: WorkField,
+    required: true,
+    index: true,
+  })
+  workField: WorkField;
 
   @Prop({
     type: Types.ObjectId,

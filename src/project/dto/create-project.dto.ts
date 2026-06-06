@@ -1,6 +1,7 @@
 import { IsString, IsNotEmpty, IsArray, IsOptional, IsEnum, IsBoolean, IsDateString, IsMongoId } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProjectStatus } from '../project.schema';
+import { WorkField } from '../../common/enums/work-field.enum';
 
 export class CreateProjectDto {
   @ApiProperty({ description: 'Title of the project', example: 'New Website Redesign' })
@@ -17,6 +18,14 @@ export class CreateProjectDto {
   @IsOptional()
   @IsEnum(ProjectStatus)
   status?: ProjectStatus;
+
+  @ApiProperty({
+    description: 'Project work field. Owner, supervisor, and all members must have the same work field.',
+    enum: WorkField,
+    example: WorkField.IT,
+  })
+  @IsEnum(WorkField)
+  workField: WorkField;
 
   @ApiProperty({ description: 'ID of the user who owns the project', example: '64a7b1c2d3e4f5a6b7c8d9e0' })
   @IsMongoId()

@@ -15,6 +15,7 @@ import { ExcelModule } from './excel/excel.module';
 import { NotificationModule } from './notification/notification.module';
 import { ManagerModule } from './manager/manager.module';
 import { SupervisorModule } from './supervisor/supervisor.module';
+import { InternalEventBusModule } from './common/events/internal-event-bus.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { SupervisorModule } from './supervisor/supervisor.module';
       validate,
       load: [appConfig],
     }),
+    InternalEventBusModule,
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({

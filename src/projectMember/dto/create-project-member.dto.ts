@@ -1,16 +1,14 @@
-import { IsString, IsNotEmpty, IsEnum, IsOptional, IsBoolean } from 'class-validator';
+import { IsEnum, IsOptional, IsBoolean, IsMongoId } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProjectMemberRole } from '../member.schema';
 
 export class CreateProjectMemberDto {
   @ApiProperty({ description: 'ID of the project', example: '64a7b1c2d3e4f5a6b7c8d9e0' })
-  @IsString()
-  @IsNotEmpty()
+  @IsMongoId()
   project: string;
 
   @ApiProperty({ description: 'ID of the user', example: '64a7b1c2d3e4f5a6b7c8d9e1' })
-  @IsString()
-  @IsNotEmpty()
+  @IsMongoId()
   user: string;
 
   @ApiPropertyOptional({ description: 'Role of the member in the project', enum: ProjectMemberRole, example: ProjectMemberRole.MEMBER })
