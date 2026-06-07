@@ -33,6 +33,12 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guard/jwt.guard';
 import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
+import {
+  PaginatedTasksResponseDto,
+  TaskCompletionStatsResponseDto,
+  TaskDateCountResponseDto,
+  TaskResponseDto,
+} from './dto/task-response.dto';
 
 @ApiTags('Tasks')
 @ApiBearerAuth()
@@ -47,7 +53,7 @@ export class TaskController {
     summary: 'Create a new task',
     description: 'Creates a new task with the provided information',
   })
-  @ApiResponse({ status: 201, description: 'Task created successfully' })
+  @ApiResponse({ status: 201, description: 'Task created successfully', type: TaskResponseDto })
   @ApiResponse({ status: 400, description: 'Validation failed' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file'))
@@ -105,7 +111,7 @@ export class TaskController {
     type: String,
     description: 'Filter by task status (todo, in_progress, done)',
   })
-  @ApiResponse({ status: 200, description: 'Tasks retrieved successfully' })
+  @ApiResponse({ status: 200, description: 'Tasks retrieved successfully', type: PaginatedTasksResponseDto })
   findAll(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
@@ -122,7 +128,7 @@ export class TaskController {
     description: 'Returns a single task by its ID',
   })
   @ApiParam({ name: 'id', description: 'Task ID' })
-  @ApiResponse({ status: 200, description: 'Task retrieved successfully' })
+  @ApiResponse({ status: 200, description: 'Task retrieved successfully', type: TaskResponseDto })
   @ApiResponse({ status: 404, description: 'Task not found' })
   findOne(@Param('id') id: string) {
     return this.taskService.findById(id);
@@ -134,7 +140,7 @@ export class TaskController {
     description: 'Updates an existing task by its ID',
   })
   @ApiParam({ name: 'id', description: 'Task ID' })
-  @ApiResponse({ status: 200, description: 'Task updated successfully' })
+  @ApiResponse({ status: 200, description: 'Task updated successfully', type: TaskResponseDto })
   @ApiResponse({ status: 404, description: 'Task not found' })
   @ApiResponse({ status: 400, description: 'Validation failed' })
   update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto) {
@@ -160,7 +166,7 @@ export class TaskController {
     description: 'Updates the status of a task by its ID',
   })
   @ApiParam({ name: 'id', description: 'Task ID' })
-  @ApiResponse({ status: 200, description: 'Task status updated successfully' })
+  @ApiResponse({ status: 200, description: 'Task status updated successfully', type: TaskResponseDto })
   @ApiResponse({ status: 404, description: 'Task not found' })
   @ApiResponse({ status: 400, description: 'Invalid status value' })
   updateStatus(@Param('id') id: string, @Body() updateTaskStatusDto: UpdateTaskStatusDto) {
@@ -173,7 +179,7 @@ export class TaskController {
     summary: 'Get task completion statistics',
     description: 'Returns the number of completed and pending tasks that a manager assigned to an expert',
   })
-  @ApiResponse({ status: 200, description: 'Task completion statistics retrieved successfully' })
+  @ApiResponse({ status: 200, description: 'Task completion statistics retrieved successfully', type: TaskCompletionStatsResponseDto })
   @ApiResponse({ status: 400, description: 'Validation failed' })
   getTaskCompletionStats(@Body() statsDto: TaskCompletionStatsDto) {
     return this.taskService.getTaskCompletionStats(statsDto);
@@ -185,7 +191,7 @@ export class TaskController {
     summary: 'Get task count by project and date range',
     description: 'Returns task statistics for a user in a project within a date range',
   })
-  @ApiResponse({ status: 200, description: 'Task count retrieved successfully' })
+  @ApiResponse({ status: 200, description: 'Task count retrieved successfully', type: TaskDateCountResponseDto })
   @ApiResponse({ status: 400, description: 'Validation failed' })
   findTasksByProjectAndCount(@Body() dateCountDto: DateCountDto) {
     return this.taskService.findTasksByProjectAndCount(dateCountDto);

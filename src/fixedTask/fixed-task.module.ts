@@ -5,6 +5,7 @@ import { FixedTaskService } from './fixed-task.service';
 import { UserModule } from '../user/user.module';
 import { ProjectModule } from '../project/project.module';
 import { FixedTaskController } from './fixed-task.controller';
+import { Task, TaskSchema } from '../task/task.schema';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { FixedTaskController } from './fixed-task.controller';
     ProjectModule,
     MongooseModule.forFeature([
       { name: FixedTaskTemplate.name, schema: FixedTaskTemplateSchema },
+      { name: Task.name, schema: TaskSchema },
     ]),
   ],
   controllers: [FixedTaskController],

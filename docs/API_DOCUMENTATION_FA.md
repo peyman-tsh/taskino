@@ -315,9 +315,31 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 |---|---|---|
 | POST | `/api/fixed-tasks` | ساخت Template جدید |
 | GET | `/api/fixed-tasks` | لیست با pagination و فیلترهای `assignedTo`, `projectId`, `recurrence`, `isActive` |
+| GET | `/api/fixed-tasks/reports/incomplete` | گزارش وظایف ثابت انجام‌نشده روزانه، هفتگی و ماهانه |
 | GET | `/api/fixed-tasks/:id` | دریافت یک Template |
 | PATCH | `/api/fixed-tasks/:id` | ویرایش Template |
 | DELETE | `/api/fixed-tasks/:id` | حذف Template با خروجی `204` |
+
+### گزارش وظایف ثابت انجام‌نشده
+
+این گزارش فقط Templateهای فعال ساخته‌شده توسط مدیر فعلی را بررسی می‌کند. اگر در دوره انتخاب‌شده هیچ Task متصل با `fixedTaskTemplateId` و وضعیت `done` وجود نداشته باشد، آن وظیفه در گزارش نمایش داده می‌شود.
+
+- دوره `daily`: از ابتدای روز تا پایان همان روز
+- دوره `weekly`: از ابتدای شنبه تا پایان پنج‌شنبه
+- دوره `monthly`: از ابتدای ماه تا پایان همان ماه
+- اگر Task واقعی `dueDate` داشته باشد، مهلت همان مقدار مدیر است؛ در غیر این صورت پایان دوره به‌عنوان مهلت استفاده می‌شود.
+- `periodAt`: تاریخی داخل دوره مورد گزارش؛ پیش‌فرض زمان فعلی
+- `reportAt`: زمان ارزیابی مهلت؛ پیش‌فرض زمان فعلی
+- `deadlineStatus`: فیلتر `overdue` یا `within_deadline`
+- فیلترهای دیگر: `recurrence`, `assignedTo`, `projectId`, `page`, `limit`
+
+نمونه گزارش دوره جاری:
+
+`GET /api/fixed-tasks/reports/incomplete?recurrence=weekly`
+
+نمونه بررسی یک دوره قدیمی و فقط موارد مهلت‌گذشته:
+
+`GET /api/fixed-tasks/reports/incomplete?periodAt=2026-04-10T12:00:00.000Z&deadlineStatus=overdue`
 
 ---
 

@@ -21,6 +21,18 @@ import { UserRole } from '../user/schemas/user.schema';
 import { JwtAuthGuard } from '../auth/guard/jwt.guard';
 import { RolesGuard } from '../user/roles.guard';
 import { Roles } from '../user/roles.decorator';
+import {
+  ManagerProjectMembersResponseDto,
+  ManagerStatisticsResponseDto,
+  MonthlyUserPerformanceResponseDto,
+  PaginatedProjectProgressResponseDto,
+  PaginatedUsersResponseDto,
+  ProjectActivationResponseDto,
+  ProjectProgressResponseDto,
+  TaskCountsByUserResponseDto,
+  TaskStatusOverviewResponseDto,
+  UserResponseDto,
+} from './dto/manager-response.dto';
 
 @ApiTags('Manager')
 @ApiBearerAuth()
@@ -35,7 +47,7 @@ export class ManagerController {
     summary: 'Get manager dashboard statistics',
     description: 'Returns active projects count, open tasks count, and active users count',
   })
-  @ApiOkResponse({ description: 'Manager statistics retrieved successfully' })
+  @ApiOkResponse({ description: 'Manager statistics retrieved successfully', type: ManagerStatisticsResponseDto })
   getStatistics() {
     return this.managerService.getDashboardStatistics();
   }
@@ -49,7 +61,7 @@ export class ManagerController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page' })
   @ApiQuery({ name: 'isActive', required: false, type: Boolean, description: 'Filter by active status' })
   @ApiQuery({ name: 'role', required: false, enum: UserRole, description: 'Filter by user role' })
-  @ApiOkResponse({ description: 'Users retrieved successfully' })
+  @ApiOkResponse({ description: 'Users retrieved successfully', type: PaginatedUsersResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   findUsers(@Query() query: ManagerUsersQueryDto) {
     return this.managerService.findUsers(query);
@@ -61,7 +73,7 @@ export class ManagerController {
     description: 'Updates a user role to specialist, supervisor, or manager',
   })
   @ApiParam({ name: 'id', description: 'User ID' })
-  @ApiOkResponse({ description: 'User role updated successfully' })
+  @ApiOkResponse({ description: 'User role updated successfully', type: UserResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid user ID or role' })
   @ApiNotFoundResponse({ description: 'User not found' })
   updateUserRole(@Param() params: MongoIdParamDto, @Body() dto: UpdateUserRoleDto) {
@@ -74,7 +86,7 @@ export class ManagerController {
     description: 'Sets project active state by updating its archive status',
   })
   @ApiParam({ name: 'id', description: 'Project ID' })
-  @ApiOkResponse({ description: 'Project activation updated successfully' })
+  @ApiOkResponse({ description: 'Project activation updated successfully', type: ProjectActivationResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid project ID or body' })
   @ApiNotFoundResponse({ description: 'Project not found' })
   setProjectActivation(@Param() params: MongoIdParamDto, @Body() dto: SetProjectActivationDto) {
@@ -88,7 +100,7 @@ export class ManagerController {
   })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page' })
-  @ApiOkResponse({ description: 'Projects progress retrieved successfully' })
+  @ApiOkResponse({ description: 'Projects progress retrieved successfully', type: PaginatedProjectProgressResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   getProjectsProgress(@Query() query: PaginationQueryDto) {
     return this.managerService.getProjectsProgress(query);
@@ -100,7 +112,7 @@ export class ManagerController {
     description: 'Returns members of a project with member roles and active status',
   })
   @ApiParam({ name: 'id', description: 'Project ID' })
-  @ApiOkResponse({ description: 'Project members retrieved successfully' })
+  @ApiOkResponse({ description: 'Project members retrieved successfully', type: ManagerProjectMembersResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid project ID' })
   @ApiNotFoundResponse({ description: 'Project not found' })
   getProjectMembers(@Param() params: MongoIdParamDto) {
@@ -113,7 +125,7 @@ export class ManagerController {
     description: 'Returns project task progress by total, done, in progress, and todo tasks',
   })
   @ApiParam({ name: 'id', description: 'Project ID' })
-  @ApiOkResponse({ description: 'Project progress retrieved successfully' })
+  @ApiOkResponse({ description: 'Project progress retrieved successfully', type: ProjectProgressResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid project ID' })
   @ApiNotFoundResponse({ description: 'Project not found' })
   getProjectProgress(@Param() params: MongoIdParamDto) {
@@ -126,7 +138,7 @@ export class ManagerController {
     description: 'Returns total task counts grouped by todo, in progress, and done status',
   })
   @ApiQuery({ name: 'projectId', required: false, type: String, description: 'Filter by project ID' })
-  @ApiOkResponse({ description: 'Task status overview retrieved successfully' })
+  @ApiOkResponse({ description: 'Task status overview retrieved successfully', type: TaskStatusOverviewResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid project ID' })
   getTaskStatusOverview(@Query() query: TaskAnalyticsQueryDto) {
     return this.managerService.getTaskStatusOverview(query);
@@ -138,7 +150,7 @@ export class ManagerController {
     description: 'Returns task counts for each assigned user grouped by status',
   })
   @ApiQuery({ name: 'projectId', required: false, type: String, description: 'Filter by project ID' })
-  @ApiOkResponse({ description: 'Task counts by user retrieved successfully' })
+  @ApiOkResponse({ description: 'Task counts by user retrieved successfully', type: [TaskCountsByUserResponseDto] })
   @ApiBadRequestResponse({ description: 'Invalid project ID' })
   getTaskCountsByUsers(@Query() query: TaskAnalyticsQueryDto) {
     return this.managerService.getTaskCountsByUsers(query);
@@ -152,7 +164,7 @@ export class ManagerController {
   @ApiQuery({ name: 'month', required: false, type: Number, description: 'Month number from 1 to 12' })
   @ApiQuery({ name: 'year', required: false, type: Number, description: 'Full year' })
   @ApiQuery({ name: 'projectId', required: false, type: String, description: 'Filter by project ID' })
-  @ApiOkResponse({ description: 'Monthly user performance retrieved successfully' })
+  @ApiOkResponse({ description: 'Monthly user performance retrieved successfully', type: MonthlyUserPerformanceResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   getMonthlyUserPerformance(@Query() query: MonthlyPerformanceQueryDto) {
     return this.managerService.getMonthlyUserPerformance(query);

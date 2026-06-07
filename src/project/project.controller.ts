@@ -22,6 +22,11 @@ import {
   ApiQuery,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+import {
+  PaginatedProjectsResponseDto,
+  ProjectProgressResponseDto,
+  ProjectResponseDto,
+} from './dto/project-response.dto';
 
 @ApiTags('Projects')
 @ApiBearerAuth()
@@ -35,7 +40,7 @@ export class ProjectController {
     summary: 'Create a new project',
     description: 'Creates a new project with the provided information',
   })
-  @ApiResponse({ status: 201, description: 'Project created successfully' })
+  @ApiResponse({ status: 201, description: 'Project created successfully', type: ProjectResponseDto })
   @ApiResponse({ status: 400, description: 'Validation failed' })
   create(@Body() createProjectDto: CreateProjectDto) {
     return this.projectService.create(createProjectDto);
@@ -82,7 +87,7 @@ export class ProjectController {
     type: Boolean,
     description: 'Filter by archive status',
   })
-  @ApiResponse({ status: 200, description: 'Projects retrieved successfully' })
+  @ApiResponse({ status: 200, description: 'Projects retrieved successfully', type: PaginatedProjectsResponseDto })
   findAll(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
@@ -100,7 +105,7 @@ export class ProjectController {
     description: 'Returns a single project by its ID',
   })
   @ApiParam({ name: 'id', description: 'Project ID' })
-  @ApiResponse({ status: 200, description: 'Project retrieved successfully' })
+  @ApiResponse({ status: 200, description: 'Project retrieved successfully', type: ProjectResponseDto })
   @ApiResponse({ status: 404, description: 'Project not found' })
   findOne(@Param('id') id: string) {
     return this.projectService.findById(id);
@@ -112,7 +117,7 @@ export class ProjectController {
     description: 'Returns all projects owned by a specific user',
   })
   @ApiParam({ name: 'ownerId', description: 'Owner user ID' })
-  @ApiResponse({ status: 200, description: 'Projects retrieved successfully' })
+  @ApiResponse({ status: 200, description: 'Projects retrieved successfully', type: [ProjectResponseDto] })
   findByOwner(@Param('ownerId') ownerId: string) {
     return this.projectService.findByOwner(ownerId);
   }
@@ -123,7 +128,7 @@ export class ProjectController {
     description: 'Updates an existing project by its ID',
   })
   @ApiParam({ name: 'id', description: 'Project ID' })
-  @ApiResponse({ status: 200, description: 'Project updated successfully' })
+  @ApiResponse({ status: 200, description: 'Project updated successfully', type: ProjectResponseDto })
   @ApiResponse({ status: 404, description: 'Project not found' })
   @ApiResponse({ status: 400, description: 'Validation failed' })
   update(@Param('id') id: string, @Body() updateProjectDto: UpdateProjectDto) {
@@ -150,7 +155,7 @@ export class ProjectController {
   })
   @ApiParam({ name: 'id', description: 'Project ID' })
   @ApiParam({ name: 'taskId', description: 'Task ID' })
-  @ApiResponse({ status: 200, description: 'Task added successfully' })
+  @ApiResponse({ status: 200, description: 'Task added successfully', type: ProjectResponseDto })
   @ApiResponse({ status: 404, description: 'Project not found' })
   @ApiResponse({ status: 400, description: 'Validation failed' })
   addTask(@Param('id') id: string, @Param('taskId') taskId: string) {
@@ -164,7 +169,7 @@ export class ProjectController {
   })
   @ApiParam({ name: 'id', description: 'Project ID' })
   @ApiParam({ name: 'taskId', description: 'Task ID' })
-  @ApiResponse({ status: 200, description: 'Task removed successfully' })
+  @ApiResponse({ status: 200, description: 'Task removed successfully', type: ProjectResponseDto })
   @ApiResponse({ status: 404, description: 'Project not found' })
   @ApiResponse({ status: 400, description: 'Validation failed' })
   removeTask(@Param('id') id: string, @Param('taskId') taskId: string) {
@@ -177,7 +182,7 @@ export class ProjectController {
     description: 'Returns the progress percentage of a project based on task completion',
   })
   @ApiParam({ name: 'id', description: 'Project ID' })
-  @ApiResponse({ status: 200, description: 'Project progress retrieved successfully' })
+  @ApiResponse({ status: 200, description: 'Project progress retrieved successfully', type: ProjectProgressResponseDto })
   @ApiResponse({ status: 404, description: 'Project not found' })
   @ApiResponse({ status: 400, description: 'Invalid project ID' })
   getProgress(@Param('id') id: string) {

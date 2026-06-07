@@ -18,6 +18,12 @@ import { FixedTaskParamDto } from './dto/fixed-task-param.dto';
 import { QueryFixedTaskDto } from './dto/query-fixed-task.dto';
 import { UpdateFixedTaskDto } from './dto/update-fixed-task.dto';
 import { FixedTaskService } from './fixed-task.service';
+import { QueryIncompleteFixedTaskReportDto } from './dto/query-incomplete-fixed-task-report.dto';
+import {
+  FixedTaskResponseDto,
+  IncompleteFixedTaskReportResponseDto,
+  PaginatedFixedTasksResponseDto,
+} from './dto/fixed-task-response.dto';
 
 @ApiTags('Fixed Tasks')
 @ApiBearerAuth()
@@ -27,23 +33,37 @@ import { FixedTaskService } from './fixed-task.service';
 export class FixedTaskController {
   constructor(private readonly fixedTaskService: FixedTaskService) {}
 
+  @Get('reports/incomplete')
+  @ApiOperation({
+    summary: 'Report incomplete recurring fixed tasks',
+    description:
+      'Reports incomplete daily, weekly, or monthly fixed task executions and indicates whether their deadline has passed.',
+  })
+  @ApiOkResponse({ description: 'Incomplete fixed task report retrieved successfully', type: IncompleteFixedTaskReportResponseDto })
+  getIncompleteReport(
+    @CurrentUserId() managerId: string,
+    @Query() query: QueryIncompleteFixedTaskReportDto,
+  ) {
+    return this.fixedTaskService.getIncompleteReport(managerId, query);
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create a fixed task template' })
-  @ApiCreatedResponse({ description: 'Fixed task template created successfully' })
+  @ApiCreatedResponse({ description: 'Fixed task template created successfully', type: FixedTaskResponseDto })
   create(@CurrentUserId() creatorId: string, @Body() dto: CreateFixedTaskDto) {
     return this.fixedTaskService.create(creatorId, dto);
   }
 
   @Get()
   @ApiOperation({ summary: 'Get fixed task templates with filters and pagination' })
-  @ApiOkResponse({ description: 'Fixed task templates retrieved successfully' })
+  @ApiOkResponse({ description: 'Fixed task templates retrieved successfully', type: PaginatedFixedTasksResponseDto })
   findAll(@Query() query: QueryFixedTaskDto) {
     return this.fixedTaskService.findAll(query);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get one fixed task template' })
-  @ApiOkResponse({ description: 'Fixed task template retrieved successfully' })
+  @ApiOkResponse({ description: 'Fixed task template retrieved successfully', type: FixedTaskResponseDto })
   @ApiNotFoundResponse({ description: 'Fixed task template not found' })
   findOne(@Param() params: FixedTaskParamDto) {
     return this.fixedTaskService.findById(params.id);
@@ -51,7 +71,7 @@ export class FixedTaskController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a fixed task template' })
-  @ApiOkResponse({ description: 'Fixed task template updated successfully' })
+  @ApiOkResponse({ description: 'Fixed task template updated successfully', type: FixedTaskResponseDto })
   update(
     @CurrentUserId() creatorId: string,
     @Param() params: FixedTaskParamDto,
