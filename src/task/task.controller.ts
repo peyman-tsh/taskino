@@ -55,7 +55,8 @@ export class TaskController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Create a new task',
-    description: 'Creates a new task with the provided information',
+    description:
+      'Creates a new task. Managers and supervisors can create standalone tasks; project tasks require ownership or supervision access.',
   })
   @ApiResponse({
     status: 201,

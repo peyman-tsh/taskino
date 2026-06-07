@@ -255,6 +255,7 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 ## قوانین ساخت تسک
 
 - سازنده واقعی از JWT دریافت می‌شود؛ مقدار `createdBy` بدنه قابل جعل نیست.
+- مدیر و سرپرست می‌توانند تسک مستقل تعریف کنند.
 - سازنده تسک پروژه باید مدیر مالک پروژه یا سرپرست همان پروژه باشد.
 - پروژه باید وجود داشته باشد.
 - هر تسک باید دقیقاً یک مسئول داشته باشد.
@@ -263,18 +264,18 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 
 ## ورودی ساخت
 
-| فیلد          | نوع            | الزامی           | توضیح                                                             |
-| ------------- | -------------- | ---------------- | ----------------------------------------------------------------- |
-| `title`       | string         | بله              | عنوان                                                             |
-| `createdBy`   | string         | در DTO وجود دارد | در Controller با شناسه JWT جایگزین می‌شود                         |
-| `projectId`   | string         | خیر              | پروژه مربوط                                                       |
-| `assignedTo`  | string[]       | بله              | آرایه‌ای شامل دقیقاً شناسه یک کاربر مسئول                         |
-| `status`      | TaskStatus     | خیر              | پیش‌فرض todo                                                      |
-| `description` | string         | خیر              | توضیحات                                                           |
-| `taskComment` | string         | خیر              | نظر                                                               |
-| `startDate`   | ISO date-time  | خیر              | زمان دقیق شروع همراه timezone؛ مانند `2026-06-07T09:00:00+03:30`  |
-| `dueDate`     | ISO date-time  | خیر              | زمان دقیق پایان مهلت همراه timezone؛ باید بعد از `startDate` باشد |
-| `file`        | multipart file | خیر              | فایل Excel همراه                                                  |
+| فیلد          | نوع            | الزامی | توضیح                                                             |
+| ------------- | -------------- | ------ | ----------------------------------------------------------------- |
+| `title`       | string         | بله    | عنوان                                                             |
+| `createdBy`   | string         | خیر    | ارسال آن لازم نیست و همیشه با شناسه JWT جایگزین می‌شود            |
+| `projectId`   | string         | خیر    | پروژه مربوط                                                       |
+| `assignedTo`  | string[]       | بله    | آرایه‌ای شامل دقیقاً شناسه یک کاربر مسئول                         |
+| `status`      | TaskStatus     | خیر    | پیش‌فرض todo                                                      |
+| `description` | string         | خیر    | توضیحات                                                           |
+| `taskComment` | string         | خیر    | نظر                                                               |
+| `startDate`   | ISO date-time  | خیر    | زمان دقیق شروع همراه timezone؛ مانند `2026-06-07T09:00:00+03:30`  |
+| `dueDate`     | ISO date-time  | خیر    | زمان دقیق پایان مهلت همراه timezone؛ باید بعد از `startDate` باشد |
+| `file`        | multipart file | خیر    | فایل Excel همراه                                                  |
 
 ## APIها
 
@@ -470,18 +471,20 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 
 ## APIها
 
-| متد   | مسیر                                            | ورودی                                 | خروجی/عملکرد                           |
-| ----- | ----------------------------------------------- | ------------------------------------- | -------------------------------------- |
-| GET   | `/api/manager/statistics`                       | -                                     | تعداد پروژه فعال، تسک باز و کاربر فعال |
-| GET   | `/api/manager/users`                            | `page`, `limit`, `isActive?`, `role?` | لیست کاربران                           |
-| PATCH | `/api/manager/users/:id/role`                   | `{ "role": "supervisor" }`            | تغییر نقش کاربر                        |
-| PATCH | `/api/manager/projects/:id/activation`          | `{ "isActive": true }`                | فعال/آرشیو کردن پروژه                  |
-| GET   | `/api/manager/projects/progress`                | pagination                            | پیشرفت تمام پروژه‌ها                   |
-| GET   | `/api/manager/projects/:id/assignee`            | شناسه پروژه                           | متخصص مسئول پروژه همراه نقش و وضعیت    |
-| GET   | `/api/manager/projects/:id/progress`            | شناسه پروژه                           | پیشرفت پروژه                           |
-| GET   | `/api/manager/tasks/status?projectId=:id`       | projectId اختیاری                     | تعداد تسک بر اساس وضعیت                |
-| GET   | `/api/manager/tasks/users/counts?projectId=:id` | projectId اختیاری                     | تعداد تسک هر کاربر                     |
-| GET   | `/api/manager/users/monthly-performance`        | `month`, `year`, `projectId?`         | عملکرد ماهانه کاربران                  |
+| متد   | مسیر                                            | ورودی                                          | خروجی/عملکرد                           |
+| ----- | ----------------------------------------------- | ---------------------------------------------- | -------------------------------------- |
+| GET   | `/api/manager/statistics`                       | -                                              | تعداد پروژه فعال، تسک باز و کاربر فعال |
+| GET   | `/api/manager/users`                            | `page`, `limit`, `isActive?`, `role?`, `name?` | لیست کاربران با جستجوی نام             |
+| PATCH | `/api/manager/users/:id/role`                   | `{ "role": "supervisor" }`                     | تغییر نقش کاربر                        |
+| PATCH | `/api/manager/projects/:id/activation`          | `{ "isActive": true }`                         | فعال/آرشیو کردن پروژه                  |
+| GET   | `/api/manager/projects/progress`                | pagination                                     | پیشرفت تمام پروژه‌ها                   |
+| GET   | `/api/manager/projects/:id/assignee`            | شناسه پروژه                                    | متخصص مسئول پروژه همراه نقش و وضعیت    |
+| GET   | `/api/manager/projects/:id/progress`            | شناسه پروژه                                    | پیشرفت پروژه                           |
+| GET   | `/api/manager/tasks/status?projectId=:id`       | projectId اختیاری                              | تعداد تسک بر اساس وضعیت                |
+| GET   | `/api/manager/tasks/users/counts?projectId=:id` | projectId اختیاری                              | تعداد تسک هر کاربر                     |
+| GET   | `/api/manager/users/monthly-performance`        | `month`, `year`, `projectId?`                  | عملکرد ماهانه کاربران                  |
+
+فیلتر `name` در `/api/manager/users` بدون حساسیت به حروف در `firstName` و `lastName` جستجو می‌کند و عبارت چندکلمه‌ای را نیز پشتیبانی می‌کند.
 
 ### خروجی statistics
 

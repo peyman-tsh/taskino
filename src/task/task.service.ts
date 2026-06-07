@@ -130,8 +130,15 @@ export class TaskService {
       (participant) => participant.userId === creatorId,
     );
 
-    if (creator?.role !== UserRole.MANAGER) {
-      throw new BadRequestException('Task creator must have the manager role');
+    if (
+      !creator ||
+      ![UserRole.MANAGER, UserRole.SUPERVISOR].includes(
+        creator.role as UserRole,
+      )
+    ) {
+      throw new BadRequestException(
+        'Task creator must have the manager or supervisor role',
+      );
     }
 
     const invalidAssignee = participants.find(

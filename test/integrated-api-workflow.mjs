@@ -312,6 +312,53 @@ if (
   throw new Error('Task start and deadline hours were not preserved');
 }
 
+const supervisorProjectTask = await request(
+  'create project task by supervisor',
+  'POST',
+  '/tasks',
+  {
+    token: supervisor.accessToken,
+    expectedStatus: 201,
+    body: {
+      title: `Supervisor Project Task ${runId}`,
+      projectId,
+      assignedTo: [specialistId],
+      startDate: taskStartDate.toISOString(),
+      dueDate: taskDueDate.toISOString(),
+    },
+  },
+);
+
+if (
+  (supervisorProjectTask.createdBy?._id ?? supervisorProjectTask.createdBy) !==
+  supervisorId
+) {
+  throw new Error('Supervisor was not recorded as the project task creator');
+}
+
+const supervisorStandaloneTask = await request(
+  'create standalone task by supervisor',
+  'POST',
+  '/tasks',
+  {
+    token: supervisor.accessToken,
+    expectedStatus: 201,
+    body: {
+      title: `Supervisor Standalone Task ${runId}`,
+      assignedTo: [specialistId],
+      startDate: taskStartDate.toISOString(),
+      dueDate: taskDueDate.toISOString(),
+    },
+  },
+);
+
+if (
+  (supervisorStandaloneTask.createdBy?._id ??
+    supervisorStandaloneTask.createdBy) !== supervisorId
+) {
+  throw new Error('Supervisor was not recorded as the standalone task creator');
+}
+
 await request('reject specialist task update', 'PATCH', `/tasks/${taskId}`, {
   token: specialist.accessToken,
   expectedStatus: 403,
@@ -487,6 +534,21 @@ await request(
     token: manager.accessToken,
   },
 );
+const managerUsersByName = await request(
+  'manager users filtered by name',
+  'GET',
+  `/manager/users?page=1&limit=20&name=${encodeURIComponent(`Specialist-${suffix}`)}`,
+  {
+    token: manager.accessToken,
+  },
+);
+if (
+  !managerUsersByName.data.some(
+    (filteredUser) => filteredUser._id === specialistId,
+  )
+) {
+  throw new Error('Manager user name filter did not return the expected user');
+}
 await request(
   'manager update role',
   'PATCH',
@@ -601,6 +663,8 @@ console.log(
         projectId,
         privateProjectId: privateProject._id,
         taskId,
+        supervisorProjectTaskId: supervisorProjectTask._id,
+        supervisorStandaloneTaskId: supervisorStandaloneTask._id,
         fixedTaskId,
         dailyFixedTaskId: dailyFixedTask._id,
         weeklyFixedTaskId: weeklyFixedTask._id,

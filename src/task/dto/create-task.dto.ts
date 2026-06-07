@@ -25,12 +25,13 @@ export class CreateTaskDto {
   @IsNotEmpty()
   title: string;
 
-  @ApiProperty({
-    description: 'ID of the user who created the task (Manager)',
+  @ApiPropertyOptional({
+    description:
+      'Ignored when sent by the client; the creator ID is always taken from JWT',
     example: '64a7b1c2d3e4f5a6b7c8d9e0',
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   createdBy: string;
 
   @ApiPropertyOptional({

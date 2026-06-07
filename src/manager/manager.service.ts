@@ -50,6 +50,7 @@ export class ManagerService extends BaseManagerService {
     return this.userService.findForManager(page, limit, {
       isActive: query.isActive,
       role: query.role,
+      name: query.name,
     });
   }
 

@@ -68,7 +68,7 @@ export class ManagerController {
   @ApiOperation({
     summary: 'Get users list',
     description:
-      'Returns paginated users with optional role and active status filters',
+      'Returns paginated users with optional name, role, and active status filters',
   })
   @ApiQuery({
     name: 'page',
@@ -93,6 +93,12 @@ export class ManagerController {
     required: false,
     enum: UserRole,
     description: 'Filter by user role',
+  })
+  @ApiQuery({
+    name: 'name',
+    required: false,
+    type: String,
+    description: 'Case-insensitive search in first name and last name',
   })
   @ApiOkResponse({
     description: 'Users retrieved successfully',

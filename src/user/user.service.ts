@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
@@ -17,13 +22,17 @@ export class UserService {
     private readonly userModel: Model<UserDocument>,
     private readonly configService: ConfigService,
   ) {
-    this.bcryptSaltRounds = this.configService.get<number>('app.bcryptSaltRounds') ?? 10;
+    this.bcryptSaltRounds =
+      this.configService.get<number>('app.bcryptSaltRounds') ?? 10;
   }
 
   /**
    * Create a new user (password should already be hashed by AuthService)
    */
-  async create(createUserDto: CreateUserDto, hashedPassword?: string): Promise<UserDocument> {
+  async create(
+    createUserDto: CreateUserDto,
+    hashedPassword?: string,
+  ): Promise<UserDocument> {
     const { email, password, ...rest } = createUserDto;
 
     const existingUser = await this.userModel.findOne({ email }).exec();
@@ -35,7 +44,7 @@ export class UserService {
     const createdUser = new this.userModel({
       ...rest,
       email,
-      password: hashedPassword || password
+      password: hashedPassword || password,
     });
 
     return createdUser.save();
@@ -44,7 +53,10 @@ export class UserService {
   /**
    * Find all users with pagination
    */
-  async findAll(page: number = 1, limit: number = 10): Promise<{
+  async findAll(
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<{
     data: Omit<UserDocument, 'password'>[];
     total: number;
     page: number;
@@ -70,13 +82,17 @@ export class UserService {
   }
 
   async findProfilesByIds(userIds: string[]) {
-    const validUserIds = userIds.filter((userId) => Types.ObjectId.isValid(userId));
+    const validUserIds = userIds.filter((userId) =>
+      Types.ObjectId.isValid(userId),
+    );
     if (validUserIds.length === 0) {
       return [];
     }
 
     const users = await this.userModel
-      .find({ _id: { $in: validUserIds.map((userId) => new Types.ObjectId(userId)) } })
+      .find({
+        _id: { $in: validUserIds.map((userId) => new Types.ObjectId(userId)) },
+      })
       .select('firstName lastName email mobile isActive score')
       .lean()
       .exec();
@@ -94,19 +110,25 @@ export class UserService {
 
   async findProjectParticipantsByIds(userIds: string[]) {
     const uniqueUserIds = [...new Set(userIds)];
-    const invalidUserIds = uniqueUserIds.filter((userId) => !Types.ObjectId.isValid(userId));
+    const invalidUserIds = uniqueUserIds.filter(
+      (userId) => !Types.ObjectId.isValid(userId),
+    );
     if (invalidUserIds.length > 0) {
       throw new BadRequestException('Invalid project participant user IDs');
     }
 
     const users = await this.userModel
-      .find({ _id: { $in: uniqueUserIds.map((userId) => new Types.ObjectId(userId)) } })
+      .find({
+        _id: { $in: uniqueUserIds.map((userId) => new Types.ObjectId(userId)) },
+      })
       .select('roles workField isActive')
       .lean()
       .exec();
 
     if (users.length !== uniqueUserIds.length) {
-      throw new NotFoundException('One or more project participants were not found');
+      throw new NotFoundException(
+        'One or more project participants were not found',
+      );
     }
 
     return users.map((user) => ({
@@ -119,7 +141,9 @@ export class UserService {
 
   async assertUsersExist(userIds: string[]): Promise<void> {
     const uniqueUserIds = [...new Set(userIds)];
-    const invalidUserIds = uniqueUserIds.filter((userId) => !Types.ObjectId.isValid(userId));
+    const invalidUserIds = uniqueUserIds.filter(
+      (userId) => !Types.ObjectId.isValid(userId),
+    );
     if (invalidUserIds.length > 0) {
       throw new BadRequestException('Invalid user IDs');
     }
@@ -141,6 +165,7 @@ export class UserService {
     filters?: {
       isActive?: boolean;
       role?: UserRole;
+      name?: string;
     },
   ): Promise<{
     data: Omit<UserDocument, 'password'>[];
@@ -159,8 +184,24 @@ export class UserService {
       query.roles = filters.role;
     }
 
+    const nameTerms = filters?.name?.trim().split(/\s+/).filter(Boolean) ?? [];
+    if (nameTerms.length > 0) {
+      query.$and = nameTerms.map((term) => {
+        const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const namePattern = new RegExp(escapedTerm, 'i');
+        return {
+          $or: [{ firstName: namePattern }, { lastName: namePattern }],
+        };
+      });
+    }
+
     const [data, total] = await Promise.all([
-      this.userModel.find(query).skip(skip).limit(limit).sort({ createdAt: -1 }).exec(),
+      this.userModel
+        .find(query)
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 })
+        .exec(),
       this.userModel.countDocuments(query).exec(),
     ]);
 
@@ -189,7 +230,10 @@ export class UserService {
    * Find a user by mobile number (with password for authentication)
    */
   async findByMobile(mobile: string): Promise<UserDocument> {
-    const user = await this.userModel.findOne({ mobile }).select('+password').exec();
+    const user = await this.userModel
+      .findOne({ mobile })
+      .select('+password')
+      .exec();
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -201,7 +245,10 @@ export class UserService {
   /**
    * Update a user by ID
    */
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<Omit<UserDocument, 'password'>> {
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<Omit<UserDocument, 'password'>> {
     const user = await this.userModel.findById(id).exec();
 
     if (!user) {
@@ -240,23 +287,27 @@ export class UserService {
       updateData.password = await bcrypt.hash(password, this.bcryptSaltRounds);
     }
 
-   
-    await this.userModel.findByIdAndUpdate(
-  id,
-  {
-    ...updateData,
-    updatedAt: new Date(),
-  },
-  { new: true }
- ).exec();
-  
+    await this.userModel
+      .findByIdAndUpdate(
+        id,
+        {
+          ...updateData,
+          updatedAt: new Date(),
+        },
+        { new: true },
+      )
+      .exec();
+
     const updatedUser = await this.findById(id);
 
-      console.log(updateData.mobile,updatedUser.mobile);
+    console.log(updateData.mobile, updatedUser.mobile);
     return updatedUser;
   }
 
-  async updateRole(id: string, role: UserRole | string): Promise<Omit<UserDocument, 'password'>> {
+  async updateRole(
+    id: string,
+    role: UserRole | string,
+  ): Promise<Omit<UserDocument, 'password'>> {
     const user = await this.userModel
       .findByIdAndUpdate(
         id,
@@ -286,13 +337,12 @@ export class UserService {
     }
   }
 
-
   async approveExpert(userId: string) {
     console.log('in');
-    
+
     const user = await this.userModel.findById(userId);
     console.log(user);
-    
+
     if (!user) {
       throw new NotFoundException('User not found');
     }
