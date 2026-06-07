@@ -35,10 +35,18 @@ export class TaskResponseDto {
   @ApiProperty()
   isPublic: boolean;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    type: String,
+    format: 'date-time',
+    example: '2026-06-07T05:30:00.000Z',
+  })
   startDate?: Date;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    type: String,
+    format: 'date-time',
+    example: '2026-06-07T13:30:00.000Z',
+  })
   dueDate?: Date;
 }
 

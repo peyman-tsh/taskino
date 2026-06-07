@@ -73,8 +73,10 @@ Authorization: Bearer <accessToken>
 
 - خروجی endpointهای اصلی با Response DTO در Swagger مستند شده‌اند و Schemaهای Mongoose مستقیماً قرارداد API نیستند.
 - تغییر متخصص پروژه، انتقال Taskها و انتقال FixedTaskها داخل transaction انجام می‌شود؛ محیط MongoDB production باید replica set یا mongos داشته باشد.
-- تاریخ‌های `Task.startDate` و `Task.dueDate` از نوع MongoDB Date هستند.
+- تاریخ‌های `Task.startDate` و `Task.dueDate` از نوع MongoDB Date هستند و ساعت دقیق را نگه می‌دارند.
+- ورودی زمان Task باید ISO 8601 همراه timezone باشد؛ مانند `2026-06-07T09:00:00+03:30`. تاریخ بدون ساعت پذیرفته نمی‌شود و `dueDate` باید بعد از `startDate` باشد.
 - برای تبدیل داده‌های قدیمی رشته‌ای اجرا کنید: `npm run migrate:task-dates`.
+- برای تنظیم عمومی/خصوصی بودن پروژه‌های قدیمی بر اساس `assigneeId` اجرا کنید: `npm run migrate:project-visibility`.
 - منطق گزارش وظایف ثابت در `FixedTaskReportService` از CRUD الگوها جدا شده است.
 
 ---
@@ -191,37 +193,42 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 - مالک پروژه باید نقش `manager` داشته باشد.
 - `supervisorId` باید متعلق به کاربری با نقش `supervisor` باشد.
 - هر پروژه حداکثر یک متخصص مسئول در فیلد `assigneeId` دارد.
+- پروژه بدون `assigneeId` عمومی است و `isPublic=true` دارد.
+- پروژه دارای `assigneeId` خصوصی است و `isPublic=false` دارد.
+- هنگام تخصیص متخصص توسط سرپرست، پروژه به‌صورت خودکار از عمومی به خصوصی تبدیل می‌شود.
+- مقدار `isPublic` از وجود متخصص محاسبه می‌شود و ورودی ناسازگار کاربر را قبول نمی‌کند.
 - متخصص مسئول باید فعال، دارای نقش `specialist` و هم‌حوزه با پروژه باشد.
 - مالک، سرپرست و متخصص مسئول باید با `workField` پروژه یکسان باشند.
 - پیشرفت پروژه بر اساس تسک‌هایی محاسبه می‌شود که `projectId` آن‌ها برابر شناسه پروژه است.
 
 ## ورودی ساخت پروژه
 
-| فیلد           | نوع           | الزامی | توضیح            |
-| -------------- | ------------- | ------ | ---------------- |
-| `title`        | string        | بله    | عنوان پروژه      |
-| `description`  | string        | خیر    | توضیحات          |
-| `status`       | ProjectStatus | خیر    | پیش‌فرض pending  |
-| `workField`    | WorkField     | بله    | حوزه کاری        |
-| `owner`        | MongoId       | بله    | شناسه مدیر مالک  |
-| `supervisorId` | MongoId       | بله    | شناسه سرپرست     |
-| `startDate`    | ISO date      | خیر    | تاریخ شروع       |
-| `endDate`      | ISO date      | خیر    | تاریخ پایان      |
-| `isArchived`   | boolean       | خیر    | آرشیو بودن پروژه |
+| فیلد           | نوع           | الزامی | توضیح                                               |
+| -------------- | ------------- | ------ | --------------------------------------------------- |
+| `title`        | string        | بله    | عنوان پروژه                                         |
+| `description`  | string        | خیر    | توضیحات                                             |
+| `status`       | ProjectStatus | خیر    | پیش‌فرض pending                                     |
+| `workField`    | WorkField     | بله    | حوزه کاری                                           |
+| `owner`        | MongoId       | بله    | شناسه مدیر مالک                                     |
+| `supervisorId` | MongoId       | بله    | شناسه سرپرست                                        |
+| `assigneeId`   | MongoId       | خیر    | متخصص مسئول؛ در صورت ارسال پروژه خصوصی ساخته می‌شود |
+| `startDate`    | ISO date      | خیر    | تاریخ شروع                                          |
+| `endDate`      | ISO date      | خیر    | تاریخ پایان                                         |
+| `isArchived`   | boolean       | خیر    | آرشیو بودن پروژه                                    |
 
 ## APIها
 
-| متد    | مسیر                              | ورودی                                                            | خروجی/عملکرد                                   |
-| ------ | --------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------- |
-| POST   | `/api/projects`                   | CreateProjectDto                                                 | ساخت پروژه                                     |
-| GET    | `/api/projects`                   | `page`, `limit`, `owner?`, `assignee?`, `status?`, `isArchived?` | لیست پروژه‌ها با فیلتر متخصص مسئول             |
-| GET    | `/api/projects/:id`               | شناسه پروژه                                                      | پروژه با owner، supervisor، assigneeId و tasks |
-| GET    | `/api/projects/owner/:ownerId`    | شناسه مالک                                                       | پروژه‌های مالک                                 |
-| PATCH  | `/api/projects/:id`               | فیلدهای قابل ویرایش پروژه                                        | ویرایش پروژه                                   |
-| DELETE | `/api/projects/:id`               | شناسه پروژه                                                      | حذف پروژه                                      |
-| PATCH  | `/api/projects/:id/tasks/:taskId` | شناسه پروژه و تسک                                                | افزودن شناسه تسک به آرایه tasks                |
-| DELETE | `/api/projects/:id/tasks/:taskId` | شناسه پروژه و تسک                                                | حذف شناسه تسک از آرایه tasks                   |
-| GET    | `/api/projects/:id/progress`      | شناسه پروژه                                                      | آمار و درصد پیشرفت                             |
+| متد    | مسیر                              | ورودی                                                                         | خروجی/عملکرد                                   |
+| ------ | --------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------- |
+| POST   | `/api/projects`                   | CreateProjectDto                                                              | ساخت پروژه                                     |
+| GET    | `/api/projects`                   | `page`, `limit`, `owner?`, `assignee?`, `status?`, `isArchived?`, `isPublic?` | لیست پروژه‌ها با فیلتر متخصص و عمومی/خصوصی     |
+| GET    | `/api/projects/:id`               | شناسه پروژه                                                                   | پروژه با owner، supervisor، assigneeId و tasks |
+| GET    | `/api/projects/owner/:ownerId`    | شناسه مالک                                                                    | پروژه‌های مالک                                 |
+| PATCH  | `/api/projects/:id`               | فیلدهای قابل ویرایش پروژه                                                     | ویرایش پروژه                                   |
+| DELETE | `/api/projects/:id`               | شناسه پروژه                                                                   | حذف پروژه                                      |
+| PATCH  | `/api/projects/:id/tasks/:taskId` | شناسه پروژه و تسک                                                             | افزودن شناسه تسک به آرایه tasks                |
+| DELETE | `/api/projects/:id/tasks/:taskId` | شناسه پروژه و تسک                                                             | حذف شناسه تسک از آرایه tasks                   |
+| GET    | `/api/projects/:id/progress`      | شناسه پروژه                                                                   | آمار و درصد پیشرفت                             |
 
 ### نمونه خروجی پیشرفت
 
@@ -256,31 +263,33 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 
 ## ورودی ساخت
 
-| فیلد          | نوع            | الزامی           | توضیح                                              |
-| ------------- | -------------- | ---------------- | -------------------------------------------------- |
-| `title`       | string         | بله              | عنوان                                              |
-| `createdBy`   | string         | در DTO وجود دارد | در Controller با شناسه JWT جایگزین می‌شود          |
-| `projectId`   | string         | خیر              | پروژه مربوط                                        |
-| `assignedTo`  | string[]       | بله              | آرایه‌ای شامل دقیقاً شناسه یک کاربر مسئول          |
-| `status`      | TaskStatus     | خیر              | پیش‌فرض todo                                       |
-| `description` | string         | خیر              | توضیحات                                            |
-| `taskComment` | string         | خیر              | نظر                                                |
-| `startDate`   | ISO date       | خیر              | تاریخ شروع؛ در MongoDB به‌صورت `Date` ذخیره می‌شود |
-| `dueDate`     | ISO date       | خیر              | موعد؛ در MongoDB به‌صورت `Date` ذخیره می‌شود       |
-| `file`        | multipart file | خیر              | فایل Excel همراه                                   |
+| فیلد          | نوع            | الزامی           | توضیح                                                             |
+| ------------- | -------------- | ---------------- | ----------------------------------------------------------------- |
+| `title`       | string         | بله              | عنوان                                                             |
+| `createdBy`   | string         | در DTO وجود دارد | در Controller با شناسه JWT جایگزین می‌شود                         |
+| `projectId`   | string         | خیر              | پروژه مربوط                                                       |
+| `assignedTo`  | string[]       | بله              | آرایه‌ای شامل دقیقاً شناسه یک کاربر مسئول                         |
+| `status`      | TaskStatus     | خیر              | پیش‌فرض todo                                                      |
+| `description` | string         | خیر              | توضیحات                                                           |
+| `taskComment` | string         | خیر              | نظر                                                               |
+| `startDate`   | ISO date-time  | خیر              | زمان دقیق شروع همراه timezone؛ مانند `2026-06-07T09:00:00+03:30`  |
+| `dueDate`     | ISO date-time  | خیر              | زمان دقیق پایان مهلت همراه timezone؛ باید بعد از `startDate` باشد |
+| `file`        | multipart file | خیر              | فایل Excel همراه                                                  |
 
 ## APIها
 
-| متد    | مسیر                          | ورودی                                                   | خروجی/عملکرد                  |
-| ------ | ----------------------------- | ------------------------------------------------------- | ----------------------------- |
-| POST   | `/api/tasks`                  | multipart یا JSON CreateTaskDto + JWT                   | ساخت تسک                      |
-| GET    | `/api/tasks`                  | `page`, `limit`, `createdBy?`, `assignedTo?`, `status?` | لیست تسک‌ها                   |
-| GET    | `/api/tasks/:id`              | شناسه تسک                                               | تسک با کاربران populateشده    |
-| PATCH  | `/api/tasks/:id`              | `title?`, `assignedTo?`, `status?`, `taskComment?`      | ویرایش تسک                    |
-| DELETE | `/api/tasks/:id`              | شناسه تسک                                               | حذف تسک، خروجی `204`          |
-| PATCH  | `/api/tasks/:id/status`       | `{ "status": "done" }`                                  | تغییر وضعیت معتبر             |
-| POST   | `/api/tasks/completion-stats` | `managerId`, `expertId`, `projectId?`                   | آمار تکمیل تسک مدیر/کارشناس   |
-| POST   | `/api/tasks/date-count`       | `projectId`, `userId`, `startdate`, `enddate`           | آمار تسک‌های هم‌پوشان با بازه |
+| متد    | مسیر                          | ورودی                                                                             | خروجی/عملکرد                    |
+| ------ | ----------------------------- | --------------------------------------------------------------------------------- | ------------------------------- |
+| POST   | `/api/tasks`                  | multipart یا JSON CreateTaskDto + JWT                                             | ساخت تسک                        |
+| GET    | `/api/tasks`                  | `page`, `limit`, `createdBy?`, `assignedTo?`, `status?`, `startDate?`, `endDate?` | لیست تسک‌ها با فیلتر بازه زمانی |
+| GET    | `/api/tasks/:id`              | شناسه تسک                                                                         | تسک با کاربران populateشده      |
+| PATCH  | `/api/tasks/:id`              | `title?`, `assignedTo?`, `status?`, `taskComment?`, `startDate?`, `dueDate?`      | ویرایش تسک و ساعت‌های مهلت      |
+| DELETE | `/api/tasks/:id`              | شناسه تسک                                                                         | حذف تسک، خروجی `204`            |
+| PATCH  | `/api/tasks/:id/status`       | `{ "status": "done" }`                                                            | تغییر وضعیت معتبر               |
+| POST   | `/api/tasks/completion-stats` | `managerId`, `expertId`, `projectId?`                                             | آمار تکمیل تسک مدیر/کارشناس     |
+| POST   | `/api/tasks/date-count`       | `projectId`, `userId`, `startdate`, `enddate`                                     | آمار تسک‌های هم‌پوشان با بازه   |
+
+فیلتر `startDate` و `endDate` در `GET /api/tasks` تسک‌هایی را برمی‌گرداند که با بازه زمانی درخواست‌شده هم‌پوشانی دارند. ارسال هرکدام به‌تنهایی مجاز است، اما در صورت ارسال هر دو، `endDate` نباید قبل از `startDate` باشد.
 
 ### خروجی completion-stats
 

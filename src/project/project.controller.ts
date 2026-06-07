@@ -99,6 +99,13 @@ export class ProjectController {
     type: Boolean,
     description: 'Filter by archive status',
   })
+  @ApiQuery({
+    name: 'isPublic',
+    required: false,
+    type: Boolean,
+    description:
+      'Filter public projects without an assignee or private assigned projects',
+  })
   @ApiResponse({
     status: 200,
     description: 'Projects retrieved successfully',
@@ -111,12 +118,14 @@ export class ProjectController {
     @Query('assignee') assignee?: string,
     @Query('status') status?: ProjectStatus,
     @Query('isArchived') isArchived?: boolean,
+    @Query('isPublic') isPublic?: boolean,
   ) {
     return this.projectService.findAll(page, limit, {
       owner,
       assignee,
       status,
       isArchived,
+      isPublic,
     });
   }
 

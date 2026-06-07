@@ -1,54 +1,95 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsBoolean, IsDateString, IsMongoId } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsEnum,
+  IsBoolean,
+  IsDateString,
+  IsMongoId,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProjectStatus } from '../project.schema';
 import { WorkField } from '../../common/enums/work-field.enum';
 
 export class CreateProjectDto {
-  @ApiProperty({ description: 'Title of the project', example: 'New Website Redesign' })
+  @ApiProperty({
+    description: 'Title of the project',
+    example: 'New Website Redesign',
+  })
   @IsString()
   @IsNotEmpty()
   title: string;
 
-  @ApiPropertyOptional({ description: 'Description of the project', example: 'Redesign the company website with modern UI/UX' })
+  @ApiPropertyOptional({
+    description: 'Description of the project',
+    example: 'Redesign the company website with modern UI/UX',
+  })
   @IsOptional()
   @IsString()
   description?: string;
 
-  @ApiPropertyOptional({ description: 'Status of the project', enum: ProjectStatus, example: ProjectStatus.PENDING })
+  @ApiPropertyOptional({
+    description: 'Status of the project',
+    enum: ProjectStatus,
+    example: ProjectStatus.PENDING,
+  })
   @IsOptional()
   @IsEnum(ProjectStatus)
   status?: ProjectStatus;
 
   @ApiProperty({
-    description: 'Project work field. Owner, supervisor, and assigned specialist must have the same work field.',
+    description:
+      'Project work field. Owner, supervisor, and assigned specialist must have the same work field.',
     enum: WorkField,
     example: WorkField.IT,
   })
   @IsEnum(WorkField)
   workField: WorkField;
 
-  @ApiProperty({ description: 'ID of the user who owns the project', example: '64a7b1c2d3e4f5a6b7c8d9e0' })
+  @ApiProperty({
+    description: 'ID of the user who owns the project',
+    example: '64a7b1c2d3e4f5a6b7c8d9e0',
+  })
   @IsMongoId()
   owner: string;
 
   @ApiProperty({
-    description: 'ID of the supervisor responsible for the project. The user must have the supervisor role.',
+    description:
+      'ID of the supervisor responsible for the project. The user must have the supervisor role.',
     example: '64a7b1c2d3e4f5a6b7c8d9e1',
   })
   @IsMongoId()
   supervisorId: string;
 
-  @ApiPropertyOptional({ description: 'Start date of the project', example: '2024-01-01' })
+  @ApiPropertyOptional({
+    description:
+      'Optional specialist responsible for the project. When provided, the project is created as private; without it, the project is public.',
+    example: '64a7b1c2d3e4f5a6b7c8d9e2',
+  })
+  @IsOptional()
+  @IsMongoId()
+  assigneeId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Start date of the project',
+    example: '2024-01-01',
+  })
   @IsOptional()
   @IsDateString()
   startDate?: string;
 
-  @ApiPropertyOptional({ description: 'End date of the project', example: '2024-12-31' })
+  @ApiPropertyOptional({
+    description: 'End date of the project',
+    example: '2024-12-31',
+  })
   @IsOptional()
   @IsDateString()
   endDate?: string;
 
-  @ApiPropertyOptional({ description: 'Whether the project is archived', example: false })
+  @ApiPropertyOptional({
+    description: 'Whether the project is archived',
+    example: false,
+  })
   @IsOptional()
   @IsBoolean()
   isArchived?: boolean;

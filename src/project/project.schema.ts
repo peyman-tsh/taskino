@@ -63,6 +63,13 @@ export class Project {
   })
   assigneeId?: Types.ObjectId;
 
+  @Prop({
+    type: Boolean,
+    default: true,
+    index: true,
+  })
+  isPublic: boolean;
+
   @Prop()
   startDate?: Date;
 
@@ -82,3 +89,7 @@ export class Project {
 }
 
 export const ProjectSchema = SchemaFactory.createForClass(Project);
+
+ProjectSchema.pre('validate', function () {
+  this.isPublic = !this.assigneeId;
+});

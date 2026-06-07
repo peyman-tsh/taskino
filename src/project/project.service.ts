@@ -193,7 +193,7 @@ export class ProjectService {
    * Create a new project
    */
   async create(createProjectDto: CreateProjectDto): Promise<ProjectDocument> {
-    const { owner, supervisorId, ...rest } = createProjectDto;
+    const { owner, supervisorId, assigneeId, ...rest } = createProjectDto;
 
     // Validate owner is a valid ObjectId
     if (!Types.ObjectId.isValid(owner)) {
@@ -204,11 +204,14 @@ export class ProjectService {
       createProjectDto.workField,
       owner,
       supervisorId,
+      assigneeId,
     );
     const createdProject = new this.projectModel({
       ...rest,
       owner: new Types.ObjectId(owner),
       supervisorId: new Types.ObjectId(supervisorId),
+      assigneeId: assigneeId ? new Types.ObjectId(assigneeId) : undefined,
+      isPublic: !assigneeId,
     });
 
     return createdProject.save();
@@ -225,6 +228,7 @@ export class ProjectService {
       assignee?: string;
       status?: ProjectStatus;
       isArchived?: boolean;
+      isPublic?: boolean;
     },
   ): Promise<{
     data: ProjectDocument[];
@@ -250,6 +254,10 @@ export class ProjectService {
 
     if (filters?.isArchived !== undefined) {
       query.isArchived = filters.isArchived;
+    }
+
+    if (filters?.isPublic !== undefined) {
+      query.isPublic = filters.isPublic;
     }
 
     const [data, total] = await Promise.all([
@@ -426,6 +434,7 @@ export class ProjectService {
 
     const previousAssigneeId = this.getProjectAssigneeId(project);
     project.assigneeId = new Types.ObjectId(assigneeId);
+    project.isPublic = false;
     await project.save({ session });
 
     return {

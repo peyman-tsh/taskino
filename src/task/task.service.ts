@@ -104,6 +104,20 @@ export class TaskService {
     }
   }
 
+  private parseTaskDateTime(value: string, fieldName: string): Date {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      throw new BadRequestException(`${fieldName} is not a valid date-time`);
+    }
+    return date;
+  }
+
+  private assertValidDeadline(startDate?: Date, dueDate?: Date): void {
+    if (startDate && dueDate && dueDate.getTime() <= startDate.getTime()) {
+      throw new BadRequestException('dueDate must be after startDate');
+    }
+  }
+
   private async assertStandaloneTaskParticipants(
     creatorId: string,
     assigneeIds: string[],
@@ -177,13 +191,21 @@ export class TaskService {
       await this.assertStandaloneTaskParticipants(createdBy, assignedToArray);
     }
 
+    const parsedStartDate = startDate
+      ? this.parseTaskDateTime(startDate, 'startDate')
+      : undefined;
+    const parsedDueDate = dueDate
+      ? this.parseTaskDateTime(dueDate, 'dueDate')
+      : undefined;
+    this.assertValidDeadline(parsedStartDate, parsedDueDate);
+
     const createdTask = new this.taskModel({
       ...rest,
       createdBy: new Types.ObjectId(createdBy),
       assignedTo: assignedToArray.map((userId) => new Types.ObjectId(userId)),
       projectId: projectId ? new Types.ObjectId(projectId) : undefined,
-      startDate: startDate ? new Date(startDate) : undefined,
-      dueDate: dueDate ? new Date(dueDate) : undefined,
+      startDate: parsedStartDate,
+      dueDate: parsedDueDate,
     });
 
     // Handle file upload if provided
@@ -225,6 +247,8 @@ export class TaskService {
       createdBy?: string;
       assignedTo?: string;
       status?: TaskStatus;
+      startDate?: string;
+      endDate?: string;
     },
   ): Promise<{
     data: TaskDocument[];
@@ -243,6 +267,21 @@ export class TaskService {
     }
     if (filters?.status) {
       query.status = filters.status;
+    }
+    const rangeStart = filters?.startDate
+      ? this.parseTaskDateTime(filters.startDate, 'startDate')
+      : undefined;
+    const rangeEnd = filters?.endDate
+      ? this.parseTaskDateTime(filters.endDate, 'endDate')
+      : undefined;
+    if (rangeStart && rangeEnd && rangeEnd.getTime() < rangeStart.getTime()) {
+      throw new BadRequestException('endDate must be on or after startDate');
+    }
+    if (rangeStart) {
+      query.dueDate = { $gte: rangeStart };
+    }
+    if (rangeEnd) {
+      query.startDate = { $lte: rangeEnd };
     }
 
     const [data, total] = await Promise.all([
@@ -298,11 +337,20 @@ export class TaskService {
     const updateData: Record<string, unknown> = Object.fromEntries(
       Object.entries(updateTaskDto).filter(([_, value]) => value !== undefined),
     );
+    const nextStartDate =
+      updateTaskDto.startDate !== undefined
+        ? this.parseTaskDateTime(updateTaskDto.startDate, 'startDate')
+        : task.startDate;
+    const nextDueDate =
+      updateTaskDto.dueDate !== undefined
+        ? this.parseTaskDateTime(updateTaskDto.dueDate, 'dueDate')
+        : task.dueDate;
+    this.assertValidDeadline(nextStartDate, nextDueDate);
     if (updateTaskDto.startDate !== undefined) {
-      updateData.startDate = new Date(updateTaskDto.startDate);
+      updateData.startDate = nextStartDate;
     }
     if (updateTaskDto.dueDate !== undefined) {
-      updateData.dueDate = new Date(updateTaskDto.dueDate);
+      updateData.dueDate = nextDueDate;
     }
 
     // Validate and convert assignedTo if provided
@@ -976,7 +1024,10 @@ export class TaskService {
       .aggregate<{
         _id: TaskStatus;
         count: number;
-      }>([{ $match: match }, { $group: { _id: '$status', count: { $sum: 1 } } }])
+      }>([
+        { $match: match },
+        { $group: { _id: '$status', count: { $sum: 1 } } },
+      ])
       .exec();
 
     const counts = statusCounts.reduce(

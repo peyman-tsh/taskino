@@ -185,10 +185,17 @@ const project = await request('create project', 'POST', '/projects', {
 });
 const projectId = project._id;
 
+if (project.isPublic !== true || project.assigneeId) {
+  throw new Error('A project created without assigneeId must be public');
+}
+
 await request('get project', 'GET', `/projects/${projectId}`, {
   token: manager.accessToken,
 });
 await request('list projects by owner', 'GET', `/projects?owner=${managerId}`, {
+  token: manager.accessToken,
+});
+await request('list public projects', 'GET', '/projects?isPublic=true', {
   token: manager.accessToken,
 });
 await request('update project', 'PATCH', `/projects/${projectId}`, {
@@ -209,7 +216,7 @@ await request(
     body: { assigneeId: roleCandidateId },
   },
 );
-await request(
+const assignedProject = await request(
   'assign specialist to project',
   'PATCH',
   `/supervisor/projects/${projectId}/assignee`,
@@ -219,20 +226,91 @@ await request(
   },
 );
 
-const task = await request('create project task', 'POST', '/tasks', {
+if (assignedProject.project.isPublic !== false) {
+  throw new Error('A project must become private when an assignee is added');
+}
+
+const privateProject = await request(
+  'create private project with assignee',
+  'POST',
+  '/projects',
+  {
+    token: manager.accessToken,
+    expectedStatus: 201,
+    body: {
+      title: `Integration Private Project ${runId}`,
+      description: 'Created privately with an assignee',
+      workField: 'it',
+      owner: managerId,
+      supervisorId,
+      assigneeId: specialistId,
+      isPublic: true,
+    },
+  },
+);
+
+if (privateProject.isPublic !== false || !privateProject.assigneeId) {
+  throw new Error('A project created with assigneeId must be private');
+}
+
+await request('list private projects', 'GET', '/projects?isPublic=false', {
   token: manager.accessToken,
-  expectedStatus: 201,
+});
+
+const taskStartDate = new Date();
+taskStartDate.setUTCHours(6, 15, 0, 0);
+const taskDueDate = new Date(taskStartDate.getTime() + 8 * 60 * 60 * 1000);
+
+await request('reject task date without time', 'POST', '/tasks', {
+  token: manager.accessToken,
+  expectedStatus: 400,
   body: {
-    title: `Integration Task ${runId}`,
-    createdBy: managerId,
+    title: `Invalid date-only Task ${runId}`,
     projectId,
     assignedTo: [specialistId],
-    description: 'Created by integrated API workflow',
-    startDate: new Date().toISOString(),
-    dueDate: new Date(Date.now() + 86_400_000).toISOString(),
+    startDate: '2026-06-07',
+    dueDate: '2026-06-08',
   },
 });
+
+await request('reject deadline before start time', 'POST', '/tasks', {
+  token: manager.accessToken,
+  expectedStatus: 400,
+  body: {
+    title: `Invalid deadline Task ${runId}`,
+    projectId,
+    assignedTo: [specialistId],
+    startDate: taskDueDate.toISOString(),
+    dueDate: taskStartDate.toISOString(),
+  },
+});
+
+const task = await request(
+  'create project task with exact hours',
+  'POST',
+  '/tasks',
+  {
+    token: manager.accessToken,
+    expectedStatus: 201,
+    body: {
+      title: `Integration Task ${runId}`,
+      createdBy: managerId,
+      projectId,
+      assignedTo: [specialistId],
+      description: 'Created by integrated API workflow',
+      startDate: taskStartDate.toISOString(),
+      dueDate: taskDueDate.toISOString(),
+    },
+  },
+);
 const taskId = task._id;
+
+if (
+  task.startDate !== taskStartDate.toISOString() ||
+  task.dueDate !== taskDueDate.toISOString()
+) {
+  throw new Error('Task start and deadline hours were not preserved');
+}
 
 await request('reject specialist task update', 'PATCH', `/tasks/${taskId}`, {
   token: specialist.accessToken,
@@ -253,6 +331,11 @@ await request('update task', 'PATCH', `/tasks/${taskId}`, {
   token: manager.accessToken,
   body: { taskComment: 'Integration workflow update', status: 'in_progress' },
 });
+await request('reject invalid deadline update', 'PATCH', `/tasks/${taskId}`, {
+  token: manager.accessToken,
+  expectedStatus: 400,
+  body: { dueDate: new Date(taskStartDate.getTime() - 60_000).toISOString() },
+});
 await request('complete task', 'PATCH', `/tasks/${taskId}/status`, {
   token: manager.accessToken,
   body: { status: 'done' },
@@ -266,6 +349,28 @@ await request(
   `/tasks?assignedTo=${specialistId}`,
   {
     token: manager.accessToken,
+  },
+);
+const dateFilteredTasks = await request(
+  'list tasks overlapping date range',
+  'GET',
+  `/tasks?startDate=${encodeURIComponent(new Date(taskStartDate.getTime() + 60_000).toISOString())}&endDate=${encodeURIComponent(new Date(taskDueDate.getTime() - 60_000).toISOString())}`,
+  {
+    token: manager.accessToken,
+  },
+);
+if (
+  !dateFilteredTasks.data.some((filteredTask) => filteredTask._id === taskId)
+) {
+  throw new Error('Task date-range filter did not return the overlapping task');
+}
+await request(
+  'reject invalid task date range',
+  'GET',
+  `/tasks?startDate=${encodeURIComponent(taskDueDate.toISOString())}&endDate=${encodeURIComponent(taskStartDate.toISOString())}`,
+  {
+    token: manager.accessToken,
+    expectedStatus: 400,
   },
 );
 
@@ -494,6 +599,7 @@ console.log(
         specialistId,
         roleCandidateId,
         projectId,
+        privateProjectId: privateProject._id,
         taskId,
         fixedTaskId,
         dailyFixedTaskId: dailyFixedTask._id,
@@ -502,6 +608,7 @@ console.log(
       persisted: {
         projectAssigneeId:
           finalProject.assigneeId?._id ?? finalProject.assigneeId,
+        projectIsPublic: finalProject.isPublic,
         projectArchived: finalProject.isArchived,
         taskStatus: finalTask.status,
         fixedTaskRecurrence: finalFixedTask.recurrence,

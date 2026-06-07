@@ -27,6 +27,12 @@ export class ProjectResponseDto {
   @ApiPropertyOptional({ type: Object })
   assigneeId?: object;
 
+  @ApiProperty({
+    description:
+      'Public projects have no assignee; assigned projects are private',
+  })
+  isPublic: boolean;
+
   @ApiPropertyOptional()
   startDate?: Date;
 

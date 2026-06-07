@@ -5,10 +5,15 @@ import {
   IsOptional,
   IsArray,
   IsEnum,
+  Matches,
   IsDateString,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskStatus } from '../task.schema';
+import {
+  TASK_DATE_TIME_MESSAGE,
+  TASK_DATE_TIME_PATTERN,
+} from './task-date-time.constants';
 
 export class UpdateTaskDto {
   @ApiPropertyOptional({
@@ -47,13 +52,26 @@ export class UpdateTaskDto {
   @IsString()
   taskComment?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description: 'Exact task start date and time, including timezone',
+    example: '2026-06-07T09:00:00+03:30',
+  })
   @IsOptional()
   @IsDateString()
+  @Matches(TASK_DATE_TIME_PATTERN, {
+    message: `startDate ${TASK_DATE_TIME_MESSAGE}`,
+  })
   startDate?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description:
+      'Exact task deadline date and time, including timezone; must be after startDate',
+    example: '2026-06-07T17:00:00+03:30',
+  })
   @IsOptional()
   @IsDateString()
+  @Matches(TASK_DATE_TIME_PATTERN, {
+    message: `dueDate ${TASK_DATE_TIME_MESSAGE}`,
+  })
   dueDate?: string;
 }

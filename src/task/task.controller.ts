@@ -122,6 +122,22 @@ export class TaskController {
     type: String,
     description: 'Filter by task status (todo, in_progress, done)',
   })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    type: String,
+    description:
+      'Range start as ISO date-time. Returns tasks whose dueDate is on or after this value.',
+    example: '2026-06-07T00:00:00+03:30',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    type: String,
+    description:
+      'Range end as ISO date-time. Returns tasks whose startDate is on or before this value.',
+    example: '2026-06-07T23:59:59+03:30',
+  })
   @ApiResponse({
     status: 200,
     description: 'Tasks retrieved successfully',
@@ -133,11 +149,15 @@ export class TaskController {
     @Query('createdBy') createdBy?: string,
     @Query('assignedTo') assignedTo?: string,
     @Query('status') status?: TaskStatus,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ) {
     return this.taskService.findAll(page, limit, {
       createdBy,
       assignedTo,
       status,
+      startDate,
+      endDate,
     });
   }
 

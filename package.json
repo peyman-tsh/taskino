@@ -20,6 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "test:integrated-api": "node test/integrated-api-workflow.mjs",
     "migrate:task-dates": "ts-node -r tsconfig-paths/register src/task/migrations/migrate-task-dates.ts",
+    "migrate:project-visibility": "ts-node -r tsconfig-paths/register src/project/migrations/migrate-project-visibility.ts",
     "seed:fixed-tasks": "ts-node -r tsconfig-paths/register src/task/seeds/seed-fixed-tasks-from-excel.ts"
   },
   "dependencies": {
