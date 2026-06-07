@@ -29,7 +29,7 @@ export class SupervisorProjectSummaryDto {
   isArchived: boolean;
 
   @ApiProperty({ example: 5 })
-  membersCount: number;
+  assigneeCount: number;
 
   @ApiProperty({ example: 20 })
   totalTasks: number;
@@ -55,7 +55,7 @@ export class SupervisorProjectsResponseDto {
   limit: number;
 }
 
-export class ProjectMemberResponseDto {
+export class ProjectAssigneeProfileResponseDto {
   @ApiProperty({ example: '64a7b1c2d3e4f5a6b7c8d9e1' })
   userId: string;
 
@@ -75,18 +75,18 @@ export class ProjectMemberResponseDto {
   isActive: boolean;
 }
 
-export class ProjectMembersResponseDto {
+export class ProjectAssigneeResponseDto {
   @ApiProperty({ example: '64a7b1c2d3e4f5a6b7c8d9e1' })
   projectId: string;
 
   @ApiProperty({ example: 'Website Redesign' })
   projectName: string;
 
-  @ApiProperty({ type: [ProjectMemberResponseDto] })
-  members: ProjectMemberResponseDto[];
+  @ApiProperty({ type: ProjectAssigneeProfileResponseDto, nullable: true })
+  assignee: ProjectAssigneeProfileResponseDto | null;
 }
 
-export class MemberPerformanceResponseDto extends ProjectMemberResponseDto {
+export class AssigneePerformanceResponseDto extends ProjectAssigneeProfileResponseDto {
   @ApiProperty({ example: 100 })
   score: number;
 
@@ -106,15 +106,15 @@ export class MemberPerformanceResponseDto extends ProjectMemberResponseDto {
   completionRate: number;
 }
 
-export class ProjectMembersPerformanceResponseDto {
+export class ProjectAssigneePerformanceResponseDto {
   @ApiProperty({ example: '64a7b1c2d3e4f5a6b7c8d9e1' })
   projectId: string;
 
   @ApiProperty({ example: 'Website Redesign' })
   projectName: string;
 
-  @ApiProperty({ type: [MemberPerformanceResponseDto] })
-  members: MemberPerformanceResponseDto[];
+  @ApiProperty({ type: AssigneePerformanceResponseDto, nullable: true })
+  assignee: AssigneePerformanceResponseDto | null;
 }
 
 export class SupervisorProjectReportResponseDto {
@@ -125,7 +125,7 @@ export class SupervisorProjectReportResponseDto {
   projectName: string;
 
   @ApiProperty({ example: 5 })
-  membersCount: number;
+  assigneeCount: number;
 
   @ApiProperty({ example: 20 })
   totalTasks: number;
@@ -146,11 +146,14 @@ export class SupervisorProjectReportResponseDto {
   completionRate: number;
 }
 
-export class TeamMemberPerformanceResponseDto extends MemberPerformanceResponseDto {
+export class TeamAssigneePerformanceResponseDto extends AssigneePerformanceResponseDto {
   @ApiProperty({ example: 2 })
   projectsCount: number;
 
-  @ApiProperty({ type: [String], example: ['Website Redesign', 'Mobile Application'] })
+  @ApiProperty({
+    type: [String],
+    example: ['Website Redesign', 'Mobile Application'],
+  })
   projects: string[];
 
   @ApiProperty({ example: 1 })
@@ -162,7 +165,7 @@ export class SupervisorTeamPerformanceResponseDto {
   projectsCount: number;
 
   @ApiProperty({ example: 12 })
-  membersCount: number;
+  assigneeCount: number;
 
   @ApiProperty({ example: 80 })
   totalTasks: number;
@@ -173,6 +176,6 @@ export class SupervisorTeamPerformanceResponseDto {
   @ApiProperty({ example: 56 })
   completionRate: number;
 
-  @ApiProperty({ type: [TeamMemberPerformanceResponseDto] })
-  members: TeamMemberPerformanceResponseDto[];
+  @ApiProperty({ type: [TeamAssigneePerformanceResponseDto] })
+  assignees: TeamAssigneePerformanceResponseDto[];
 }

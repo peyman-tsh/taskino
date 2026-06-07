@@ -5,6 +5,8 @@ import { UserService } from '../user/user.service';
 import { SupervisorPaginationQueryDto } from './dto/supervisor-pagination-query.dto';
 import { UpdateSupervisedTaskStatusDto } from './dto/update-supervised-task-status.dto';
 import { FixedTaskService } from '../fixedTask/fixed-task.service';
+import { InjectConnection } from '@nestjs/mongoose';
+import { ClientSession, Connection } from 'mongoose';
 
 @Injectable()
 export class SupervisorService {
@@ -13,29 +15,82 @@ export class SupervisorService {
     private readonly taskService: TaskService,
     private readonly userService: UserService,
     private readonly fixedTaskService: FixedTaskService,
+    @InjectConnection()
+    private readonly connection: Connection,
   ) {}
+
+  private isTransactionUnsupported(error: unknown): boolean {
+    return (
+      error instanceof Error &&
+      (error.message.includes('Transaction numbers are only allowed') ||
+        error.message.includes('replica set member or mongos'))
+    );
+  }
+
+  private async performProjectReassignment(
+    supervisorId: string,
+    projectId: string,
+    assigneeId: string,
+    session?: ClientSession,
+  ) {
+    const assignment = await this.projectService.assignSpecialistBySupervisor(
+      supervisorId,
+      projectId,
+      assigneeId,
+      session,
+    );
+    const reassignedTasks = await this.taskService.reassignProjectTasks(
+      projectId,
+      assigneeId,
+      session,
+    );
+    const reassignedFixedTasks =
+      await this.fixedTaskService.reassignProjectTemplates(
+        projectId,
+        assigneeId,
+        session,
+      );
+
+    return { assignment, reassignedTasks, reassignedFixedTasks };
+  }
 
   async assignProjectSpecialist(
     supervisorId: string,
     projectId: string,
     assigneeId: string,
   ) {
-    const assignment = await this.projectService.assignSpecialistBySupervisor(
-      supervisorId,
-      projectId,
-      assigneeId,
-    );
-    const [reassignedTasks, reassignedFixedTasks] = await Promise.all([
-      this.taskService.reassignProjectTasks(projectId, assigneeId),
-      this.fixedTaskService.reassignProjectTemplates(projectId, assigneeId),
-    ]);
+    const session = await this.connection.startSession();
+    let reassignment;
+    try {
+      await session.withTransaction(async () => {
+        reassignment = await this.performProjectReassignment(
+          supervisorId,
+          projectId,
+          assigneeId,
+          session,
+        );
+      });
+    } catch (error) {
+      if (!this.isTransactionUnsupported(error)) throw error;
+      reassignment = await this.performProjectReassignment(
+        supervisorId,
+        projectId,
+        assigneeId,
+      );
+    } finally {
+      await session.endSession();
+    }
+
+    if (!reassignment) {
+      throw new Error('Project reassignment did not complete');
+    }
 
     return {
-      project: assignment.project,
-      previousAssigneeId: assignment.previousAssigneeId,
+      project: await this.projectService.findById(projectId),
+      previousAssigneeId: reassignment.assignment.previousAssigneeId,
       assigneeId,
-      reassignedTasks,
-      reassignedFixedTasks,
+      reassignedTasks: reassignment.reassignedTasks,
+      reassignedFixedTasks: reassignment.reassignedFixedTasks,
     };
   }
 
@@ -91,34 +146,39 @@ export class SupervisorService {
     };
   }
 
-  async getProjectMembers(supervisorId: string, projectId: string) {
+  async getProjectAssignee(supervisorId: string, projectId: string) {
     const project = await this.projectService.getSupervisedProjectAccess(
       supervisorId,
       projectId,
     );
-    const members = await this.userService.findProfilesByIds(project.memberIds);
+    const assignee = project.assigneeId
+      ? (await this.userService.findProfilesByIds([project.assigneeId]))[0]
+      : undefined;
 
     return {
       projectId: project.projectId,
       projectName: project.projectName,
-      members: members.map(({ score, ...member }) => member),
+      assignee: assignee
+        ? (({ score, ...profile }) => profile)(assignee)
+        : null,
     };
   }
 
-  async getProjectMembersPerformance(supervisorId: string, projectId: string) {
+  async getProjectAssigneePerformance(supervisorId: string, projectId: string) {
     const project = await this.projectService.getSupervisedProjectAccess(
       supervisorId,
       projectId,
     );
-    const [members, taskCounts] = await Promise.all([
-      this.userService.findProfilesByIds(project.memberIds),
-      this.taskService.getMemberStatusCounts(project.projectId, project.memberIds),
+    const assigneeIds = project.assigneeId ? [project.assigneeId] : [];
+    const [assignees, taskCounts] = await Promise.all([
+      this.userService.findProfilesByIds(assigneeIds),
+      this.taskService.getAssigneeStatusCounts(project.projectId, assigneeIds),
     ]);
     const taskCountsByUserId = new Map(
       taskCounts.map((counts) => [counts.userId, counts]),
     );
 
-    const performance = members
+    const performance = assignees
       .map((member) => {
         const counts = taskCountsByUserId.get(member.userId);
         const totalTasks = counts?.totalTasks ?? 0;
@@ -130,15 +190,20 @@ export class SupervisorService {
           todoTasks: counts?.todoTasks ?? 0,
           inProgressTasks: counts?.inProgressTasks ?? 0,
           doneTasks,
-          completionRate: totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0,
+          completionRate:
+            totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0,
         };
       })
-      .sort((left, right) => right.completionRate - left.completionRate || right.doneTasks - left.doneTasks);
+      .sort(
+        (left, right) =>
+          right.completionRate - left.completionRate ||
+          right.doneTasks - left.doneTasks,
+      );
 
     return {
       projectId: project.projectId,
       projectName: project.projectName,
-      members: performance,
+      assignee: performance[0] ?? null,
     };
   }
 
@@ -148,15 +213,26 @@ export class SupervisorService {
     taskId: string,
     status: UpdateSupervisedTaskStatusDto['status'],
   ) {
-    await this.projectService.getSupervisedProjectAccess(supervisorId, projectId);
+    await this.projectService.getSupervisedProjectAccess(
+      supervisorId,
+      projectId,
+    );
 
     return this.taskService.updateStatusInProject(taskId, projectId, status);
   }
 
-  async getOverdueTasks(supervisorId: string, query: SupervisorPaginationQueryDto) {
-    const projectIds = await this.projectService.findSupervisedProjectIds(supervisorId);
+  async getOverdueTasks(
+    supervisorId: string,
+    query: SupervisorPaginationQueryDto,
+  ) {
+    const projectIds =
+      await this.projectService.findSupervisedProjectIds(supervisorId);
 
-    return this.taskService.findOverdueByProjectIds(projectIds, query.page, query.limit);
+    return this.taskService.findOverdueByProjectIds(
+      projectIds,
+      query.page,
+      query.limit,
+    );
   }
 
   async getProjectReport(supervisorId: string, projectId: string) {
@@ -169,38 +245,51 @@ export class SupervisorService {
     return {
       projectId: project.projectId,
       projectName: project.projectName,
-      membersCount: project.memberIds.length,
+      assigneeCount: project.assigneeId ? 1 : 0,
       ...report,
     };
   }
 
   async getTeamPerformance(supervisorId: string) {
-    const projects = await this.projectService.getSupervisedTeamContext(supervisorId);
+    const projects =
+      await this.projectService.getSupervisedTeamContext(supervisorId);
     const projectIds = projects.map((project) => project.projectId);
-    const memberIds = [...new Set(projects.flatMap((project) => project.memberIds))];
-    const [members, taskCounts] = await Promise.all([
-      this.userService.findProfilesByIds(memberIds),
-      this.taskService.getMemberStatusCountsAcrossProjects(projectIds, memberIds),
+    const assigneeIds = [
+      ...new Set(
+        projects.flatMap((project) =>
+          project.assigneeId ? [project.assigneeId] : [],
+        ),
+      ),
+    ];
+    const [assignees, taskCounts] = await Promise.all([
+      this.userService.findProfilesByIds(assigneeIds),
+      this.taskService.getAssigneeStatusCountsAcrossProjects(
+        projectIds,
+        assigneeIds,
+      ),
     ]);
     const taskCountsByUserId = new Map(
       taskCounts.map((counts) => [counts.userId, counts]),
     );
-    const projectNamesByMemberId = new Map<string, Set<string>>();
+    const projectNamesByAssigneeId = new Map<string, Set<string>>();
 
     projects.forEach((project) => {
-      project.memberIds.forEach((memberId) => {
-        const projectNames = projectNamesByMemberId.get(memberId) ?? new Set<string>();
+      if (project.assigneeId) {
+        const projectNames =
+          projectNamesByAssigneeId.get(project.assigneeId) ?? new Set<string>();
         projectNames.add(project.projectName);
-        projectNamesByMemberId.set(memberId, projectNames);
-      });
+        projectNamesByAssigneeId.set(project.assigneeId, projectNames);
+      }
     });
 
-    const performance = members
+    const performance = assignees
       .map((member) => {
         const counts = taskCountsByUserId.get(member.userId);
         const totalTasks = counts?.totalTasks ?? 0;
         const doneTasks = counts?.doneTasks ?? 0;
-        const projectNames = [...(projectNamesByMemberId.get(member.userId) ?? [])];
+        const projectNames = [
+          ...(projectNamesByAssigneeId.get(member.userId) ?? []),
+        ];
 
         return {
           ...member,
@@ -211,21 +300,33 @@ export class SupervisorService {
           inProgressTasks: counts?.inProgressTasks ?? 0,
           doneTasks,
           overdueTasks: counts?.overdueTasks ?? 0,
-          completionRate: totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0,
+          completionRate:
+            totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0,
         };
       })
-      .sort((left, right) => right.completionRate - left.completionRate || right.doneTasks - left.doneTasks);
+      .sort(
+        (left, right) =>
+          right.completionRate - left.completionRate ||
+          right.doneTasks - left.doneTasks,
+      );
 
-    const totalTasks = performance.reduce((total, member) => total + member.totalTasks, 0);
-    const doneTasks = performance.reduce((total, member) => total + member.doneTasks, 0);
+    const totalTasks = performance.reduce(
+      (total, member) => total + member.totalTasks,
+      0,
+    );
+    const doneTasks = performance.reduce(
+      (total, member) => total + member.doneTasks,
+      0,
+    );
 
     return {
       projectsCount: projects.length,
-      membersCount: performance.length,
+      assigneeCount: performance.length,
       totalTasks,
       doneTasks,
-      completionRate: totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0,
-      members: performance,
+      completionRate:
+        totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0,
+      assignees: performance,
     };
   }
 }

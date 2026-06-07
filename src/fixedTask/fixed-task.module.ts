@@ -1,11 +1,15 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { FixedTaskTemplate, FixedTaskTemplateSchema } from './fixed-task.schema';
+import {
+  FixedTaskTemplate,
+  FixedTaskTemplateSchema,
+} from './fixed-task.schema';
 import { FixedTaskService } from './fixed-task.service';
 import { UserModule } from '../user/user.module';
 import { ProjectModule } from '../project/project.module';
 import { FixedTaskController } from './fixed-task.controller';
 import { Task, TaskSchema } from '../task/task.schema';
+import { FixedTaskReportService } from './fixed-task-report.service';
 
 @Module({
   imports: [
@@ -17,7 +21,7 @@ import { Task, TaskSchema } from '../task/task.schema';
     ]),
   ],
   controllers: [FixedTaskController],
-  providers: [FixedTaskService],
-  exports: [FixedTaskService],
+  providers: [FixedTaskService, FixedTaskReportService],
+  exports: [FixedTaskService, FixedTaskReportService],
 })
 export class FixedTaskModule {}

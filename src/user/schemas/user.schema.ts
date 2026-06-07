@@ -49,19 +49,17 @@ export class User {
   })
   workField: WorkField;
 
-  @Prop({type:Number,required:false})
-  score:number;
-  
-  @Prop({type:Boolean,default:false})
-  isActive:boolean;
+  @Prop({ type: Number, required: false })
+  score: number;
+
+  @Prop({ type: Boolean, default: false })
+  isActive: boolean;
 
   @Prop({ type: Date, default: Date.now })
   createdAt: Date;
 
   @Prop({ type: Date, default: Date.now })
   updatedAt: Date;
-
-
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

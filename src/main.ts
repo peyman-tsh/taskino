@@ -12,7 +12,7 @@ async function bootstrap() {
   // Global validation pipe
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: false,
+      whitelist: true,
       forbidNonWhitelisted: false,
       transform: true,
       transformOptions: {
@@ -37,7 +37,9 @@ async function bootstrap() {
   // Swagger configuration
   const config = new DocumentBuilder()
     .setTitle('Taskino API')
-    .setDescription('Taskino User Management API - CRUD operations for user management')
+    .setDescription(
+      'Taskino User Management API - CRUD operations for user management',
+    )
     .setVersion('1.0')
     .addBearerAuth()
     .addSecurityRequirements('bearer')
@@ -59,6 +61,8 @@ async function bootstrap() {
   await app.listen(port);
 
   console.log(`Application is running on: http://localhost:${port}`);
-  console.log(`Swagger UI is available at: http://localhost:${port}/${appConfig.swaggerPath}`);
+  console.log(
+    `Swagger UI is available at: http://localhost:${port}/${appConfig.swaggerPath}`,
+  );
 }
 bootstrap();

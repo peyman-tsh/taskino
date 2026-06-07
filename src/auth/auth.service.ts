@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
@@ -33,8 +33,11 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {
-    this.jwtSecret = this.configService.get<string>('app.jwtSecret') ?? 'your-super-secret-jwt-key';
-    this.jwtExpiresIn = this.configService.get<string>('app.jwtExpiresIn') ?? '15m';
+    this.jwtSecret =
+      this.configService.get<string>('app.jwtSecret') ??
+      'your-super-secret-jwt-key';
+    this.jwtExpiresIn =
+      this.configService.get<string>('app.jwtExpiresIn') ?? '15m';
   }
 
   /**
@@ -42,14 +45,8 @@ export class AuthService {
    */
   async register(registerDto: RegisterDto): Promise<RegisterResponse> {
     const { password } = registerDto;
-
-    // Hash password before saving
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create user with hashed password
     const user = await this.userService.create(registerDto, hashedPassword);
-
-    // Generate JWT token
     const accessToken = this.generateToken(user);
 
     return {
@@ -91,13 +88,13 @@ export class AuthService {
    * Generate JWT access token
    */
   private generateToken(user: UserDocument): string {
-const payload = {
-  sub: user._id.toString(),
-  email: user.email,
-  firstName: user.firstName,
-  lastName: user.lastName,
-  role: user.roles || UserRole.SPECIALIST,
-};
+    const payload = {
+      sub: user._id.toString(),
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.roles || UserRole.SPECIALIST,
+    };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return this.jwtService.sign(payload, {
@@ -109,7 +106,12 @@ const payload = {
   /**
    * Validate user for JWT strategy
    */
-  async validateUser(payload: { sub: string; email: string; firstName: string; lastName: string }): Promise<Omit<UserDocument, 'password'>> {
+  async validateUser(payload: {
+    sub: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+  }): Promise<Omit<UserDocument, 'password'>> {
     const user = await this.userService.findById(payload.sub);
 
     if (!user) {

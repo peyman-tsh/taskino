@@ -1,0 +1,64 @@
+import { readFileSync } from 'fs';
+import mongoose from 'mongoose';
+
+function loadEnv(): Record<string, string> {
+  return Object.fromEntries(
+    readFileSync('.env', 'utf8')
+      .split(/\r?\n/)
+      .filter(
+        (line) => line && !line.trim().startsWith('#') && line.includes('='),
+      )
+      .map((line) => {
+        const separatorIndex = line.indexOf('=');
+        return [
+          line.slice(0, separatorIndex).trim(),
+          line.slice(separatorIndex + 1).trim(),
+        ];
+      }),
+  );
+}
+
+async function run() {
+  const env = loadEnv();
+  await mongoose.connect(env.MONGODB_URI.replace('localhost', '127.0.0.1'));
+  const tasks = mongoose.connection.collection('tasks');
+
+  const [startDates, dueDates] = await Promise.all([
+    tasks.updateMany({ startDate: { $type: 'string', $ne: '' } }, [
+      {
+        $set: {
+          startDate: {
+            $convert: { input: '$startDate', to: 'date', onError: null },
+          },
+        },
+      },
+    ]),
+    tasks.updateMany({ dueDate: { $type: 'string', $ne: '' } }, [
+      {
+        $set: {
+          dueDate: {
+            $convert: { input: '$dueDate', to: 'date', onError: null },
+          },
+        },
+      },
+    ]),
+  ]);
+
+  console.log(
+    JSON.stringify(
+      {
+        startDatesModified: startDates.modifiedCount,
+        dueDatesModified: dueDates.modifiedCount,
+      },
+      null,
+      2,
+    ),
+  );
+}
+
+run()
+  .catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  })
+  .finally(() => mongoose.disconnect());

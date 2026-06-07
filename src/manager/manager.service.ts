@@ -10,7 +10,7 @@ import { TaskAnalyticsQueryDto } from './dto/task-analytics-query.dto';
 import { Types } from 'mongoose';
 import { UserRole } from '../user/schemas/user.schema';
 
-type PopulatedProjectMember = {
+type PopulatedProjectAssignee = {
   _id: Types.ObjectId;
   firstName: string;
   lastName: string;
@@ -65,27 +65,30 @@ export class ManagerService extends BaseManagerService {
     return this.projectService.setActivation(projectId, isActive);
   }
 
-  async getProjectMembers(projectId: string) {
+  async getProjectAssignee(projectId: string) {
     this.toObjectId(projectId, 'project ID');
 
     const project = await this.projectService.findById(projectId);
-    const populatedAssignee = project.assigneeId as unknown as PopulatedProjectMember | undefined;
-    const projectMembers = populatedAssignee ? [populatedAssignee] : [];
+    const assignee = project.assigneeId as unknown as
+      | PopulatedProjectAssignee
+      | undefined;
 
     return {
       projectId: project._id.toString(),
       projectName: project.title,
-      members: projectMembers.map((projectMember) => ({
-        user: {
-          userId: projectMember._id.toString(),
-          firstName: projectMember.firstName,
-          lastName: projectMember.lastName,
-          email: projectMember.email,
-          workField: projectMember.workField,
-        },
-        role: projectMember.roles,
-        isActive: projectMember.isActive,
-      })),
+      assignee: assignee
+        ? {
+            user: {
+              userId: assignee._id.toString(),
+              firstName: assignee.firstName,
+              lastName: assignee.lastName,
+              email: assignee.email,
+              workField: assignee.workField,
+            },
+            role: assignee.roles,
+            isActive: assignee.isActive,
+          }
+        : null,
     };
   }
 

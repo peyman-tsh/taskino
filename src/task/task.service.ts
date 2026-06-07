@@ -1,6 +1,12 @@
-import { Inject, Injectable, NotFoundException, BadRequestException, forwardRef } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { ClientSession, Model, Types } from 'mongoose';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TaskCompletionStatsDto } from './dto/task-count.dto';
@@ -81,7 +87,9 @@ export class TaskService {
   /**
    * Normalize assignedTo to always be an array of strings.
    */
-  private normalizeAssignedTo(assignedTo: string | string[] | undefined): string[] {
+  private normalizeAssignedTo(
+    assignedTo: string | string[] | undefined,
+  ): string[] {
     if (Array.isArray(assignedTo)) {
       return assignedTo;
     }
@@ -90,7 +98,9 @@ export class TaskService {
 
   private assertSingleAssignee(assignedTo: string[]): void {
     if (assignedTo.length !== 1) {
-      throw new BadRequestException('A task must be assigned to exactly one user');
+      throw new BadRequestException(
+        'A task must be assigned to exactly one user',
+      );
     }
   }
 
@@ -102,7 +112,9 @@ export class TaskService {
       creatorId,
       ...assigneeIds,
     ]);
-    const creator = participants.find((participant) => participant.userId === creatorId);
+    const creator = participants.find(
+      (participant) => participant.userId === creatorId,
+    );
 
     if (creator?.role !== UserRole.MANAGER) {
       throw new BadRequestException('Task creator must have the manager role');
@@ -111,22 +123,33 @@ export class TaskService {
     const invalidAssignee = participants.find(
       (participant) =>
         participant.userId !== creatorId &&
-        ![UserRole.SPECIALIST, UserRole.SUPERVISOR].includes(participant.role as UserRole),
+        ![UserRole.SPECIALIST, UserRole.SUPERVISOR].includes(
+          participant.role as UserRole,
+        ),
     );
 
     if (invalidAssignee) {
-      throw new BadRequestException('Task assignees must have the specialist or supervisor role');
+      throw new BadRequestException(
+        'Task assignees must have the specialist or supervisor role',
+      );
     }
   }
 
   /**
    * Create a new task
    */
-  async create(createTaskDto: CreateTaskDto, file?: Express.Multer.File): Promise<TaskDocument | {
-    task: TaskDocument;
-    excelUpload: ExcelFile;
-  }> {
-    const { createdBy, assignedTo, projectId, ...rest } = createTaskDto;
+  async create(
+    createTaskDto: CreateTaskDto,
+    file?: Express.Multer.File,
+  ): Promise<
+    | TaskDocument
+    | {
+        task: TaskDocument;
+        excelUpload: ExcelFile;
+      }
+  > {
+    const { createdBy, assignedTo, projectId, startDate, dueDate, ...rest } =
+      createTaskDto;
 
     // Validate createdBy
     this.validateObjectId(createdBy);
@@ -135,7 +158,9 @@ export class TaskService {
     const assignedToArray = this.normalizeAssignedTo(assignedTo);
     this.assertSingleAssignee(assignedToArray);
     if (assignedToArray.length > 0) {
-      const invalidIds = assignedToArray.filter((userId) => !Types.ObjectId.isValid(userId));
+      const invalidIds = assignedToArray.filter(
+        (userId) => !Types.ObjectId.isValid(userId),
+      );
       if (invalidIds.length > 0) {
         throw new BadRequestException('Invalid assignedTo user IDs');
       }
@@ -143,7 +168,11 @@ export class TaskService {
 
     if (projectId) {
       this.validateObjectId(projectId);
-      await this.projectService.assertTaskParticipants(projectId, createdBy, assignedToArray);
+      await this.projectService.assertTaskParticipants(
+        projectId,
+        createdBy,
+        assignedToArray,
+      );
     } else {
       await this.assertStandaloneTaskParticipants(createdBy, assignedToArray);
     }
@@ -153,14 +182,24 @@ export class TaskService {
       createdBy: new Types.ObjectId(createdBy),
       assignedTo: assignedToArray.map((userId) => new Types.ObjectId(userId)),
       projectId: projectId ? new Types.ObjectId(projectId) : undefined,
+      startDate: startDate ? new Date(startDate) : undefined,
+      dueDate: dueDate ? new Date(dueDate) : undefined,
     });
 
     // Handle file upload if provided
     if (file) {
-      const excelUpload = await this.excelService.uploadFile(file, createdBy, EXCEL_IMPORT_TYPE);
+      const excelUpload = await this.excelService.uploadFile(
+        file,
+        createdBy,
+        EXCEL_IMPORT_TYPE,
+      );
       createdTask.file = excelUpload.fileName;
       const savedTask = await createdTask.save();
-      this.notifyAssignedUsers(assignedToArray, savedTask._id.toString(), savedTask.title);
+      this.notifyAssignedUsers(
+        assignedToArray,
+        savedTask._id.toString(),
+        savedTask.title,
+      );
       return {
         task: savedTask,
         excelUpload,
@@ -168,7 +207,11 @@ export class TaskService {
     }
 
     const savedTask = await createdTask.save();
-    this.notifyAssignedUsers(assignedToArray, savedTask._id.toString(), savedTask.title);
+    this.notifyAssignedUsers(
+      assignedToArray,
+      savedTask._id.toString(),
+      savedTask.title,
+    );
     return savedTask;
   }
 
@@ -240,7 +283,10 @@ export class TaskService {
    * Update a task by ID with only provided fields
    * @throws NotFoundException if task not found
    */
-  async update(id: string, updateTaskDto: UpdateTaskDto): Promise<TaskDocument> {
+  async update(
+    id: string,
+    updateTaskDto: UpdateTaskDto,
+  ): Promise<TaskDocument> {
     this.validateObjectId(id);
 
     const task = await this.taskModel.findById(id).exec();
@@ -252,11 +298,19 @@ export class TaskService {
     const updateData: Record<string, unknown> = Object.fromEntries(
       Object.entries(updateTaskDto).filter(([_, value]) => value !== undefined),
     );
+    if (updateTaskDto.startDate !== undefined) {
+      updateData.startDate = new Date(updateTaskDto.startDate);
+    }
+    if (updateTaskDto.dueDate !== undefined) {
+      updateData.dueDate = new Date(updateTaskDto.dueDate);
+    }
 
     // Validate and convert assignedTo if provided
     if (updateTaskDto.assignedTo !== undefined) {
       this.assertSingleAssignee(updateTaskDto.assignedTo);
-      const invalidIds = updateTaskDto.assignedTo.filter((userId) => !Types.ObjectId.isValid(userId));
+      const invalidIds = updateTaskDto.assignedTo.filter(
+        (userId) => !Types.ObjectId.isValid(userId),
+      );
       if (invalidIds.length > 0) {
         throw new BadRequestException('Invalid assignedTo user IDs');
       }
@@ -272,14 +326,21 @@ export class TaskService {
           updateTaskDto.assignedTo,
         );
       }
-      updateData.assignedTo = updateTaskDto.assignedTo.map((userId) => new Types.ObjectId(userId));
+      updateData.assignedTo = updateTaskDto.assignedTo.map(
+        (userId) => new Types.ObjectId(userId),
+      );
     }
 
-    const previousAssigneeIds = task.assignedTo.map((userId) => userId.toString());
+    const previousAssigneeIds = task.assignedTo.map((userId) =>
+      userId.toString(),
+    );
     const newlyAssignedUserIds =
-      updateTaskDto.assignedTo?.filter((userId) => !previousAssigneeIds.includes(userId)) ?? [];
+      updateTaskDto.assignedTo?.filter(
+        (userId) => !previousAssigneeIds.includes(userId),
+      ) ?? [];
     const changedToDone =
-      updateTaskDto.status === TaskStatus.DONE && task.status !== TaskStatus.DONE;
+      updateTaskDto.status === TaskStatus.DONE &&
+      task.status !== TaskStatus.DONE;
 
     const updatedTask = await this.taskModel
       .findByIdAndUpdate(id, updateData, { new: true })
@@ -291,7 +352,11 @@ export class TaskService {
       throw new NotFoundException('Task not found');
     }
 
-    this.notifyAssignedUsers(newlyAssignedUserIds, updatedTask._id.toString(), updatedTask.title);
+    this.notifyAssignedUsers(
+      newlyAssignedUserIds,
+      updatedTask._id.toString(),
+      updatedTask.title,
+    );
     if (changedToDone) {
       this.notifyCreatorWhenCompleted(
         task.createdBy.toString(),
@@ -433,25 +498,33 @@ export class TaskService {
     }
 
     // Total tasks
-    const totalTasks = await this.taskModel.countDocuments(managerExpertQuery).exec();
+    const totalTasks = await this.taskModel
+      .countDocuments(managerExpertQuery)
+      .exec();
 
     // Completed tasks (status = done)
     const completedQuery = { ...managerExpertQuery, status: TaskStatus.DONE };
-    const completedTasks = await this.taskModel.countDocuments(completedQuery).exec();
+    const completedTasks = await this.taskModel
+      .countDocuments(completedQuery)
+      .exec();
 
     // Pending tasks by status
-    const pendingTodo = await this.taskModel.countDocuments({
-      ...managerExpertQuery,
-      status: TaskStatus.TODO,
-    }).exec();
+    const pendingTodo = await this.taskModel
+      .countDocuments({
+        ...managerExpertQuery,
+        status: TaskStatus.TODO,
+      })
+      .exec();
 
-    const pendingInProgress = await this.taskModel.countDocuments({
-      ...managerExpertQuery,
-      status: TaskStatus.IN_PROGRESS,
-    }).exec();
+    const pendingInProgress = await this.taskModel
+      .countDocuments({
+        ...managerExpertQuery,
+        status: TaskStatus.IN_PROGRESS,
+      })
+      .exec();
 
     const pendingTasks = pendingTodo + pendingInProgress;
-    
+
     return {
       managerId,
       expertId,
@@ -492,44 +565,22 @@ export class TaskService {
     const rangeEnd = new Date(dateCountDto.enddate);
     rangeEnd.setUTCHours(23, 59, 59, 999);
 
-    const tasks = await this.taskModel.find({
-      projectId: new Types.ObjectId(dateCountDto.projectId),
-      assignedTo: userObjectId,
-      $expr: {
-        $and: [
-          {
-            $lte: [
-              {
-                $convert: {
-                  input: '$startDate',
-                  to: 'date',
-                  onError: null,
-                  onNull: null,
-                },
-              },
-              rangeEnd,
-            ],
-          },
-          {
-            $gte: [
-              {
-                $convert: {
-                  input: '$dueDate',
-                  to: 'date',
-                  onError: null,
-                  onNull: null,
-                },
-              },
-              rangeStart,
-            ],
-          },
-        ],
-      },
-    }).exec();
+    const tasks = await this.taskModel
+      .find({
+        projectId: new Types.ObjectId(dateCountDto.projectId),
+        assignedTo: userObjectId,
+        startDate: { $lte: rangeEnd },
+        dueDate: { $gte: rangeStart },
+      })
+      .exec();
 
     const totalTasks = tasks.length;
-    const completedTasks = tasks.filter((task) => task.status === TaskStatus.DONE).length;
-    const todoTasks = tasks.filter((task) => task.status === TaskStatus.TODO).length;
+    const completedTasks = tasks.filter(
+      (task) => task.status === TaskStatus.DONE,
+    ).length;
+    const todoTasks = tasks.filter(
+      (task) => task.status === TaskStatus.TODO,
+    ).length;
     const pendingTasks = totalTasks - completedTasks;
 
     // Adjust user score based on task performance
@@ -568,9 +619,11 @@ export class TaskService {
   //   }
   // }
 
- async findTaskByProjectId(projectId: string): Promise<TaskDocument[]> {
+  async findTaskByProjectId(projectId: string): Promise<TaskDocument[]> {
     this.validateObjectId(projectId);
-    return this.taskModel.find({ projectId: new Types.ObjectId(projectId) }).exec();
+    return this.taskModel
+      .find({ projectId: new Types.ObjectId(projectId) })
+      .exec();
   }
 
   async countOpenTasks(): Promise<number> {
@@ -581,7 +634,11 @@ export class TaskService {
       .exec();
   }
 
-  async reassignProjectTasks(projectId: string, assigneeId: string): Promise<number> {
+  async reassignProjectTasks(
+    projectId: string,
+    assigneeId: string,
+    session?: ClientSession,
+  ): Promise<number> {
     this.validateObjectId(projectId);
     this.validateObjectId(assigneeId);
 
@@ -589,14 +646,17 @@ export class TaskService {
       .updateMany(
         { projectId: new Types.ObjectId(projectId) },
         { $set: { assignedTo: [new Types.ObjectId(assigneeId)] } },
-        { runValidators: true },
+        { runValidators: true, session },
       )
       .exec();
 
     return result.modifiedCount;
   }
 
-  async countByProjectIdsAndStatus(projectIds: string[], status: TaskStatus): Promise<number> {
+  async countByProjectIdsAndStatus(
+    projectIds: string[],
+    status: TaskStatus,
+  ): Promise<number> {
     if (projectIds.length === 0) {
       return 0;
     }
@@ -619,7 +679,10 @@ export class TaskService {
     return this.countByProjectIdsAndStatus(projectIds, TaskStatus.DONE);
   }
 
-  async countByAssigneeAndStatus(userId: string, status: TaskStatus): Promise<number> {
+  async countByAssigneeAndStatus(
+    userId: string,
+    status: TaskStatus,
+  ): Promise<number> {
     this.validateObjectId(userId);
 
     return this.taskModel
@@ -660,7 +723,9 @@ export class TaskService {
             _id: '$projectId',
             totalTasks: { $sum: 1 },
             inProgressTasks: {
-              $sum: { $cond: [{ $eq: ['$status', TaskStatus.IN_PROGRESS] }, 1, 0] },
+              $sum: {
+                $cond: [{ $eq: ['$status', TaskStatus.IN_PROGRESS] }, 1, 0],
+              },
             },
             doneTasks: {
               $sum: { $cond: [{ $eq: ['$status', TaskStatus.DONE] }, 1, 0] },
@@ -680,7 +745,10 @@ export class TaskService {
       .exec();
   }
 
-  async getMemberStatusCounts(projectId: string, memberIds: string[]): Promise<
+  async getAssigneeStatusCounts(
+    projectId: string,
+    assigneeIds: string[],
+  ): Promise<
     Array<{
       userId: string;
       totalTasks: number;
@@ -690,33 +758,41 @@ export class TaskService {
     }>
   > {
     this.validateObjectId(projectId);
-    memberIds.forEach((memberId) => this.validateObjectId(memberId));
+    assigneeIds.forEach((assigneeId) => this.validateObjectId(assigneeId));
 
-    if (memberIds.length === 0) {
+    if (assigneeIds.length === 0) {
       return [];
     }
 
-    const memberObjectIds = memberIds.map((memberId) => new Types.ObjectId(memberId));
+    const assigneeObjectIds = assigneeIds.map(
+      (assigneeId) => new Types.ObjectId(assigneeId),
+    );
 
     return this.taskModel
       .aggregate([
         {
           $match: {
             $expr: { $eq: [{ $toString: '$projectId' }, projectId] },
-            assignedTo: { $in: memberObjectIds },
+            assignedTo: { $in: assigneeObjectIds },
           },
         },
         { $unwind: '$assignedTo' },
-        { $match: { assignedTo: { $in: memberObjectIds } } },
+        { $match: { assignedTo: { $in: assigneeObjectIds } } },
         {
           $group: {
             _id: '$assignedTo',
             totalTasks: { $sum: 1 },
-            todoTasks: { $sum: { $cond: [{ $eq: ['$status', TaskStatus.TODO] }, 1, 0] } },
-            inProgressTasks: {
-              $sum: { $cond: [{ $eq: ['$status', TaskStatus.IN_PROGRESS] }, 1, 0] },
+            todoTasks: {
+              $sum: { $cond: [{ $eq: ['$status', TaskStatus.TODO] }, 1, 0] },
             },
-            doneTasks: { $sum: { $cond: [{ $eq: ['$status', TaskStatus.DONE] }, 1, 0] } },
+            inProgressTasks: {
+              $sum: {
+                $cond: [{ $eq: ['$status', TaskStatus.IN_PROGRESS] }, 1, 0],
+              },
+            },
+            doneTasks: {
+              $sum: { $cond: [{ $eq: ['$status', TaskStatus.DONE] }, 1, 0] },
+            },
           },
         },
         {
@@ -733,7 +809,11 @@ export class TaskService {
       .exec();
   }
 
-  async findOverdueByProjectIds(projectIds: string[], page: number, limit: number) {
+  async findOverdueByProjectIds(
+    projectIds: string[],
+    page: number,
+    limit: number,
+  ) {
     if (projectIds.length === 0) {
       return { data: [], total: 0, page, limit };
     }
@@ -741,24 +821,10 @@ export class TaskService {
     projectIds.forEach((projectId) => this.validateObjectId(projectId));
     const now = new Date();
     const match = {
-      $expr: {
-        $and: [
-          { $in: [{ $toString: '$projectId' }, projectIds] },
-          {
-            $lt: [
-              {
-                $convert: {
-                  input: '$dueDate',
-                  to: 'date',
-                  onError: null,
-                  onNull: null,
-                },
-              },
-              now,
-            ],
-          },
-        ],
+      projectId: {
+        $in: projectIds.map((projectId) => new Types.ObjectId(projectId)),
       },
+      dueDate: { $lt: now },
       status: { $ne: TaskStatus.DONE },
     };
     const skip = (page - 1) * limit;
@@ -785,24 +851,8 @@ export class TaskService {
       this.getTaskStatusOverview(projectId),
       this.taskModel
         .countDocuments({
-          $expr: {
-            $and: [
-              { $eq: [{ $toString: '$projectId' }, projectId] },
-              {
-                $lt: [
-                  {
-                    $convert: {
-                      input: '$dueDate',
-                      to: 'date',
-                      onError: null,
-                      onNull: null,
-                    },
-                  },
-                  now,
-                ],
-              },
-            ],
-          },
+          projectId: new Types.ObjectId(projectId),
+          dueDate: { $lt: now },
           status: { $ne: TaskStatus.DONE },
         })
         .exec(),
@@ -813,12 +863,17 @@ export class TaskService {
       overdueTasks,
       completionRate:
         statusOverview.totalTasks > 0
-          ? Math.round((statusOverview.doneTasks / statusOverview.totalTasks) * 100)
+          ? Math.round(
+              (statusOverview.doneTasks / statusOverview.totalTasks) * 100,
+            )
           : 0,
     };
   }
 
-  async getMemberStatusCountsAcrossProjects(projectIds: string[], memberIds: string[]): Promise<
+  async getAssigneeStatusCountsAcrossProjects(
+    projectIds: string[],
+    assigneeIds: string[],
+  ): Promise<
     Array<{
       userId: string;
       projectIds: string[];
@@ -829,13 +884,15 @@ export class TaskService {
       overdueTasks: number;
     }>
   > {
-    if (projectIds.length === 0 || memberIds.length === 0) {
+    if (projectIds.length === 0 || assigneeIds.length === 0) {
       return [];
     }
 
     projectIds.forEach((projectId) => this.validateObjectId(projectId));
-    memberIds.forEach((memberId) => this.validateObjectId(memberId));
-    const memberObjectIds = memberIds.map((memberId) => new Types.ObjectId(memberId));
+    assigneeIds.forEach((assigneeId) => this.validateObjectId(assigneeId));
+    const assigneeObjectIds = assigneeIds.map(
+      (assigneeId) => new Types.ObjectId(assigneeId),
+    );
     const now = new Date();
 
     return this.taskModel
@@ -843,40 +900,34 @@ export class TaskService {
         {
           $match: {
             $expr: { $in: [{ $toString: '$projectId' }, projectIds] },
-            assignedTo: { $in: memberObjectIds },
+            assignedTo: { $in: assigneeObjectIds },
           },
         },
         { $unwind: '$assignedTo' },
-        { $match: { assignedTo: { $in: memberObjectIds } } },
+        { $match: { assignedTo: { $in: assigneeObjectIds } } },
         {
           $group: {
             _id: '$assignedTo',
             projectIds: { $addToSet: '$projectId' },
             totalTasks: { $sum: 1 },
-            todoTasks: { $sum: { $cond: [{ $eq: ['$status', TaskStatus.TODO] }, 1, 0] } },
-            inProgressTasks: {
-              $sum: { $cond: [{ $eq: ['$status', TaskStatus.IN_PROGRESS] }, 1, 0] },
+            todoTasks: {
+              $sum: { $cond: [{ $eq: ['$status', TaskStatus.TODO] }, 1, 0] },
             },
-            doneTasks: { $sum: { $cond: [{ $eq: ['$status', TaskStatus.DONE] }, 1, 0] } },
+            inProgressTasks: {
+              $sum: {
+                $cond: [{ $eq: ['$status', TaskStatus.IN_PROGRESS] }, 1, 0],
+              },
+            },
+            doneTasks: {
+              $sum: { $cond: [{ $eq: ['$status', TaskStatus.DONE] }, 1, 0] },
+            },
             overdueTasks: {
               $sum: {
                 $cond: [
                   {
                     $and: [
                       { $ne: ['$status', TaskStatus.DONE] },
-                      {
-                        $lt: [
-                          {
-                            $convert: {
-                              input: '$dueDate',
-                              to: 'date',
-                              onError: null,
-                              onNull: null,
-                            },
-                          },
-                          now,
-                        ],
-                      },
+                      { $lt: ['$dueDate', now] },
                     ],
                   },
                   1,
@@ -922,10 +973,10 @@ export class TaskService {
     }
 
     const statusCounts = await this.taskModel
-      .aggregate<{ _id: TaskStatus; count: number }>([
-        { $match: match },
-        { $group: { _id: '$status', count: { $sum: 1 } } },
-      ])
+      .aggregate<{
+        _id: TaskStatus;
+        count: number;
+      }>([{ $match: match }, { $group: { _id: '$status', count: { $sum: 1 } } }])
       .exec();
 
     const counts = statusCounts.reduce(
@@ -941,7 +992,10 @@ export class TaskService {
     );
 
     return {
-      totalTasks: counts[TaskStatus.TODO] + counts[TaskStatus.IN_PROGRESS] + counts[TaskStatus.DONE],
+      totalTasks:
+        counts[TaskStatus.TODO] +
+        counts[TaskStatus.IN_PROGRESS] +
+        counts[TaskStatus.DONE],
       todoTasks: counts[TaskStatus.TODO],
       inProgressTasks: counts[TaskStatus.IN_PROGRESS],
       doneTasks: counts[TaskStatus.DONE],
@@ -979,7 +1033,9 @@ export class TaskService {
               $sum: { $cond: [{ $eq: ['$status', TaskStatus.TODO] }, 1, 0] },
             },
             inProgressTasks: {
-              $sum: { $cond: [{ $eq: ['$status', TaskStatus.IN_PROGRESS] }, 1, 0] },
+              $sum: {
+                $cond: [{ $eq: ['$status', TaskStatus.IN_PROGRESS] }, 1, 0],
+              },
             },
             doneTasks: {
               $sum: { $cond: [{ $eq: ['$status', TaskStatus.DONE] }, 1, 0] },
@@ -1060,7 +1116,9 @@ export class TaskService {
               $sum: { $cond: [{ $eq: ['$status', TaskStatus.DONE] }, 1, 0] },
             },
             inProgressTasks: {
-              $sum: { $cond: [{ $eq: ['$status', TaskStatus.IN_PROGRESS] }, 1, 0] },
+              $sum: {
+                $cond: [{ $eq: ['$status', TaskStatus.IN_PROGRESS] }, 1, 0],
+              },
             },
             pendingTasks: {
               $sum: { $cond: [{ $eq: ['$status', TaskStatus.TODO] }, 1, 0] },
@@ -1091,7 +1149,17 @@ export class TaskService {
             completionRate: {
               $cond: [
                 { $gt: ['$totalTasks', 0] },
-                { $round: [{ $multiply: [{ $divide: ['$completedTasks', '$totalTasks'] }, 100] }, 0] },
+                {
+                  $round: [
+                    {
+                      $multiply: [
+                        { $divide: ['$completedTasks', '$totalTasks'] },
+                        100,
+                      ],
+                    },
+                    0,
+                  ],
+                },
                 0,
               ],
             },
@@ -1108,6 +1176,4 @@ export class TaskService {
       users,
     };
   }
-
-
 }

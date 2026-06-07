@@ -36,10 +36,10 @@ export class TaskResponseDto {
   isPublic: boolean;
 
   @ApiPropertyOptional()
-  startDate?: string;
+  startDate?: Date;
 
   @ApiPropertyOptional()
-  dueDate?: string;
+  dueDate?: Date;
 }
 
 export class PaginatedTasksResponseDto {

@@ -8,7 +8,10 @@ import {
   TaskCountsByUserResponseDto,
   TaskStatusOverviewResponseDto,
 } from '../../task/dto/task-response.dto';
-import { PaginatedUsersResponseDto, UserResponseDto } from '../../user/dto/user-response.dto';
+import {
+  PaginatedUsersResponseDto,
+  UserResponseDto,
+} from '../../user/dto/user-response.dto';
 
 export class ManagerStatisticsResponseDto {
   @ApiProperty()
@@ -29,7 +32,7 @@ export class ProjectActivationResponseDto {
   project: ProjectResponseDto;
 }
 
-export class ManagerProjectMemberDto {
+export class ManagerProjectAssigneeDto {
   @ApiProperty({ type: Object })
   user: object;
 
@@ -40,15 +43,15 @@ export class ManagerProjectMemberDto {
   isActive: boolean;
 }
 
-export class ManagerProjectMembersResponseDto {
+export class ManagerProjectAssigneeResponseDto {
   @ApiProperty()
   projectId: string;
 
   @ApiProperty()
   projectName: string;
 
-  @ApiProperty({ type: [ManagerProjectMemberDto] })
-  members: ManagerProjectMemberDto[];
+  @ApiProperty({ type: ManagerProjectAssigneeDto, nullable: true })
+  assignee: ManagerProjectAssigneeDto | null;
 }
 
 export class MonthlyUserPerformanceItemDto {

@@ -1,3 +1,6 @@
+import { readFile } from 'node:fs/promises';
+import mongoose from 'mongoose';
+
 const baseUrl = process.env.API_BASE_URL ?? 'http://localhost:3000/api';
 const runId = Date.now().toString();
 const suffix = runId.slice(-9);
@@ -25,16 +28,25 @@ async function request(name, method, path, options = {}) {
 
   const expectedStatus = options.expectedStatus ?? 200;
   const passed = response.status === expectedStatus;
-  results.push({ name, method, path, status: response.status, expectedStatus, passed });
+  results.push({
+    name,
+    method,
+    path,
+    status: response.status,
+    expectedStatus,
+    passed,
+  });
 
   if (!passed) {
-    throw new Error(`${name} failed with ${response.status}: ${JSON.stringify(body)}`);
+    throw new Error(
+      `${name} failed with ${response.status}: ${JSON.stringify(body)}`,
+    );
   }
 
   return body;
 }
 
-async function register(label, role, mobile) {
+async function register(label, mobile, requestedRole) {
   return request(`register ${label}`, 'POST', '/auth/register', {
     expectedStatus: 201,
     body: {
@@ -43,24 +55,107 @@ async function register(label, role, mobile) {
       email: `integration.${label.toLowerCase()}.${runId}@example.com`,
       mobile,
       password,
-      roles: role,
+      ...(requestedRole ? { roles: requestedRole } : {}),
       workField: 'it',
     },
   });
 }
 
-const manager = await register('Manager', 'manager', `98910${suffix}`);
-const supervisor = await register('Supervisor', 'supervisor', `98911${suffix}`);
-const specialist = await register('Specialist', 'specialist', `98912${suffix}`);
-const roleCandidate = await register('RoleCandidate', 'specialist', `98913${suffix}`);
+async function getMongoUri() {
+  if (process.env.MONGODB_URI) {
+    return process.env.MONGODB_URI;
+  }
+
+  const envFile = await readFile('.env', 'utf8');
+  const match = envFile.match(/^MONGODB_URI=(.+)$/m);
+  if (!match) {
+    throw new Error('MONGODB_URI is missing');
+  }
+
+  return match[1].trim().replace('localhost', '127.0.0.1');
+}
+
+async function promoteTestUsers(managerId, supervisorId) {
+  await mongoose.connect(await getMongoUri());
+  const users = mongoose.connection.collection('users');
+  await Promise.all([
+    users.updateOne(
+      { _id: new mongoose.Types.ObjectId(managerId) },
+      { $set: { roles: 'manager' } },
+    ),
+    users.updateOne(
+      { _id: new mongoose.Types.ObjectId(supervisorId) },
+      { $set: { roles: 'supervisor' } },
+    ),
+  ]);
+  await mongoose.disconnect();
+}
+
+const managerRegistration = await register(
+  'Manager',
+  `98910${suffix}`,
+  'manager',
+);
+const supervisorRegistration = await register(
+  'Supervisor',
+  `98911${suffix}`,
+  'supervisor',
+);
+const specialist = await register('Specialist', `98912${suffix}`);
+const roleCandidate = await register('RoleCandidate', `98913${suffix}`);
+
+if (
+  managerRegistration.user.roles !== 'specialist' ||
+  supervisorRegistration.user.roles !== 'specialist'
+) {
+  throw new Error('Public registration must not allow privileged roles');
+}
+
+await promoteTestUsers(
+  managerRegistration.user._id,
+  supervisorRegistration.user._id,
+);
+
+const manager = await request('login promoted Manager', 'POST', '/auth/login', {
+  body: { mobile: `98910${suffix}`, password },
+});
+const supervisor = await request(
+  'login promoted Supervisor',
+  'POST',
+  '/auth/login',
+  {
+    body: { mobile: `98911${suffix}`, password },
+  },
+);
 
 const managerId = manager.user._id;
 const supervisorId = supervisor.user._id;
 const specialistId = specialist.user._id;
 const roleCandidateId = roleCandidate.user._id;
 
-await request('get specialist user', 'GET', `/users/${specialistId}`);
+await request('reject unauthenticated project list', 'GET', '/projects', {
+  expectedStatus: 401,
+});
+await request('reject specialist user list', 'GET', '/users', {
+  token: specialist.accessToken,
+  expectedStatus: 403,
+});
+await request('reject specialist project creation', 'POST', '/projects', {
+  token: specialist.accessToken,
+  expectedStatus: 403,
+  body: {
+    title: 'Forbidden project',
+    workField: 'it',
+    owner: managerId,
+    supervisorId,
+  },
+});
+
+await request('get specialist user', 'GET', `/users/${specialistId}`, {
+  token: manager.accessToken,
+});
 await request('update specialist user', 'PATCH', `/users/${specialistId}`, {
+  token: manager.accessToken,
   body: { lastName: `Specialist-${suffix}` },
 });
 await request('approve specialist', 'PATCH', `/users/${specialistId}/approve`, {
@@ -68,11 +163,15 @@ await request('approve specialist', 'PATCH', `/users/${specialistId}/approve`, {
   body: {},
 });
 await request('increase specialist score', 'POST', '/users/increase-score', {
+  token: manager.accessToken,
   body: { userId: specialistId, score: 15 },
 });
-await request('list users', 'GET', '/users?page=1&limit=20');
+await request('list users', 'GET', '/users?page=1&limit=20', {
+  token: manager.accessToken,
+});
 
 const project = await request('create project', 'POST', '/projects', {
+  token: manager.accessToken,
   expectedStatus: 201,
   body: {
     title: `Integration Project ${runId}`,
@@ -86,21 +185,39 @@ const project = await request('create project', 'POST', '/projects', {
 });
 const projectId = project._id;
 
-await request('get project', 'GET', `/projects/${projectId}`);
-await request('list projects by owner', 'GET', `/projects?owner=${managerId}`);
+await request('get project', 'GET', `/projects/${projectId}`, {
+  token: manager.accessToken,
+});
+await request('list projects by owner', 'GET', `/projects?owner=${managerId}`, {
+  token: manager.accessToken,
+});
 await request('update project', 'PATCH', `/projects/${projectId}`, {
-  body: { status: 'in_progress', description: 'Integrated workflow is running' },
+  token: manager.accessToken,
+  body: {
+    status: 'in_progress',
+    description: 'Integrated workflow is running',
+  },
 });
 
-await request('reject inactive specialist assignment', 'PATCH', `/supervisor/projects/${projectId}/assignee`, {
-  token: supervisor.accessToken,
-  expectedStatus: 400,
-  body: { assigneeId: roleCandidateId },
-});
-await request('assign specialist to project', 'PATCH', `/supervisor/projects/${projectId}/assignee`, {
-  token: supervisor.accessToken,
-  body: { assigneeId: specialistId },
-});
+await request(
+  'reject inactive specialist assignment',
+  'PATCH',
+  `/supervisor/projects/${projectId}/assignee`,
+  {
+    token: supervisor.accessToken,
+    expectedStatus: 400,
+    body: { assigneeId: roleCandidateId },
+  },
+);
+await request(
+  'assign specialist to project',
+  'PATCH',
+  `/supervisor/projects/${projectId}/assignee`,
+  {
+    token: supervisor.accessToken,
+    body: { assigneeId: specialistId },
+  },
+);
 
 const task = await request('create project task', 'POST', '/tasks', {
   token: manager.accessToken,
@@ -117,11 +234,21 @@ const task = await request('create project task', 'POST', '/tasks', {
 });
 const taskId = task._id;
 
-await request('reject wrong project task assignee', 'PATCH', `/tasks/${taskId}`, {
-  token: manager.accessToken,
-  expectedStatus: 400,
-  body: { assignedTo: [supervisorId] },
+await request('reject specialist task update', 'PATCH', `/tasks/${taskId}`, {
+  token: specialist.accessToken,
+  expectedStatus: 403,
+  body: { status: 'done' },
 });
+await request(
+  'reject wrong project task assignee',
+  'PATCH',
+  `/tasks/${taskId}`,
+  {
+    token: manager.accessToken,
+    expectedStatus: 400,
+    body: { assignedTo: [supervisorId] },
+  },
+);
 await request('update task', 'PATCH', `/tasks/${taskId}`, {
   token: manager.accessToken,
   body: { taskComment: 'Integration workflow update', status: 'in_progress' },
@@ -130,10 +257,17 @@ await request('complete task', 'PATCH', `/tasks/${taskId}/status`, {
   token: manager.accessToken,
   body: { status: 'done' },
 });
-await request('get task', 'GET', `/tasks/${taskId}`, { token: manager.accessToken });
-await request('list specialist tasks', 'GET', `/tasks?assignedTo=${specialistId}`, {
+await request('get task', 'GET', `/tasks/${taskId}`, {
   token: manager.accessToken,
 });
+await request(
+  'list specialist tasks',
+  'GET',
+  `/tasks?assignedTo=${specialistId}`,
+  {
+    token: manager.accessToken,
+  },
+);
 
 const fixedTask = await request('create fixed task', 'POST', '/fixed-tasks', {
   token: manager.accessToken,
@@ -150,30 +284,40 @@ const fixedTask = await request('create fixed task', 'POST', '/fixed-tasks', {
 });
 const fixedTaskId = fixedTask._id;
 
-const dailyFixedTask = await request('create daily fixed task', 'POST', '/fixed-tasks', {
-  token: manager.accessToken,
-  expectedStatus: 201,
-  body: {
-    title: `Integration Daily Fixed Task ${runId}`,
-    assignedTo: specialistId,
-    projectId,
-    recurrence: 'daily',
-    description: 'Daily incomplete report fixture',
-    isActive: true,
+const dailyFixedTask = await request(
+  'create daily fixed task',
+  'POST',
+  '/fixed-tasks',
+  {
+    token: manager.accessToken,
+    expectedStatus: 201,
+    body: {
+      title: `Integration Daily Fixed Task ${runId}`,
+      assignedTo: specialistId,
+      projectId,
+      recurrence: 'daily',
+      description: 'Daily incomplete report fixture',
+      isActive: true,
+    },
   },
-});
-const weeklyFixedTask = await request('create weekly fixed task', 'POST', '/fixed-tasks', {
-  token: manager.accessToken,
-  expectedStatus: 201,
-  body: {
-    title: `Integration Weekly Fixed Task ${runId}`,
-    assignedTo: specialistId,
-    projectId,
-    recurrence: 'weekly',
-    description: 'Weekly incomplete report fixture',
-    isActive: true,
+);
+const weeklyFixedTask = await request(
+  'create weekly fixed task',
+  'POST',
+  '/fixed-tasks',
+  {
+    token: manager.accessToken,
+    expectedStatus: 201,
+    body: {
+      title: `Integration Weekly Fixed Task ${runId}`,
+      assignedTo: specialistId,
+      projectId,
+      recurrence: 'weekly',
+      description: 'Weekly incomplete report fixture',
+      isActive: true,
+    },
   },
-});
+);
 
 await request('update fixed task', 'PATCH', `/fixed-tasks/${fixedTaskId}`, {
   token: manager.accessToken,
@@ -182,9 +326,14 @@ await request('update fixed task', 'PATCH', `/fixed-tasks/${fixedTaskId}`, {
 await request('get fixed task', 'GET', `/fixed-tasks/${fixedTaskId}`, {
   token: manager.accessToken,
 });
-await request('list project fixed tasks', 'GET', `/fixed-tasks?projectId=${projectId}`, {
-  token: manager.accessToken,
-});
+await request(
+  'list project fixed tasks',
+  'GET',
+  `/fixed-tasks?projectId=${projectId}`,
+  {
+    token: manager.accessToken,
+  },
+);
 const dailyReport = await request(
   'daily incomplete fixed task report',
   'GET',
@@ -217,34 +366,71 @@ if (
   !monthlyReport.data.some((item) => item.templateId === fixedTaskId) ||
   overdueReport.total < 3
 ) {
-  throw new Error('Incomplete fixed task reports did not include all recurrence fixtures');
+  throw new Error(
+    'Incomplete fixed task reports did not include all recurrence fixtures',
+  );
 }
 
 await request('manager statistics', 'GET', '/manager/statistics', {
   token: manager.accessToken,
 });
-await request('manager users', 'GET', '/manager/users?page=1&limit=20&role=specialist', {
-  token: manager.accessToken,
-});
-await request('manager update role', 'PATCH', `/manager/users/${roleCandidateId}/role`, {
-  token: manager.accessToken,
-  body: { role: 'supervisor' },
-});
-await request('manager project specialist', 'GET', `/manager/projects/${projectId}/members`, {
-  token: manager.accessToken,
-});
-await request('manager project progress', 'GET', `/manager/projects/${projectId}/progress`, {
-  token: manager.accessToken,
-});
-await request('manager projects progress', 'GET', '/manager/projects/progress?page=1&limit=20', {
-  token: manager.accessToken,
-});
-await request('manager task status overview', 'GET', `/manager/tasks/status?projectId=${projectId}`, {
-  token: manager.accessToken,
-});
-await request('manager task counts by user', 'GET', `/manager/tasks/users/counts?projectId=${projectId}`, {
-  token: manager.accessToken,
-});
+await request(
+  'manager users',
+  'GET',
+  '/manager/users?page=1&limit=20&role=specialist',
+  {
+    token: manager.accessToken,
+  },
+);
+await request(
+  'manager update role',
+  'PATCH',
+  `/manager/users/${roleCandidateId}/role`,
+  {
+    token: manager.accessToken,
+    body: { role: 'supervisor' },
+  },
+);
+await request(
+  'manager project specialist',
+  'GET',
+  `/manager/projects/${projectId}/assignee`,
+  {
+    token: manager.accessToken,
+  },
+);
+await request(
+  'manager project progress',
+  'GET',
+  `/manager/projects/${projectId}/progress`,
+  {
+    token: manager.accessToken,
+  },
+);
+await request(
+  'manager projects progress',
+  'GET',
+  '/manager/projects/progress?page=1&limit=20',
+  {
+    token: manager.accessToken,
+  },
+);
+await request(
+  'manager task status overview',
+  'GET',
+  `/manager/tasks/status?projectId=${projectId}`,
+  {
+    token: manager.accessToken,
+  },
+);
+await request(
+  'manager task counts by user',
+  'GET',
+  `/manager/tasks/users/counts?projectId=${projectId}`,
+  {
+    token: manager.accessToken,
+  },
+);
 const now = new Date();
 await request(
   'manager monthly performance',
@@ -252,43 +438,77 @@ await request(
   `/manager/users/monthly-performance?month=${now.getMonth() + 1}&year=${now.getFullYear()}&projectId=${projectId}`,
   { token: manager.accessToken },
 );
-await request('manager deactivate project', 'PATCH', `/manager/projects/${projectId}/activation`, {
-  token: manager.accessToken,
-  body: { isActive: false },
-});
-await request('manager reactivate project', 'PATCH', `/manager/projects/${projectId}/activation`, {
-  token: manager.accessToken,
-  body: { isActive: true },
-});
-
-const finalProject = await request('verify persisted project', 'GET', `/projects/${projectId}`);
-const finalTask = await request('verify persisted task', 'GET', `/tasks/${taskId}`, {
-  token: manager.accessToken,
-});
-const finalFixedTask = await request('verify persisted fixed task', 'GET', `/fixed-tasks/${fixedTaskId}`, {
-  token: manager.accessToken,
-});
-
-console.log(JSON.stringify({
-  runId,
-  passed: results.every((result) => result.passed),
-  requests: results.length,
-  records: {
-    managerId,
-    supervisorId,
-    specialistId,
-    roleCandidateId,
-    projectId,
-    taskId,
-    fixedTaskId,
-    dailyFixedTaskId: dailyFixedTask._id,
-    weeklyFixedTaskId: weeklyFixedTask._id,
+await request(
+  'manager deactivate project',
+  'PATCH',
+  `/manager/projects/${projectId}/activation`,
+  {
+    token: manager.accessToken,
+    body: { isActive: false },
   },
-  persisted: {
-    projectAssigneeId: finalProject.assigneeId?._id ?? finalProject.assigneeId,
-    projectArchived: finalProject.isArchived,
-    taskStatus: finalTask.status,
-    fixedTaskRecurrence: finalFixedTask.recurrence,
+);
+await request(
+  'manager reactivate project',
+  'PATCH',
+  `/manager/projects/${projectId}/activation`,
+  {
+    token: manager.accessToken,
+    body: { isActive: true },
   },
-  results,
-}, null, 2));
+);
+
+const finalProject = await request(
+  'verify persisted project',
+  'GET',
+  `/projects/${projectId}`,
+  {
+    token: manager.accessToken,
+  },
+);
+const finalTask = await request(
+  'verify persisted task',
+  'GET',
+  `/tasks/${taskId}`,
+  {
+    token: manager.accessToken,
+  },
+);
+const finalFixedTask = await request(
+  'verify persisted fixed task',
+  'GET',
+  `/fixed-tasks/${fixedTaskId}`,
+  {
+    token: manager.accessToken,
+  },
+);
+
+console.log(
+  JSON.stringify(
+    {
+      runId,
+      passed: results.every((result) => result.passed),
+      requests: results.length,
+      records: {
+        managerId,
+        supervisorId,
+        specialistId,
+        roleCandidateId,
+        projectId,
+        taskId,
+        fixedTaskId,
+        dailyFixedTaskId: dailyFixedTask._id,
+        weeklyFixedTaskId: weeklyFixedTask._id,
+      },
+      persisted: {
+        projectAssigneeId:
+          finalProject.assigneeId?._id ?? finalProject.assigneeId,
+        projectArchived: finalProject.isArchived,
+        taskStatus: finalTask.status,
+        fixedTaskRecurrence: finalFixedTask.recurrence,
+      },
+      results,
+    },
+    null,
+    2,
+  ),
+);

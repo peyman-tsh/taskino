@@ -39,31 +39,42 @@ import {
   TaskDateCountResponseDto,
   TaskResponseDto,
 } from './dto/task-response.dto';
+import { RolesGuard } from '../user/roles.guard';
+import { Roles } from '../user/roles.decorator';
+import { UserRole } from '../user/schemas/user.schema';
 
 @ApiTags('Tasks')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('tasks')
 export class TaskController {
   constructor(private readonly taskService: TaskService) {}
 
   @Post()
+  @Roles(UserRole.MANAGER, UserRole.SUPERVISOR)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Create a new task',
     description: 'Creates a new task with the provided information',
   })
-  @ApiResponse({ status: 201, description: 'Task created successfully', type: TaskResponseDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Task created successfully',
+    type: TaskResponseDto,
+  })
   @ApiResponse({ status: 400, description: 'Validation failed' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file'))
   create(
-    @Body(new ValidationPipe({
-      transform: true,
-      transformOptions: { enableImplicitConversion: true },
-      whitelist: true,
-      forbidNonWhitelisted: false,
-    })) createTaskDto: CreateTaskDto,
+    @Body(
+      new ValidationPipe({
+        transform: true,
+        transformOptions: { enableImplicitConversion: true },
+        whitelist: true,
+        forbidNonWhitelisted: false,
+      }),
+    )
+    createTaskDto: CreateTaskDto,
     @UploadedFile() file?: Express.Multer.File,
     @Request() request?: { user: { userId: string } },
   ) {
@@ -111,7 +122,11 @@ export class TaskController {
     type: String,
     description: 'Filter by task status (todo, in_progress, done)',
   })
-  @ApiResponse({ status: 200, description: 'Tasks retrieved successfully', type: PaginatedTasksResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Tasks retrieved successfully',
+    type: PaginatedTasksResponseDto,
+  })
   findAll(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
@@ -119,7 +134,11 @@ export class TaskController {
     @Query('assignedTo') assignedTo?: string,
     @Query('status') status?: TaskStatus,
   ) {
-    return this.taskService.findAll(page, limit, { createdBy, assignedTo, status });
+    return this.taskService.findAll(page, limit, {
+      createdBy,
+      assignedTo,
+      status,
+    });
   }
 
   @Get(':id')
@@ -128,19 +147,28 @@ export class TaskController {
     description: 'Returns a single task by its ID',
   })
   @ApiParam({ name: 'id', description: 'Task ID' })
-  @ApiResponse({ status: 200, description: 'Task retrieved successfully', type: TaskResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Task retrieved successfully',
+    type: TaskResponseDto,
+  })
   @ApiResponse({ status: 404, description: 'Task not found' })
   findOne(@Param('id') id: string) {
     return this.taskService.findById(id);
   }
 
   @Patch(':id')
+  @Roles(UserRole.MANAGER)
   @ApiOperation({
     summary: 'Update task',
     description: 'Updates an existing task by its ID',
   })
   @ApiParam({ name: 'id', description: 'Task ID' })
-  @ApiResponse({ status: 200, description: 'Task updated successfully', type: TaskResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Task updated successfully',
+    type: TaskResponseDto,
+  })
   @ApiResponse({ status: 404, description: 'Task not found' })
   @ApiResponse({ status: 400, description: 'Validation failed' })
   update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto) {
@@ -148,6 +176,7 @@ export class TaskController {
   }
 
   @Delete(':id')
+  @Roles(UserRole.MANAGER)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Delete task',
@@ -161,37 +190,57 @@ export class TaskController {
   }
 
   @Patch(':id/status')
+  @Roles(UserRole.MANAGER)
   @ApiOperation({
     summary: 'Update task status',
     description: 'Updates the status of a task by its ID',
   })
   @ApiParam({ name: 'id', description: 'Task ID' })
-  @ApiResponse({ status: 200, description: 'Task status updated successfully', type: TaskResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Task status updated successfully',
+    type: TaskResponseDto,
+  })
   @ApiResponse({ status: 404, description: 'Task not found' })
   @ApiResponse({ status: 400, description: 'Invalid status value' })
-  updateStatus(@Param('id') id: string, @Body() updateTaskStatusDto: UpdateTaskStatusDto) {
+  updateStatus(
+    @Param('id') id: string,
+    @Body() updateTaskStatusDto: UpdateTaskStatusDto,
+  ) {
     return this.taskService.updateStatus(id, updateTaskStatusDto.status);
   }
 
   @Post('completion-stats')
+  @Roles(UserRole.MANAGER)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get task completion statistics',
-    description: 'Returns the number of completed and pending tasks that a manager assigned to an expert',
+    description:
+      'Returns the number of completed and pending tasks that a manager assigned to an expert',
   })
-  @ApiResponse({ status: 200, description: 'Task completion statistics retrieved successfully', type: TaskCompletionStatsResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Task completion statistics retrieved successfully',
+    type: TaskCompletionStatsResponseDto,
+  })
   @ApiResponse({ status: 400, description: 'Validation failed' })
   getTaskCompletionStats(@Body() statsDto: TaskCompletionStatsDto) {
     return this.taskService.getTaskCompletionStats(statsDto);
   }
 
   @Post('date-count')
+  @Roles(UserRole.MANAGER, UserRole.SUPERVISOR)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get task count by project and date range',
-    description: 'Returns task statistics for a user in a project within a date range',
+    description:
+      'Returns task statistics for a user in a project within a date range',
   })
-  @ApiResponse({ status: 200, description: 'Task count retrieved successfully', type: TaskDateCountResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Task count retrieved successfully',
+    type: TaskDateCountResponseDto,
+  })
   @ApiResponse({ status: 400, description: 'Validation failed' })
   findTasksByProjectAndCount(@Body() dateCountDto: DateCountDto) {
     return this.taskService.findTasksByProjectAndCount(dateCountDto);

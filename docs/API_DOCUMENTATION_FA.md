@@ -39,33 +39,43 @@ Authorization: Bearer <accessToken>
 
 ### Enumهای اصلی
 
-| عنوان | مقادیر |
-|---|---|
-| نقش کاربر | `specialist`, `supervisor`, `manager` |
-| حوزه کاری | `it`, `human_resources`, `finance`, `sales`, `operations` |
-| وضعیت پروژه | `pending`, `in_progress`, `completed` |
-| وضعیت تسک | `todo`, `in_progress`, `done` |
-| توالی الگوی وظیفه ثابت | `daily`, `weekly`, `monthly` |
-| وضعیت مرخصی | `pending`, `approved`, `rejected` |
-| نوع Excel | `import`, `export` |
-| وضعیت Excel | `pending`, `processing`, `completed`, `failed` |
-| نوع اعلان | `task_assigned`, `task_completed`, `task_completion_stats`, `date_count`, `leave_request`, `leave_approved`, `leave_rejected`, `project_member_added` |
+| عنوان                  | مقادیر                                                                                                                                                |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| نقش کاربر              | `specialist`, `supervisor`, `manager`                                                                                                                 |
+| حوزه کاری              | `it`, `human_resources`, `finance`, `sales`, `operations`                                                                                             |
+| وضعیت پروژه            | `pending`, `in_progress`, `completed`                                                                                                                 |
+| وضعیت تسک              | `todo`, `in_progress`, `done`                                                                                                                         |
+| توالی الگوی وظیفه ثابت | `daily`, `weekly`, `monthly`                                                                                                                          |
+| وضعیت مرخصی            | `pending`, `approved`, `rejected`                                                                                                                     |
+| نوع Excel              | `import`, `export`                                                                                                                                    |
+| وضعیت Excel            | `pending`, `processing`, `completed`, `failed`                                                                                                        |
+| نوع اعلان              | `task_assigned`, `task_completed`, `task_completion_stats`, `date_count`, `leave_request`, `leave_approved`, `leave_rejected`, `project_member_added` |
 
 ## سطح دسترسی فعلی ماژول‌ها
 
-| ماژول | سطح دسترسی واقعی در کد فعلی |
-|---|---|
-| Auth | عمومی |
-| User | بیشتر APIها عمومی؛ فقط approve نیازمند JWT مدیر است |
-| Project | عمومی |
-| Task | نیازمند JWT |
-| LeaveRequest | عمومی |
-| Excel | عمومی؛ وجود `ApiBearerAuth` فقط برای Swagger است |
-| Notification | نیازمند JWT و محدود به اعلان‌های خود کاربر |
-| Manager | نیازمند JWT و نقش `manager` |
-| Supervisor | نیازمند JWT و نقش `supervisor` |
+ثبت‌نام عمومی همیشه کاربر را با نقش `specialist` می‌سازد. فیلدهای تعریف‌نشده در DTO، از جمله تلاش برای ارسال `roles`، توسط ValidationPipe سراسری حذف می‌شوند و ارتقای نقش فقط از endpoint مدیریتی انجام می‌شود.
+
+| ماژول        | سطح دسترسی واقعی در کد فعلی                                           |
+| ------------ | --------------------------------------------------------------------- |
+| Auth         | عمومی                                                                 |
+| User         | نیازمند JWT و نقش `manager`                                           |
+| Project      | خواندن نیازمند JWT؛ ساخت، ویرایش و حذف نیازمند نقش `manager`          |
+| Task         | نیازمند JWT؛ ساخت برای manager/supervisor و تغییرات حساس برای manager |
+| LeaveRequest | عمومی                                                                 |
+| Excel        | عمومی؛ وجود `ApiBearerAuth` فقط برای Swagger است                      |
+| Notification | نیازمند JWT و محدود به اعلان‌های خود کاربر                            |
+| Manager      | نیازمند JWT و نقش `manager`                                           |
+| Supervisor   | نیازمند JWT و نقش `supervisor`                                        |
 
 > نکته امنیتی: نمایش قفل در Swagger الزاماً به معنی محافظت API نیست. فقط وجود `JwtAuthGuard` دسترسی را واقعاً محدود می‌کند.
+
+## نکات فنی
+
+- خروجی endpointهای اصلی با Response DTO در Swagger مستند شده‌اند و Schemaهای Mongoose مستقیماً قرارداد API نیستند.
+- تغییر متخصص پروژه، انتقال Taskها و انتقال FixedTaskها داخل transaction انجام می‌شود؛ محیط MongoDB production باید replica set یا mongos داشته باشد.
+- تاریخ‌های `Task.startDate` و `Task.dueDate` از نوع MongoDB Date هستند.
+- برای تبدیل داده‌های قدیمی رشته‌ای اجرا کنید: `npm run migrate:task-dates`.
+- منطق گزارش وظایف ثابت در `FixedTaskReportService` از CRUD الگوها جدا شده است.
 
 ---
 
@@ -75,9 +85,9 @@ Authorization: Bearer <accessToken>
 
 Endpoint ساده برای بررسی در دسترس بودن برنامه.
 
-| متد | مسیر | دسترسی | توضیح |
-|---|---|---|---|
-| GET | `/api` | عمومی | دریافت پیام اولیه برنامه |
+| متد | مسیر   | دسترسی | توضیح                    |
+| --- | ------ | ------ | ------------------------ |
+| GET | `/api` | عمومی  | دریافت پیام اولیه برنامه |
 
 ---
 
@@ -89,15 +99,15 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 
 ## مدل ورودی ثبت‌نام
 
-| فیلد | نوع | الزامی | توضیح |
-|---|---|---|---|
-| `firstName` | string | بله | نام |
-| `lastName` | string | بله | نام خانوادگی |
-| `email` | email | بله | ایمیل یکتا |
-| `mobile` | string | خیر | شماره موبایل |
-| `password` | string | بله | حداقل ۶ کاراکتر |
-| `roles` | UserRole | خیر | پیش‌فرض `specialist` |
-| `workField` | WorkField | بله | حوزه کاری کاربر |
+| فیلد        | نوع       | الزامی | توضیح                |
+| ----------- | --------- | ------ | -------------------- |
+| `firstName` | string    | بله    | نام                  |
+| `lastName`  | string    | بله    | نام خانوادگی         |
+| `email`     | email     | بله    | ایمیل یکتا           |
+| `mobile`    | string    | خیر    | شماره موبایل         |
+| `password`  | string    | بله    | حداقل ۶ کاراکتر      |
+| `roles`     | UserRole  | خیر    | پیش‌فرض `specialist` |
+| `workField` | WorkField | بله    | حوزه کاری کاربر      |
 
 ## APIها
 
@@ -125,10 +135,10 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 
 `POST /api/auth/login`
 
-| فیلد | نوع | الزامی |
-|---|---|---|
-| `mobile` | string | بله |
-| `password` | string، حداقل ۶ کاراکتر | بله |
+| فیلد       | نوع                     | الزامی |
+| ---------- | ----------------------- | ------ |
+| `mobile`   | string                  | بله    |
+| `password` | string، حداقل ۶ کاراکتر | بله    |
 
 - خروجی موفق `200`: اطلاعات کاربر و JWT
 - خطا: اطلاعات ورود اشتباه `401`
@@ -147,15 +157,15 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 
 ## APIها
 
-| متد | مسیر | ورودی | خروجی/عملکرد |
-|---|---|---|---|
-| POST | `/api/users` | `firstName`, `lastName`, `email`, `mobile?`, `password`, `workField` | ساخت کاربر با نقش پیش‌فرض specialist |
-| GET | `/api/users?page=1&limit=10` | Query pagination | لیست صفحه‌بندی‌شده کاربران |
-| GET | `/api/users/:id` | شناسه کاربر | اطلاعات یک کاربر |
-| PATCH | `/api/users/:id` | `firstName?`, `lastName?`, `email?`, `mobile?`, `password?` | ویرایش اطلاعات کاربر |
-| DELETE | `/api/users/:id` | شناسه کاربر | حذف کاربر، خروجی `204` |
-| PATCH | `/api/users/:id/approve` | JWT مدیر | فعال‌کردن کاربر و تنظیم `isActive=true` |
-| POST | `/api/users/increase-score` | `userId`, `score` | افزایش امتیاز کاربر |
+| متد    | مسیر                         | ورودی                                                                | خروجی/عملکرد                            |
+| ------ | ---------------------------- | -------------------------------------------------------------------- | --------------------------------------- |
+| POST   | `/api/users`                 | `firstName`, `lastName`, `email`, `mobile?`, `password`, `workField` | ساخت کاربر با نقش پیش‌فرض specialist    |
+| GET    | `/api/users?page=1&limit=10` | Query pagination                                                     | لیست صفحه‌بندی‌شده کاربران              |
+| GET    | `/api/users/:id`             | شناسه کاربر                                                          | اطلاعات یک کاربر                        |
+| PATCH  | `/api/users/:id`             | `firstName?`, `lastName?`, `email?`, `mobile?`, `password?`          | ویرایش اطلاعات کاربر                    |
+| DELETE | `/api/users/:id`             | شناسه کاربر                                                          | حذف کاربر، خروجی `204`                  |
+| PATCH  | `/api/users/:id/approve`     | JWT مدیر                                                             | فعال‌کردن کاربر و تنظیم `isActive=true` |
+| POST   | `/api/users/increase-score`  | `userId`, `score`                                                    | افزایش امتیاز کاربر                     |
 
 ### افزایش امتیاز
 
@@ -187,31 +197,31 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 
 ## ورودی ساخت پروژه
 
-| فیلد | نوع | الزامی | توضیح |
-|---|---|---|---|
-| `title` | string | بله | عنوان پروژه |
-| `description` | string | خیر | توضیحات |
-| `status` | ProjectStatus | خیر | پیش‌فرض pending |
-| `workField` | WorkField | بله | حوزه کاری |
-| `owner` | MongoId | بله | شناسه مدیر مالک |
-| `supervisorId` | MongoId | بله | شناسه سرپرست |
-| `startDate` | ISO date | خیر | تاریخ شروع |
-| `endDate` | ISO date | خیر | تاریخ پایان |
-| `isArchived` | boolean | خیر | آرشیو بودن پروژه |
+| فیلد           | نوع           | الزامی | توضیح            |
+| -------------- | ------------- | ------ | ---------------- |
+| `title`        | string        | بله    | عنوان پروژه      |
+| `description`  | string        | خیر    | توضیحات          |
+| `status`       | ProjectStatus | خیر    | پیش‌فرض pending  |
+| `workField`    | WorkField     | بله    | حوزه کاری        |
+| `owner`        | MongoId       | بله    | شناسه مدیر مالک  |
+| `supervisorId` | MongoId       | بله    | شناسه سرپرست     |
+| `startDate`    | ISO date      | خیر    | تاریخ شروع       |
+| `endDate`      | ISO date      | خیر    | تاریخ پایان      |
+| `isArchived`   | boolean       | خیر    | آرشیو بودن پروژه |
 
 ## APIها
 
-| متد | مسیر | ورودی | خروجی/عملکرد |
-|---|---|---|---|
-| POST | `/api/projects` | CreateProjectDto | ساخت پروژه |
-| GET | `/api/projects` | `page`, `limit`, `owner?`, `member?`, `status?`, `isArchived?` | لیست پروژه‌ها؛ `member` شناسه متخصص مسئول است |
-| GET | `/api/projects/:id` | شناسه پروژه | پروژه با owner، supervisor، assigneeId و tasks |
-| GET | `/api/projects/owner/:ownerId` | شناسه مالک | پروژه‌های مالک |
-| PATCH | `/api/projects/:id` | فیلدهای قابل ویرایش پروژه | ویرایش پروژه |
-| DELETE | `/api/projects/:id` | شناسه پروژه | حذف پروژه |
-| PATCH | `/api/projects/:id/tasks/:taskId` | شناسه پروژه و تسک | افزودن شناسه تسک به آرایه tasks |
-| DELETE | `/api/projects/:id/tasks/:taskId` | شناسه پروژه و تسک | حذف شناسه تسک از آرایه tasks |
-| GET | `/api/projects/:id/progress` | شناسه پروژه | آمار و درصد پیشرفت |
+| متد    | مسیر                              | ورودی                                                            | خروجی/عملکرد                                   |
+| ------ | --------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------- |
+| POST   | `/api/projects`                   | CreateProjectDto                                                 | ساخت پروژه                                     |
+| GET    | `/api/projects`                   | `page`, `limit`, `owner?`, `assignee?`, `status?`, `isArchived?` | لیست پروژه‌ها با فیلتر متخصص مسئول             |
+| GET    | `/api/projects/:id`               | شناسه پروژه                                                      | پروژه با owner، supervisor، assigneeId و tasks |
+| GET    | `/api/projects/owner/:ownerId`    | شناسه مالک                                                       | پروژه‌های مالک                                 |
+| PATCH  | `/api/projects/:id`               | فیلدهای قابل ویرایش پروژه                                        | ویرایش پروژه                                   |
+| DELETE | `/api/projects/:id`               | شناسه پروژه                                                      | حذف پروژه                                      |
+| PATCH  | `/api/projects/:id/tasks/:taskId` | شناسه پروژه و تسک                                                | افزودن شناسه تسک به آرایه tasks                |
+| DELETE | `/api/projects/:id/tasks/:taskId` | شناسه پروژه و تسک                                                | حذف شناسه تسک از آرایه tasks                   |
+| GET    | `/api/projects/:id/progress`      | شناسه پروژه                                                      | آمار و درصد پیشرفت                             |
 
 ### نمونه خروجی پیشرفت
 
@@ -246,31 +256,31 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 
 ## ورودی ساخت
 
-| فیلد | نوع | الزامی | توضیح |
-|---|---|---|---|
-| `title` | string | بله | عنوان |
-| `createdBy` | string | در DTO وجود دارد | در Controller با شناسه JWT جایگزین می‌شود |
-| `projectId` | string | خیر | پروژه مربوط |
-| `assignedTo` | string[] | بله | آرایه‌ای شامل دقیقاً شناسه یک کاربر مسئول |
-| `status` | TaskStatus | خیر | پیش‌فرض todo |
-| `description` | string | خیر | توضیحات |
-| `taskComment` | string | خیر | نظر |
-| `startDate` | string | خیر | تاریخ شروع |
-| `dueDate` | string | خیر | موعد |
-| `file` | multipart file | خیر | فایل Excel همراه |
+| فیلد          | نوع            | الزامی           | توضیح                                              |
+| ------------- | -------------- | ---------------- | -------------------------------------------------- |
+| `title`       | string         | بله              | عنوان                                              |
+| `createdBy`   | string         | در DTO وجود دارد | در Controller با شناسه JWT جایگزین می‌شود          |
+| `projectId`   | string         | خیر              | پروژه مربوط                                        |
+| `assignedTo`  | string[]       | بله              | آرایه‌ای شامل دقیقاً شناسه یک کاربر مسئول          |
+| `status`      | TaskStatus     | خیر              | پیش‌فرض todo                                       |
+| `description` | string         | خیر              | توضیحات                                            |
+| `taskComment` | string         | خیر              | نظر                                                |
+| `startDate`   | ISO date       | خیر              | تاریخ شروع؛ در MongoDB به‌صورت `Date` ذخیره می‌شود |
+| `dueDate`     | ISO date       | خیر              | موعد؛ در MongoDB به‌صورت `Date` ذخیره می‌شود       |
+| `file`        | multipart file | خیر              | فایل Excel همراه                                   |
 
 ## APIها
 
-| متد | مسیر | ورودی | خروجی/عملکرد |
-|---|---|---|---|
-| POST | `/api/tasks` | multipart یا JSON CreateTaskDto + JWT | ساخت تسک |
-| GET | `/api/tasks` | `page`, `limit`, `createdBy?`, `assignedTo?`, `status?` | لیست تسک‌ها |
-| GET | `/api/tasks/:id` | شناسه تسک | تسک با کاربران populateشده |
-| PATCH | `/api/tasks/:id` | `title?`, `assignedTo?`, `status?`, `taskComment?` | ویرایش تسک |
-| DELETE | `/api/tasks/:id` | شناسه تسک | حذف تسک، خروجی `204` |
-| PATCH | `/api/tasks/:id/status` | `{ "status": "done" }` | تغییر وضعیت معتبر |
-| POST | `/api/tasks/completion-stats` | `managerId`, `expertId`, `projectId?` | آمار تکمیل تسک مدیر/کارشناس |
-| POST | `/api/tasks/date-count` | `projectId`, `userId`, `startdate`, `enddate` | آمار تسک‌های هم‌پوشان با بازه |
+| متد    | مسیر                          | ورودی                                                   | خروجی/عملکرد                  |
+| ------ | ----------------------------- | ------------------------------------------------------- | ----------------------------- |
+| POST   | `/api/tasks`                  | multipart یا JSON CreateTaskDto + JWT                   | ساخت تسک                      |
+| GET    | `/api/tasks`                  | `page`, `limit`, `createdBy?`, `assignedTo?`, `status?` | لیست تسک‌ها                   |
+| GET    | `/api/tasks/:id`              | شناسه تسک                                               | تسک با کاربران populateشده    |
+| PATCH  | `/api/tasks/:id`              | `title?`, `assignedTo?`, `status?`, `taskComment?`      | ویرایش تسک                    |
+| DELETE | `/api/tasks/:id`              | شناسه تسک                                               | حذف تسک، خروجی `204`          |
+| PATCH  | `/api/tasks/:id/status`       | `{ "status": "done" }`                                  | تغییر وضعیت معتبر             |
+| POST   | `/api/tasks/completion-stats` | `managerId`, `expertId`, `projectId?`                   | آمار تکمیل تسک مدیر/کارشناس   |
+| POST   | `/api/tasks/date-count`       | `projectId`, `userId`, `startdate`, `enddate`           | آمار تسک‌های هم‌پوشان با بازه |
 
 ### خروجی completion-stats
 
@@ -296,29 +306,29 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 
 ## مدل FixedTaskTemplate
 
-| فیلد | توضیح |
-|---|---|
-| `title` | عنوان یا ورودی فرایند |
-| `assignedTo` | مسئول ثابت وظیفه؛ یک کاربر |
-| `createdBy` | مدیر سازنده الگو |
-| `projectId` | پروژه اختیاری |
-| `recurrence` | `daily`, `weekly`, `monthly` |
-| `description` | توضیحات |
-| `isActive` | فعال یا متوقف بودن تولید دوره‌ای |
-| `lastGeneratedAt` | آخرین زمان تولید Task واقعی |
-| `nextRunAt` | زمان بعدی تولید |
+| فیلد                                      | توضیح                                          |
+| ----------------------------------------- | ---------------------------------------------- |
+| `title`                                   | عنوان یا ورودی فرایند                          |
+| `assignedTo`                              | مسئول ثابت وظیفه؛ یک کاربر                     |
+| `createdBy`                               | مدیر سازنده الگو                               |
+| `projectId`                               | پروژه اختیاری                                  |
+| `recurrence`                              | `daily`, `weekly`, `monthly`                   |
+| `description`                             | توضیحات                                        |
+| `isActive`                                | فعال یا متوقف بودن تولید دوره‌ای               |
+| `lastGeneratedAt`                         | آخرین زمان تولید Task واقعی                    |
+| `nextRunAt`                               | زمان بعدی تولید                                |
 | `sourceExcel`, `sourceSheet`, `sourceRow` | اطلاعات منبع Excel برای جلوگیری از داده تکراری |
 
 تمام APIهای این ماژول نیازمند JWT و نقش `manager` هستند. در Template مستقل، مسئول باید با مدیر هم‌حوزه و دارای نقش `specialist` یا `supervisor` باشد. اگر `projectId` ارسال شود، مدیر باید مالک همان پروژه باشد و مسئول فقط متخصص ثبت‌شده در `Project.assigneeId` است.
 
-| متد | مسیر | توضیح |
-|---|---|---|
-| POST | `/api/fixed-tasks` | ساخت Template جدید |
-| GET | `/api/fixed-tasks` | لیست با pagination و فیلترهای `assignedTo`, `projectId`, `recurrence`, `isActive` |
-| GET | `/api/fixed-tasks/reports/incomplete` | گزارش وظایف ثابت انجام‌نشده روزانه، هفتگی و ماهانه |
-| GET | `/api/fixed-tasks/:id` | دریافت یک Template |
-| PATCH | `/api/fixed-tasks/:id` | ویرایش Template |
-| DELETE | `/api/fixed-tasks/:id` | حذف Template با خروجی `204` |
+| متد    | مسیر                                  | توضیح                                                                             |
+| ------ | ------------------------------------- | --------------------------------------------------------------------------------- |
+| POST   | `/api/fixed-tasks`                    | ساخت Template جدید                                                                |
+| GET    | `/api/fixed-tasks`                    | لیست با pagination و فیلترهای `assignedTo`, `projectId`, `recurrence`, `isActive` |
+| GET    | `/api/fixed-tasks/reports/incomplete` | گزارش وظایف ثابت انجام‌نشده روزانه، هفتگی و ماهانه                                |
+| GET    | `/api/fixed-tasks/:id`                | دریافت یک Template                                                                |
+| PATCH  | `/api/fixed-tasks/:id`                | ویرایش Template                                                                   |
+| DELETE | `/api/fixed-tasks/:id`                | حذف Template با خروجی `204`                                                       |
 
 ### گزارش وظایف ثابت انجام‌نشده
 
@@ -351,27 +361,27 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 
 ## ورودی ساخت
 
-| فیلد | نوع | الزامی |
-|---|---|---|
-| `user` | MongoId | بله |
-| `startDate` | ISO date string | بله |
-| `endDate` | ISO date string | بله |
-| `reason` | string | خیر |
-| `status` | LeaveStatus | خیر |
-| `approvedBy` | MongoId | خیر |
+| فیلد         | نوع             | الزامی |
+| ------------ | --------------- | ------ |
+| `user`       | MongoId         | بله    |
+| `startDate`  | ISO date string | بله    |
+| `endDate`    | ISO date string | بله    |
+| `reason`     | string          | خیر    |
+| `status`     | LeaveStatus     | خیر    |
+| `approvedBy` | MongoId         | خیر    |
 
 ## APIها
 
-| متد | مسیر | توضیح |
-|---|---|---|
-| POST | `/api/leave-requests` | ساخت درخواست؛ پایان نباید قبل از شروع باشد |
-| GET | `/api/leave-requests` | لیست با `page`, `limit`, `user?`, `status?`, `approvedBy?` |
-| GET | `/api/leave-requests/:id` | دریافت درخواست |
-| GET | `/api/leave-requests/user/:userId` | درخواست‌های یک کاربر |
-| PATCH | `/api/leave-requests/:id` | ویرایش کاربر، تاریخ، دلیل، وضعیت و اطلاعات تأیید |
-| DELETE | `/api/leave-requests/:id` | حذف درخواست |
-| POST | `/api/leave-requests/:id/approve` | بدنه `{ "approvedBy": "..." }` |
-| POST | `/api/leave-requests/:id/reject` | بدنه شامل `approvedBy` و `rejectionReason` |
+| متد    | مسیر                               | توضیح                                                      |
+| ------ | ---------------------------------- | ---------------------------------------------------------- |
+| POST   | `/api/leave-requests`              | ساخت درخواست؛ پایان نباید قبل از شروع باشد                 |
+| GET    | `/api/leave-requests`              | لیست با `page`, `limit`, `user?`, `status?`, `approvedBy?` |
+| GET    | `/api/leave-requests/:id`          | دریافت درخواست                                             |
+| GET    | `/api/leave-requests/user/:userId` | درخواست‌های یک کاربر                                       |
+| PATCH  | `/api/leave-requests/:id`          | ویرایش کاربر، تاریخ، دلیل، وضعیت و اطلاعات تأیید           |
+| DELETE | `/api/leave-requests/:id`          | حذف درخواست                                                |
+| POST   | `/api/leave-requests/:id/approve`  | بدنه `{ "approvedBy": "..." }`                             |
+| POST   | `/api/leave-requests/:id/reject`   | بدنه شامل `approvedBy` و `rejectionReason`                 |
 
 > وضعیت فعلی: این ماژول Guard ندارد و اطلاعات تأییدکننده را از body دریافت می‌کند.
 
@@ -385,26 +395,24 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 
 ## APIها
 
-| متد | مسیر | ورودی/خروجی |
-|---|---|---|
-| POST | `/api/excel` | ساخت رکورد با `createdBy`, `fileName` و اطلاعات اختیاری فایل |
-| POST | `/api/excel/upload?createdBy=:id&type=import` | multipart با فیلد `file`؛ آپلود فایل |
-| GET | `/api/excel` | لیست با `page`, `limit`, `createdBy?`, `status?`, `type?` |
-| GET | `/api/excel/:id` | دریافت رکورد |
-| GET | `/api/excel/:id/download` | دانلود فایل فیزیکی |
-| PATCH | `/api/excel/:id` | ویرایش مسیر، MIME، سایز، status، sheet و آمار ردیف‌ها |
-| DELETE | `/api/excel/:id` | حذف رکورد و فایل، خروجی `204` |
-| POST | `/api/excel/:id/process` | پردازش فایل import |
-| GET | `/api/excel/statistics/:userId` | آمار فایل‌های کاربر |
-| POST | `/api/excel/export/generate` | تولید و دانلود `export.xlsx` از JSON |
+| متد    | مسیر                                          | ورودی/خروجی                                                  |
+| ------ | --------------------------------------------- | ------------------------------------------------------------ |
+| POST   | `/api/excel`                                  | ساخت رکورد با `createdBy`, `fileName` و اطلاعات اختیاری فایل |
+| POST   | `/api/excel/upload?createdBy=:id&type=import` | multipart با فیلد `file`؛ آپلود فایل                         |
+| GET    | `/api/excel`                                  | لیست با `page`, `limit`, `createdBy?`, `status?`, `type?`    |
+| GET    | `/api/excel/:id`                              | دریافت رکورد                                                 |
+| GET    | `/api/excel/:id/download`                     | دانلود فایل فیزیکی                                           |
+| PATCH  | `/api/excel/:id`                              | ویرایش مسیر، MIME، سایز، status، sheet و آمار ردیف‌ها        |
+| DELETE | `/api/excel/:id`                              | حذف رکورد و فایل، خروجی `204`                                |
+| POST   | `/api/excel/:id/process`                      | پردازش فایل import                                           |
+| GET    | `/api/excel/statistics/:userId`               | آمار فایل‌های کاربر                                          |
+| POST   | `/api/excel/export/generate`                  | تولید و دانلود `export.xlsx` از JSON                         |
 
 ### ورودی تولید Export
 
 ```json
 {
-  "data": [
-    { "name": "Ali", "email": "ali@example.com" }
-  ],
+  "data": [{ "name": "Ali", "email": "ali@example.com" }],
   "columns": ["name", "email"],
   "sheetName": "Users"
 }
@@ -423,25 +431,25 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 
 ## APIها
 
-| متد | مسیر | توضیح |
-|---|---|---|
-| GET | `/api/notifications/me` | اعلان‌های کاربر فعلی |
-| GET | `/api/notifications/me/unread-count` | تعداد خوانده‌نشده |
-| PATCH | `/api/notifications/me/read-all` | خوانده‌شدن همه اعلان‌ها |
-| DELETE | `/api/notifications/me/read` | حذف همه اعلان‌های خوانده‌شده |
-| GET | `/api/notifications/:id` | دریافت اعلان خود کاربر؛ اعلان دیگری `404` |
-| PATCH | `/api/notifications/:id` | فقط تغییر `{ "isRead": true }` |
-| DELETE | `/api/notifications/:id` | حذف اعلان خود کاربر، خروجی `204` |
+| متد    | مسیر                                 | توضیح                                     |
+| ------ | ------------------------------------ | ----------------------------------------- |
+| GET    | `/api/notifications/me`              | اعلان‌های کاربر فعلی                      |
+| GET    | `/api/notifications/me/unread-count` | تعداد خوانده‌نشده                         |
+| PATCH  | `/api/notifications/me/read-all`     | خوانده‌شدن همه اعلان‌ها                   |
+| DELETE | `/api/notifications/me/read`         | حذف همه اعلان‌های خوانده‌شده              |
+| GET    | `/api/notifications/:id`             | دریافت اعلان خود کاربر؛ اعلان دیگری `404` |
+| PATCH  | `/api/notifications/:id`             | فقط تغییر `{ "isRead": true }`            |
+| DELETE | `/api/notifications/:id`             | حذف اعلان خود کاربر، خروجی `204`          |
 
 ### Queryهای لیست اعلان
 
-| Query | نوع | توضیح |
-|---|---|---|
-| `page` | integer >= 1 | صفحه |
-| `limit` | integer 1..100 | تعداد |
-| `type` | NotificationType | نوع اعلان |
-| `isRead` | `"true"` یا `"false"` | وضعیت خواندن |
-| `search` | string حداکثر ۱۰۰ | جستجو در title و message |
+| Query    | نوع                   | توضیح                    |
+| -------- | --------------------- | ------------------------ |
+| `page`   | integer >= 1          | صفحه                     |
+| `limit`  | integer 1..100        | تعداد                    |
+| `type`   | NotificationType      | نوع اعلان                |
+| `isRead` | `"true"` یا `"false"` | وضعیت خواندن             |
+| `search` | string حداکثر ۱۰۰     | جستجو در title و message |
 
 ---
 
@@ -453,18 +461,18 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 
 ## APIها
 
-| متد | مسیر | ورودی | خروجی/عملکرد |
-|---|---|---|---|
-| GET | `/api/manager/statistics` | - | تعداد پروژه فعال، تسک باز و کاربر فعال |
-| GET | `/api/manager/users` | `page`, `limit`, `isActive?`, `role?` | لیست کاربران |
-| PATCH | `/api/manager/users/:id/role` | `{ "role": "supervisor" }` | تغییر نقش کاربر |
-| PATCH | `/api/manager/projects/:id/activation` | `{ "isActive": true }` | فعال/آرشیو کردن پروژه |
-| GET | `/api/manager/projects/progress` | pagination | پیشرفت تمام پروژه‌ها |
-| GET | `/api/manager/projects/:id/members` | شناسه پروژه | متخصص مسئول پروژه همراه نقش و وضعیت؛ نام مسیر برای سازگاری حفظ شده است |
-| GET | `/api/manager/projects/:id/progress` | شناسه پروژه | پیشرفت پروژه |
-| GET | `/api/manager/tasks/status?projectId=:id` | projectId اختیاری | تعداد تسک بر اساس وضعیت |
-| GET | `/api/manager/tasks/users/counts?projectId=:id` | projectId اختیاری | تعداد تسک هر کاربر |
-| GET | `/api/manager/users/monthly-performance` | `month`, `year`, `projectId?` | عملکرد ماهانه کاربران |
+| متد   | مسیر                                            | ورودی                                 | خروجی/عملکرد                           |
+| ----- | ----------------------------------------------- | ------------------------------------- | -------------------------------------- |
+| GET   | `/api/manager/statistics`                       | -                                     | تعداد پروژه فعال، تسک باز و کاربر فعال |
+| GET   | `/api/manager/users`                            | `page`, `limit`, `isActive?`, `role?` | لیست کاربران                           |
+| PATCH | `/api/manager/users/:id/role`                   | `{ "role": "supervisor" }`            | تغییر نقش کاربر                        |
+| PATCH | `/api/manager/projects/:id/activation`          | `{ "isActive": true }`                | فعال/آرشیو کردن پروژه                  |
+| GET   | `/api/manager/projects/progress`                | pagination                            | پیشرفت تمام پروژه‌ها                   |
+| GET   | `/api/manager/projects/:id/assignee`            | شناسه پروژه                           | متخصص مسئول پروژه همراه نقش و وضعیت    |
+| GET   | `/api/manager/projects/:id/progress`            | شناسه پروژه                           | پیشرفت پروژه                           |
+| GET   | `/api/manager/tasks/status?projectId=:id`       | projectId اختیاری                     | تعداد تسک بر اساس وضعیت                |
+| GET   | `/api/manager/tasks/users/counts?projectId=:id` | projectId اختیاری                     | تعداد تسک هر کاربر                     |
+| GET   | `/api/manager/users/monthly-performance`        | `month`, `year`, `projectId?`         | عملکرد ماهانه کاربران                  |
 
 ### خروجی statistics
 
@@ -486,17 +494,17 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 
 ## APIها
 
-| متد | مسیر | خروجی/عملکرد |
-|---|---|---|
-| GET | `/api/supervisor/statistics` | آمار پروژه‌ها و تسک‌های سرپرست |
-| GET | `/api/supervisor/projects?page=1&limit=10` | پروژه‌های تحت نظارت با آمار تسک |
-| PATCH | `/api/supervisor/projects/:projectId/assignee` | تخصیص یا جایگزینی متخصص مسئول و انتقال تمام تسک‌ها و وظایف ثابت پروژه به او |
-| GET | `/api/supervisor/projects/:projectId/members` | متخصص مسئول پروژه؛ نام مسیر برای سازگاری حفظ شده است |
-| GET | `/api/supervisor/projects/:projectId/members/performance` | عملکرد متخصص مسئول |
-| PATCH | `/api/supervisor/projects/:projectId/tasks/:taskId/status` | تغییر وضعیت تسک پروژه تحت نظارت |
-| GET | `/api/supervisor/tasks/overdue?page=1&limit=10` | تسک‌های معوق تمام پروژه‌های تحت نظارت |
-| GET | `/api/supervisor/projects/:projectId/report` | گزارش کامل پروژه |
-| GET | `/api/supervisor/team/performance` | عملکرد تجمیعی متخصصان مسئول پروژه‌های تحت نظارت |
+| متد   | مسیر                                                       | خروجی/عملکرد                                                                |
+| ----- | ---------------------------------------------------------- | --------------------------------------------------------------------------- |
+| GET   | `/api/supervisor/statistics`                               | آمار پروژه‌ها و تسک‌های سرپرست                                              |
+| GET   | `/api/supervisor/projects?page=1&limit=10`                 | پروژه‌های تحت نظارت با آمار تسک                                             |
+| PATCH | `/api/supervisor/projects/:projectId/assignee`             | تخصیص یا جایگزینی متخصص مسئول و انتقال تمام تسک‌ها و وظایف ثابت پروژه به او |
+| GET   | `/api/supervisor/projects/:projectId/assignee`             | متخصص مسئول پروژه                                                           |
+| GET   | `/api/supervisor/projects/:projectId/assignee/performance` | عملکرد متخصص مسئول                                                          |
+| PATCH | `/api/supervisor/projects/:projectId/tasks/:taskId/status` | تغییر وضعیت تسک پروژه تحت نظارت                                             |
+| GET   | `/api/supervisor/tasks/overdue?page=1&limit=10`            | تسک‌های معوق تمام پروژه‌های تحت نظارت                                       |
+| GET   | `/api/supervisor/projects/:projectId/report`               | گزارش کامل پروژه                                                            |
+| GET   | `/api/supervisor/team/performance`                         | عملکرد تجمیعی متخصصان مسئول پروژه‌های تحت نظارت                             |
 
 ### ورودی تخصیص متخصص پروژه
 
@@ -522,7 +530,7 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 {
   "projectId": "...",
   "projectName": "Taskino",
-  "membersCount": 1,
+  "assigneeCount": 1,
   "totalTasks": 4,
   "todoTasks": 2,
   "inProgressTasks": 1,
@@ -536,16 +544,16 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 
 # کدهای وضعیت مهم
 
-| کد | معنی |
-|---|---|
-| `200` | عملیات موفق |
-| `201` | رکورد ساخته شد |
-| `204` | حذف موفق بدون بدنه |
-| `400` | ورودی، MongoId، enum یا قانون دامنه نامعتبر |
-| `401` | JWT وجود ندارد یا معتبر نیست |
-| `403` | JWT معتبر است اما نقش اجازه دسترسی ندارد |
+| کد    | معنی                                             |
+| ----- | ------------------------------------------------ |
+| `200` | عملیات موفق                                      |
+| `201` | رکورد ساخته شد                                   |
+| `204` | حذف موفق بدون بدنه                               |
+| `400` | ورودی، MongoId، enum یا قانون دامنه نامعتبر      |
+| `401` | JWT وجود ندارد یا معتبر نیست                     |
+| `403` | JWT معتبر است اما نقش اجازه دسترسی ندارد         |
 | `404` | رکورد پیدا نشد یا کاربر اجازه مشاهده آن را ندارد |
-| `409` | داده تکراری مانند ایمیل |
+| `409` | داده تکراری مانند ایمیل                          |
 
 # پیشنهاد استفاده در Postman
 

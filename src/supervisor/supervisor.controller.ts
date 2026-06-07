@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Patch, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -18,8 +26,8 @@ import { UserRole } from '../user/schemas/user.schema';
 import { SupervisorPaginationQueryDto } from './dto/supervisor-pagination-query.dto';
 import { SupervisorProjectParamDto } from './dto/supervisor-project-param.dto';
 import {
-  ProjectMembersPerformanceResponseDto,
-  ProjectMembersResponseDto,
+  ProjectAssigneePerformanceResponseDto,
+  ProjectAssigneeResponseDto,
   SupervisorProjectReportResponseDto,
   SupervisorProjectsResponseDto,
   SupervisorStatisticsResponseDto,
@@ -69,14 +77,25 @@ export class SupervisorController {
 
   @Patch('projects/:projectId/assignee')
   @ApiOperation({
-    summary: 'Assign or replace the specialist responsible for a supervised project',
+    summary:
+      'Assign or replace the specialist responsible for a supervised project',
     description:
       'Changes the project specialist and transfers every normal and fixed task of the project to that specialist.',
   })
-  @ApiParam({ name: 'projectId', description: 'Supervised project MongoDB object ID' })
-  @ApiOkResponse({ description: 'Project specialist and all project tasks reassigned successfully' })
-  @ApiBadRequestResponse({ description: 'Invalid specialist or work-field mismatch' })
-  @ApiNotFoundResponse({ description: 'Project not found or is not supervised by the current user' })
+  @ApiParam({
+    name: 'projectId',
+    description: 'Supervised project MongoDB object ID',
+  })
+  @ApiOkResponse({
+    description:
+      'Project specialist and all project tasks reassigned successfully',
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid specialist or work-field mismatch',
+  })
+  @ApiNotFoundResponse({
+    description: 'Project not found or is not supervised by the current user',
+  })
   assignProjectSpecialist(
     @CurrentUserId() supervisorId: string,
     @Param() params: SupervisorProjectParamDto,
@@ -89,48 +108,71 @@ export class SupervisorController {
     );
   }
 
-  @Get('projects/:projectId/members')
+  @Get('projects/:projectId/assignee')
   @ApiOperation({
-    summary: 'Get supervised project members',
-    description: 'Returns members only when the current supervisor supervises the project.',
+    summary: 'Get supervised project assignee',
+    description:
+      'Returns the responsible specialist when the current supervisor supervises the project.',
   })
-  @ApiOkResponse({ type: ProjectMembersResponseDto })
-  @ApiParam({ name: 'projectId', description: 'Supervised project MongoDB object ID' })
+  @ApiOkResponse({ type: ProjectAssigneeResponseDto })
+  @ApiParam({
+    name: 'projectId',
+    description: 'Supervised project MongoDB object ID',
+  })
   @ApiBadRequestResponse({ description: 'Invalid project ID' })
-  @ApiNotFoundResponse({ description: 'Project not found or is not supervised by the current user' })
-  getProjectMembers(
+  @ApiNotFoundResponse({
+    description: 'Project not found or is not supervised by the current user',
+  })
+  getProjectAssignee(
     @CurrentUserId() supervisorId: string,
     @Param() params: SupervisorProjectParamDto,
   ) {
-    return this.supervisorService.getProjectMembers(supervisorId, params.projectId);
+    return this.supervisorService.getProjectAssignee(
+      supervisorId,
+      params.projectId,
+    );
   }
 
-  @Get('projects/:projectId/members/performance')
+  @Get('projects/:projectId/assignee/performance')
   @ApiOperation({
-    summary: 'Get supervised project members performance',
+    summary: 'Get supervised project assignee performance',
     description:
-      'Returns task counts, completion rate, and score for every member of a supervised project.',
+      'Returns task counts, completion rate, and score for the responsible specialist.',
   })
-  @ApiOkResponse({ type: ProjectMembersPerformanceResponseDto })
-  @ApiParam({ name: 'projectId', description: 'Supervised project MongoDB object ID' })
+  @ApiOkResponse({ type: ProjectAssigneePerformanceResponseDto })
+  @ApiParam({
+    name: 'projectId',
+    description: 'Supervised project MongoDB object ID',
+  })
   @ApiBadRequestResponse({ description: 'Invalid project ID' })
-  @ApiNotFoundResponse({ description: 'Project not found or is not supervised by the current user' })
-  getProjectMembersPerformance(
+  @ApiNotFoundResponse({
+    description: 'Project not found or is not supervised by the current user',
+  })
+  getProjectAssigneePerformance(
     @CurrentUserId() supervisorId: string,
     @Param() params: SupervisorProjectParamDto,
   ) {
-    return this.supervisorService.getProjectMembersPerformance(supervisorId, params.projectId);
+    return this.supervisorService.getProjectAssigneePerformance(
+      supervisorId,
+      params.projectId,
+    );
   }
 
   @Patch('projects/:projectId/tasks/:taskId/status')
   @ApiOperation({
     summary: 'Update a supervised project task status',
-    description: 'Updates task status only when the current supervisor supervises its project.',
+    description:
+      'Updates task status only when the current supervisor supervises its project.',
   })
-  @ApiParam({ name: 'projectId', description: 'Supervised project MongoDB object ID' })
+  @ApiParam({
+    name: 'projectId',
+    description: 'Supervised project MongoDB object ID',
+  })
   @ApiParam({ name: 'taskId', description: 'Task MongoDB object ID' })
   @ApiOkResponse({ description: 'Task status updated successfully' })
-  @ApiBadRequestResponse({ description: 'Invalid project ID, task ID, or status' })
+  @ApiBadRequestResponse({
+    description: 'Invalid project ID, task ID, or status',
+  })
   @ApiNotFoundResponse({ description: 'Supervised project or task not found' })
   updateTaskStatus(
     @CurrentUserId() supervisorId: string,
@@ -148,7 +190,8 @@ export class SupervisorController {
   @Get('tasks/overdue')
   @ApiOperation({
     summary: 'Get overdue tasks from supervised projects',
-    description: 'Returns unfinished tasks whose due date has passed across all supervised projects.',
+    description:
+      'Returns unfinished tasks whose due date has passed across all supervised projects.',
   })
   @ApiOkResponse({ description: 'Overdue tasks retrieved successfully' })
   @ApiBadRequestResponse({ description: 'Invalid pagination query' })
@@ -162,22 +205,31 @@ export class SupervisorController {
   @Get('projects/:projectId/report')
   @ApiOperation({
     summary: 'Get supervised project report',
-    description: 'Returns project task status, overdue task count, member count, and completion rate.',
+    description:
+      'Returns project task status, overdue task count, member count, and completion rate.',
   })
-  @ApiParam({ name: 'projectId', description: 'Supervised project MongoDB object ID' })
+  @ApiParam({
+    name: 'projectId',
+    description: 'Supervised project MongoDB object ID',
+  })
   @ApiOkResponse({ type: SupervisorProjectReportResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid project ID' })
-  @ApiNotFoundResponse({ description: 'Project not found or is not supervised by the current user' })
+  @ApiNotFoundResponse({
+    description: 'Project not found or is not supervised by the current user',
+  })
   getProjectReport(
     @CurrentUserId() supervisorId: string,
     @Param() params: SupervisorProjectParamDto,
   ) {
-    return this.supervisorService.getProjectReport(supervisorId, params.projectId);
+    return this.supervisorService.getProjectReport(
+      supervisorId,
+      params.projectId,
+    );
   }
 
   @Get('team/performance')
   @ApiOperation({
-    summary: 'Get all supervised team members performance',
+    summary: 'Get all supervised assignees performance',
     description:
       'Aggregates every unique member across all supervised projects and returns their combined performance.',
   })

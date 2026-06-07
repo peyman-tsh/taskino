@@ -35,6 +35,8 @@ import {
 
 @ApiTags('Users')
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.MANAGER)
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
@@ -45,7 +47,11 @@ export class UserController {
     summary: 'Create a new user',
     description: 'Creates a new user with the provided information',
   })
-  @ApiResponse({ status: 201, description: 'User created successfully', type: UserResponseDto })
+  @ApiResponse({
+    status: 201,
+    description: 'User created successfully',
+    type: UserResponseDto,
+  })
   @ApiResponse({ status: 409, description: 'Email already exists' })
   @ApiResponse({ status: 400, description: 'Validation failed' })
   create(@Body() createUserDto: CreateUserDto) {
@@ -69,11 +75,12 @@ export class UserController {
     type: Number,
     description: 'Items per page (default: 10)',
   })
-  @ApiResponse({ status: 200, description: 'Users retrieved successfully', type: PaginatedUsersResponseDto })
-  findAll(
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
-  ) {
+  @ApiResponse({
+    status: 200,
+    description: 'Users retrieved successfully',
+    type: PaginatedUsersResponseDto,
+  })
+  findAll(@Query('page') page: number = 1, @Query('limit') limit: number = 10) {
     return this.userService.findAll(Number(page), Number(limit));
   }
 
@@ -83,7 +90,11 @@ export class UserController {
     description: 'Returns a single user by their ID',
   })
   @ApiParam({ name: 'id', description: 'User ID' })
-  @ApiResponse({ status: 200, description: 'User retrieved successfully', type: UserResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'User retrieved successfully',
+    type: UserResponseDto,
+  })
   @ApiResponse({ status: 404, description: 'User not found' })
   findOne(@Param('id') id: string) {
     return this.userService.findById(id);
@@ -95,7 +106,11 @@ export class UserController {
     description: 'Updates an existing user by their ID',
   })
   @ApiParam({ name: 'id', description: 'User ID' })
-  @ApiResponse({ status: 200, description: 'User updated successfully', type: UserResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'User updated successfully',
+    type: UserResponseDto,
+  })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 409, description: 'Email already exists' })
   async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
@@ -114,13 +129,15 @@ export class UserController {
   remove(@Param('id') id: string) {
     return this.userService.delete(id);
   }
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Patch(':id/approve')
- @Roles(UserRole.MANAGER)
- @ApiResponse({ status: 200, description: 'User approved successfully', type: ApproveUserResponseDto })
- async approveUser(@Param('id') id: string) {
-   return await this.userService.approveExpert(id);
- }
+  @Patch(':id/approve')
+  @ApiResponse({
+    status: 200,
+    description: 'User approved successfully',
+    type: ApproveUserResponseDto,
+  })
+  async approveUser(@Param('id') id: string) {
+    return await this.userService.approveExpert(id);
+  }
 
   @Post('increase-score')
   @HttpCode(HttpStatus.OK)
@@ -129,7 +146,11 @@ export class UserController {
     description: 'Increases a user score by the specified amount',
   })
   @ApiBearerAuth()
-  @ApiResponse({ status: 200, description: 'Score increased successfully', type: UserResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Score increased successfully',
+    type: UserResponseDto,
+  })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 400, description: 'Invalid input' })
   async increaseScore(@Body() increaseScoreDto: IncreaseScoreDto) {
