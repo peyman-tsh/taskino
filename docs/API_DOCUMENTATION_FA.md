@@ -334,11 +334,19 @@ Endpoint ساده برای بررسی در دسترس بودن برنامه.
 | متد    | مسیر                                  | توضیح                                                                             |
 | ------ | ------------------------------------- | --------------------------------------------------------------------------------- |
 | POST   | `/api/fixed-tasks`                    | ساخت Template جدید                                                                |
-| GET    | `/api/fixed-tasks`                    | لیست با pagination و فیلترهای `assignedTo`, `projectId`, `recurrence`, `isActive` |
+| GET    | `/api/fixed-tasks`                    | لیست با pagination و فیلترهای `title`, `assignedTo`, `projectId`, `recurrence`, `isActive` |
 | GET    | `/api/fixed-tasks/reports/incomplete` | گزارش وظایف ثابت انجام‌نشده روزانه، هفتگی و ماهانه                                |
 | GET    | `/api/fixed-tasks/:id`                | دریافت یک Template                                                                |
 | PATCH  | `/api/fixed-tasks/:id`                | ویرایش Template                                                                   |
 | DELETE | `/api/fixed-tasks/:id`                | حذف Template با خروجی `204`                                                       |
+
+### فیلتر لیست وظایف ثابت
+
+پارامتر اختیاری `title` جست‌وجوی بخشی و بدون حساسیت به حروف بزرگ و کوچک را روی عنوان Template انجام می‌دهد. کاراکترهای خاص Regex در ورودی به‌عنوان متن معمولی جست‌وجو می‌شوند.
+
+نمونه جست‌وجو بر اساس عنوان:
+
+`GET /api/fixed-tasks?title=report&page=1&limit=10`
 
 ### گزارش وظایف ثابت انجام‌نشده
 
