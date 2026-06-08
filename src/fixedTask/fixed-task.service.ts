@@ -118,6 +118,12 @@ export class FixedTaskService {
 
   async findAll(queryDto: QueryFixedTaskDto) {
     const query: Record<string, unknown> = {};
+    if (queryDto.title) {
+      query.title = {
+        $regex: queryDto.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+        $options: 'i',
+      };
+    }
     if (queryDto.assignedTo) {
       query.assignedTo = this.toObjectId(
         queryDto.assignedTo,
