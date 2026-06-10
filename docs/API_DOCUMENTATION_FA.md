@@ -117,6 +117,351 @@ GET /api/tasks?page=1&limit=20
 
 > کنترلرهای LeaveRequest و Excel در حال حاضر فقط annotation مربوط به Swagger دارند و Guard احراز هویت روی آن‌ها اعمال نشده است. بنابراین endpointهای آن‌ها عملاً عمومی هستند و بهتر است قبل از production ایمن شوند.
 
+## مرجع کامل Endpointها
+
+در جدول‌های زیر تمام endpointهای موجود در controllerهای پروژه فهرست شده‌اند.
+
+راهنمای سطح دسترسی:
+
+- `Public`: بدون توکن نیز قابل فراخوانی است.
+- `Authenticated`: هر کاربر دارای JWT معتبر.
+- `Manager`: فقط مدیر.
+- `Manager / Supervisor`: مدیر یا سرپرست.
+- `Current User`: فقط روی داده‌های متعلق به کاربر داخل JWT کار می‌کند.
+
+### App و Auth
+
+| متد | مسیر | دسترسی | ورودی | پاسخ موفق |
+| --- | --- | --- | --- | --- |
+| GET | `/api` | Public | ندارد | `200`؛ پیام سلامت برنامه |
+| POST | `/api/auth/register` | Public | body: `RegisterDto` | `201`؛ کاربر و `accessToken` |
+| POST | `/api/auth/login` | Public | body: `LoginDto` | `200`؛ کاربر و `accessToken` |
+
+### Users
+
+تمام مسیرهای این جدول فقط برای مدیر هستند.
+
+| متد | مسیر | ورودی | پاسخ موفق |
+| --- | --- | --- | --- |
+| POST | `/api/users` | body: `CreateUserDto` | `201`؛ کاربر ساخته‌شده |
+| GET | `/api/users` | query: `page`, `limit` | `200`؛ لیست صفحه‌بندی‌شده |
+| GET | `/api/users/:id` | path: `id` | `200`؛ یک کاربر |
+| PATCH | `/api/users/:id` | path: `id`، body: `UpdateUserDto` | `200`؛ کاربر ویرایش‌شده |
+| DELETE | `/api/users/:id` | path: `id` | `204`؛ بدون body |
+| PATCH | `/api/users/:id/approve` | path: `id` | `200`؛ نتیجه تأیید و کاربر |
+| POST | `/api/users/increase-score` | body: `userId`, `score` | `200`؛ کاربر با امتیاز جدید |
+
+### Tasks
+
+| متد | مسیر | دسترسی | ورودی | پاسخ موفق |
+| --- | --- | --- | --- | --- |
+| POST | `/api/tasks` | Manager / Supervisor | `multipart/form-data`؛ فیلدهای Task و فایل اختیاری `file` | `201`؛ Task یا `{ task, excelUpload }` |
+| GET | `/api/tasks` | Authenticated | queryهای فیلتر و pagination | `200`؛ لیست صفحه‌بندی‌شده |
+| GET | `/api/tasks/user` | Authenticated | query: `userName`, `lastName` | `200`؛ Taskهای کاربر پیدا‌شده |
+| GET | `/api/tasks/:id` | Authenticated | path: `id` | `200`؛ یک Task |
+| PATCH | `/api/tasks/:id` | Manager | path: `id`، body: `UpdateTaskDto` | `200`؛ Task ویرایش‌شده |
+| DELETE | `/api/tasks/:id` | Manager | path: `id` | `204`؛ بدون body |
+| PATCH | `/api/tasks/:id/status` | Manager | body: `status` | `200`؛ Task با وضعیت جدید |
+| POST | `/api/tasks/completion-stats` | Manager | body: `managerId`, `expertId` | `200`؛ آمار تکمیل |
+| POST | `/api/tasks/date-count` | Manager / Supervisor | body: `userId`, `startDate`, `endDate` | `200`؛ آمار بازه و نتیجه امتیاز |
+
+### Fixed Tasks
+
+تمام مسیرهای این جدول برای مدیر و سرپرست هستند.
+
+| متد | مسیر | ورودی | پاسخ موفق |
+| --- | --- | --- | --- |
+| POST | `/api/fixed-tasks` | body: `CreateFixedTaskDto` | `201`؛ FixedTask ساخته‌شده |
+| GET | `/api/fixed-tasks` | queryهای فیلتر و pagination | `200`؛ لیست صفحه‌بندی‌شده |
+| GET | `/api/fixed-tasks/:id` | path: `id` | `200`؛ یک FixedTask |
+| PATCH | `/api/fixed-tasks/:id` | path: `id`، body: `UpdateFixedTaskDto` | `200`؛ FixedTask ویرایش‌شده |
+| DELETE | `/api/fixed-tasks/:id` | path: `id` | `204`؛ بدون body |
+
+### Manager
+
+تمام مسیرهای این جدول فقط برای مدیر هستند.
+
+| متد | مسیر | ورودی | پاسخ موفق |
+| --- | --- | --- | --- |
+| GET | `/api/manager/statistics` | ندارد | `200`؛ آمار داشبورد |
+| GET | `/api/manager/users` | query: `page`, `limit`, `isActive`, `role`, `name` | `200`؛ کاربران فیلترشده |
+| PATCH | `/api/manager/users/:id/role` | body: `role` | `200`؛ کاربر با نقش جدید |
+| GET | `/api/manager/tasks/status` | ندارد | `200`؛ تعداد Taskها براساس وضعیت |
+| GET | `/api/manager/tasks/users/counts` | ندارد | `200`؛ تعداد Taskهای هر کاربر |
+| GET | `/api/manager/users/monthly-performance` | query: `month`, `year` | `200`؛ عملکرد ماهانه |
+| GET | `/api/manager/users/progress` | ندارد | `200`؛ ارزیابی و ذخیره پیشرفت کاربران |
+
+### Notifications
+
+تمام مسیرهای این جدول نیازمند JWT هستند و فقط روی اعلان‌های کاربر جاری کار می‌کنند.
+
+| متد | مسیر | ورودی | پاسخ موفق |
+| --- | --- | --- | --- |
+| GET | `/api/notifications/me` | query: `page`, `limit`, `type`, `isRead`, `search` | `200`؛ لیست اعلان‌ها |
+| GET | `/api/notifications/me/unread-count` | ندارد | `200`؛ تعداد خوانده‌نشده‌ها |
+| GET | `/api/notifications/me/unread` | ندارد | `200`؛ یک اعلان خوانده‌نشده |
+| PATCH | `/api/notifications/me/read-all` | ندارد | `200`؛ نتیجه خوانده‌شدن همه |
+| DELETE | `/api/notifications/me/read` | ندارد | `200`؛ نتیجه حذف خوانده‌شده‌ها |
+| GET | `/api/notifications/:id` | path: `id` | `200`؛ یک اعلان متعلق به کاربر |
+| PATCH | `/api/notifications/:id` | body: `isRead` | `200`؛ اعلان ویرایش‌شده |
+| DELETE | `/api/notifications/:id` | path: `id` | `204`؛ بدون body |
+
+### Leave Requests
+
+این مسیرها در وضعیت فعلی کد Public هستند.
+
+| متد | مسیر | ورودی | پاسخ موفق |
+| --- | --- | --- | --- |
+| POST | `/api/leave-requests` | body: `CreateLeaveRequestDto` | `201`؛ درخواست ساخته‌شده |
+| GET | `/api/leave-requests` | query: `page`, `limit`, `user`, `status`, `approvedBy` | `200`؛ لیست درخواست‌ها |
+| GET | `/api/leave-requests/:id` | path: `id` | `200`؛ یک درخواست |
+| GET | `/api/leave-requests/user/:userId` | path: `userId`، query: `page`, `limit` | `200`؛ درخواست‌های کاربر |
+| PATCH | `/api/leave-requests/:id` | body: `UpdateLeaveRequestDto` | `200`؛ درخواست ویرایش‌شده |
+| DELETE | `/api/leave-requests/:id` | path: `id` | `204`؛ بدون body |
+| POST | `/api/leave-requests/:id/approve` | body: `approvedBy` | `200`؛ درخواست تأییدشده |
+| POST | `/api/leave-requests/:id/reject` | body: `approvedBy`, `rejectionReason` | `200`؛ درخواست ردشده |
+
+### Excel
+
+این مسیرها در وضعیت فعلی کد Public هستند.
+
+| متد | مسیر | ورودی | پاسخ موفق |
+| --- | --- | --- | --- |
+| POST | `/api/excel` | body: `CreateExcelDto` | `201`؛ رکورد ساخته‌شده |
+| POST | `/api/excel/upload` | query: `createdBy`, `type`؛ فایل `file` | `201`؛ اطلاعات فایل آپلودشده |
+| GET | `/api/excel` | query: `page`, `limit`, `createdBy`, `status`, `type` | `200`؛ لیست رکوردها |
+| GET | `/api/excel/:id` | path: `id` | `200`؛ یک رکورد |
+| GET | `/api/excel/:id/download` | path: `id` | `200`؛ فایل باینری |
+| PATCH | `/api/excel/:id` | body: `UpdateExcelDto` | `200`؛ رکورد ویرایش‌شده |
+| DELETE | `/api/excel/:id` | path: `id` | `204`؛ بدون body |
+| POST | `/api/excel/:id/process` | path: `id` | `200`؛ نتیجه پردازش import |
+| GET | `/api/excel/statistics/:userId` | path: `userId` | `200`؛ آمار فایل‌های کاربر |
+| POST | `/api/excel/export/generate` | body: `data`, `columns`, `sheetName` | `200`؛ فایل `export.xlsx` |
+
+## مرجع Body و Query
+
+### هدر درخواست‌های محافظت‌شده
+
+```http
+Authorization: Bearer ACCESS_TOKEN
+Content-Type: application/json
+```
+
+### `RegisterDto` و `CreateUserDto`
+
+| فیلد | نوع | الزامی | توضیح |
+| --- | --- | --- | --- |
+| `firstName` | string | بله | نام |
+| `lastName` | string | بله | نام خانوادگی |
+| `email` | string | بله | ایمیل معتبر و یکتا |
+| `mobile` | string | خیر | شماره موبایل |
+| `password` | string | بله | حداقل ۶ کاراکتر |
+| `workField` | enum | بله | یکی از حوزه‌های کاری |
+
+### `UpdateUserDto`
+
+فیلدهای `firstName`، `lastName`، `email`، `mobile` و `password` اختیاری هستند.
+
+### `CreateTaskDto`
+
+| فیلد | نوع | الزامی | توضیح |
+| --- | --- | --- | --- |
+| `title` | string | بله | عنوان |
+| `assignedTo` | string[] | بله | آرایه شامل دقیقاً یک شناسه کاربر |
+| `status` | enum | خیر | پیش‌فرض `todo` |
+| `description` | string | خیر | توضیحات |
+| `taskComment` | string | خیر | یادداشت |
+| `startDate` | ISO date-time | خیر | زمان شروع |
+| `dueDate` | ISO date-time | خیر | مهلت انجام |
+| `startTime` | `HH:mm` | خیر | ساعت شروع |
+| `endTime` | `HH:mm` | خیر | ساعت پایان |
+| `recurrence` | enum | خیر | `daily`, `weekly`, `monthly` |
+| `file` | file | خیر | فایل Excel در multipart |
+
+`UpdateTaskDto` فقط فیلدهای `title`، `assignedTo`، `status`، `taskComment`، `startDate`، `dueDate`، `startTime`، `endTime` و `recurrence` را به‌صورت اختیاری می‌پذیرد. فیلدهای `description`، `createdBy` و فایل در endpoint ویرایش قابل ارسال نیستند.
+
+Queryهای `GET /api/tasks`:
+
+| query | نوع | توضیح |
+| --- | --- | --- |
+| `page`, `limit` | number | pagination |
+| `createdBy` | ObjectId | سازنده |
+| `assignedTo` | ObjectId | مسئول |
+| `status` | enum | وضعیت |
+| `startDate`, `endDate` | ISO date-time | بازه هم‌پوشانی |
+| `recurrence` | enum | تناوب |
+
+### `CreateFixedTaskDto`
+
+| فیلد | نوع | الزامی | توضیح |
+| --- | --- | --- | --- |
+| `title` | string | بله | عنوان |
+| `assignedTo` | ObjectId | بله | مسئول |
+| `recurrence` | enum | بله | تناوب |
+| `status` | enum | خیر | پیش‌فرض `todo` |
+| `description` | string | خیر | توضیحات |
+| `isActive` | boolean | خیر | پیش‌فرض `true` |
+| `nextRunAt` | ISO date-time | خیر | زمان اجرای بعدی |
+| `startTime`, `endTime` | `HH:mm` | خیر | ساعت شروع و پایان |
+
+`UpdateFixedTaskDto` همین فیلدها را به‌صورت اختیاری می‌پذیرد.
+
+Queryهای `GET /api/fixed-tasks`: `page`, `limit`, `title`, `assignedTo`, `recurrence`, `isActive`.
+
+### `CreateLeaveRequestDto`
+
+| فیلد | نوع | الزامی |
+| --- | --- | --- |
+| `user` | ObjectId | بله |
+| `startDate` | ISO date | بله |
+| `endDate` | ISO date | بله |
+| `reason` | string | خیر |
+| `status` | enum | خیر |
+| `approvedBy` | ObjectId | خیر |
+
+### `CreateExcelDto`
+
+| فیلد | نوع | الزامی |
+| --- | --- | --- |
+| `createdBy` | ObjectId | بله |
+| `fileName` | string | بله |
+| `originalName`, `filePath`, `mimeType` | string | خیر |
+| `fileSize` | number | خیر |
+| `type` | enum | خیر |
+| `status` | enum | خیر |
+| `sheetName` | string | خیر |
+| `totalRows`, `successRows`, `errorRows` | number | خیر |
+| `errorMessage` | string | خیر |
+| `columns` | array | خیر |
+| `relatedLeave` | ObjectId | خیر |
+
+### Status codeهای رایج
+
+| کد | مفهوم |
+| --- | --- |
+| `200` | درخواست موفق |
+| `201` | رکورد ساخته شد |
+| `204` | عملیات موفق بدون response body |
+| `400` | ورودی یا وضعیت عملیات نامعتبر |
+| `401` | JWT نامعتبر یا ارسال‌نشده |
+| `403` | نقش کاربر اجازه دسترسی ندارد |
+| `404` | رکورد پیدا نشد |
+| `409` | داده یکتا مانند ایمیل تکراری است |
+
+## نمونه ساختار پاسخ‌ها
+
+### پاسخ صفحه‌بندی Task
+
+```json
+{
+  "data": [
+    {
+      "_id": "TASK_ID",
+      "title": "تهیه گزارش",
+      "createdBy": {},
+      "assignedTo": [{}],
+      "status": "done",
+      "startDate": "2026-06-11T05:30:00.000Z",
+      "dueDate": "2026-06-11T13:30:00.000Z",
+      "startTime": "09:00",
+      "endTime": "17:00",
+      "recurrence": "daily",
+      "doneTime": "2026-06-11T12:00:00.000Z"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "limit": 10
+}
+```
+
+### پاسخ آمار تکمیل Task
+
+```json
+{
+  "managerId": "MANAGER_ID",
+  "expertId": "SPECIALIST_ID",
+  "totalTasks": 5,
+  "completedTasks": 3,
+  "pendingTasks": 2,
+  "pendingByStatus": {
+    "todo": 1,
+    "in_progress": 1
+  },
+  "completedByStatus": {
+    "done": 3
+  }
+}
+```
+
+### پاسخ آمار Taskهای بازه زمانی
+
+```json
+{
+  "userId": "USER_ID",
+  "startDate": "2026-06-01",
+  "endDate": "2026-06-30",
+  "todoTasks": 2,
+  "totalTasks": 10,
+  "completedTasks": 7,
+  "pendingTasks": 3
+}
+```
+
+### پاسخ آمار داشبورد مدیر
+
+```json
+{
+  "openTasks": 12,
+  "activeUsers": 8
+}
+```
+
+### پاسخ عملکرد ماهانه
+
+```json
+{
+  "month": 6,
+  "year": 2026,
+  "users": [
+    {
+      "userId": "USER_ID",
+      "firstName": "علی",
+      "lastName": "احمدی",
+      "email": "ali@example.com",
+      "score": 20,
+      "totalTasks": 10,
+      "completedTasks": 8,
+      "inProgressTasks": 1,
+      "pendingTasks": 1,
+      "completionRate": 80
+    }
+  ]
+}
+```
+
+### پاسخ ارزیابی پیشرفت کاربران
+
+```json
+[
+  {
+    "userId": "USER_ID",
+    "firstName": "علی",
+    "lastName": "احمدی",
+    "email": "ali@example.com",
+    "role": "specialist",
+    "totalTasks": 5,
+    "completedTasks": 5,
+    "onTimeTasks": 5,
+    "totalFixedTasks": 2,
+    "completedFixedTasks": 2,
+    "progressPercentage": 100,
+    "performanceStatus": "good",
+    "performanceEvaluatedAt": "2026-06-11T08:00:00.000Z"
+  }
+]
+```
+
 ## معماری وظایف
 
 پروژه دو نوع وظیفه مستقل دارد:
@@ -306,6 +651,7 @@ GET /api/tasks?assignedTo=USER_ID&status=done&startDate=2026-06-01T00:00:00Z&end
 
 | متد | مسیر | دسترسی | توضیح |
 | --- | --- | --- | --- |
+| GET | `/api/tasks/user` | کاربر واردشده | جست‌وجوی Taskها با queryهای `userName` و `lastName` |
 | GET | `/api/tasks/:id` | کاربر واردشده | مشاهده Task |
 | PATCH | `/api/tasks/:id` | manager | ویرایش Task |
 | DELETE | `/api/tasks/:id` | manager | حذف Task |
@@ -502,6 +848,7 @@ GET /api/manager/users/progress
 | --- | --- | --- |
 | GET | `/api/notifications/me` | لیست اعلان‌های کاربر جاری |
 | GET | `/api/notifications/me/unread-count` | تعداد خوانده‌نشده‌ها |
+| GET | `/api/notifications/me/unread` | دریافت یک اعلان خوانده‌نشده |
 | PATCH | `/api/notifications/me/read-all` | خوانده‌شدن همه |
 | DELETE | `/api/notifications/me/read` | حذف اعلان‌های خوانده‌شده |
 | GET | `/api/notifications/:id` | مشاهده یک اعلان |
