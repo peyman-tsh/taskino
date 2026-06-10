@@ -53,6 +53,14 @@ export class UserService {
   /**
    * Find all users with pagination
    */
+
+  async findByName(userName:string,lastname:string): Promise<UserDocument> {
+    const user = await this.userModel.findOne({ firstName: userName, lastName:lastname }).exec(); 
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+   return user;
+  }
   async findAll(
     page: number = 1,
     limit: number = 10,

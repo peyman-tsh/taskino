@@ -53,6 +53,22 @@ export class NotificationService {
     return this.notificationModel.insertMany(notificationDocuments);
   }
 
+
+  async findUnReadById(userId: string) {
+    const notification = await this.notificationModel
+      .findOne({
+        user: this.toObjectId(userId, 'user ID'),
+        isRead: false,
+      })
+      .exec();
+
+    if (!notification) {
+      throw new NotFoundException('Notification not found');
+    }
+
+    return notification;
+  }
+
   async updateMyReadStatus(
     userId: string,
     notificationId: string,

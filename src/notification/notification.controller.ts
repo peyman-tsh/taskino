@@ -17,6 +17,7 @@ import { QueryNotificationDto } from './dto/query-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { NotificationQueryService } from './notification-query.service';
 import { NotificationService } from './notification.service';
+import { log } from 'console';
 
 @ApiTags('Notifications')
 @ApiBearerAuth()
@@ -45,6 +46,14 @@ export class NotificationController {
   @ApiOkResponse({ description: 'Unread count retrieved successfully' })
   getMyUnreadCount(@CurrentUserId() userId: string) {
     return this.notificationQueryService.getMyUnreadCount(userId);
+  }
+
+  @Get('me/unread')
+  @ApiOperation({ summary: 'Get one unread notification of current user' })
+  @ApiOkResponse({ description: 'Unread notification retrieved successfully' })
+  findUnReadById(@CurrentUserId() userId: string) {
+    log('Finding unread notifications for user:', userId);
+    return this.notificationService.findUnReadById(userId);
   }
 
   @Patch('me/read-all')

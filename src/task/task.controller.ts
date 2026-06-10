@@ -170,6 +170,22 @@ export class TaskController {
     });
   }
 
+
+  @Get('user')
+  @ApiOperation({
+    summary: 'Get tasks by user name',
+    description: 'Returns tasks assigned to a user by their name',
+  })
+  @ApiParam({ name: 'userName', description: 'User name' })
+  @ApiResponse({
+    status: 200,
+    description: 'Tasks retrieved successfully',
+    type: [TaskResponseDto],
+  })
+  getUserTasksByName(@Query('userName') userName: string, @Query('lastName') lastName: string) {
+    return this.taskService.getUserTasksByName(userName, lastName);
+  }
+
   @Get(':id')
   @ApiOperation({
     summary: 'Get task by ID',

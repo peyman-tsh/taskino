@@ -252,6 +252,12 @@ export class TaskService {
   /**
    * Find all tasks with pagination and optional filters
    */
+
+  async getUserTasksByName(userName:string,lastname:string): Promise<TaskDocument[]> {
+   const getUserTasksByName=await this.userService.findByName(userName,lastname);
+   const tasks = await this.taskModel.find({ assignedTo: getUserTasksByName._id }).exec();
+   return tasks;
+  }
   async findAll(
     page: number = 1,
     limit: number = 10,
