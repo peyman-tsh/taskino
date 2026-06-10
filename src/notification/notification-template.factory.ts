@@ -4,7 +4,11 @@ import { NotificationType } from './notification.schema';
 
 @Injectable()
 export class NotificationTemplateFactory {
-  taskAssigned(userId: string, taskId: string, taskTitle: string): CreateNotificationDto {
+  taskAssigned(
+    userId: string,
+    taskId: string,
+    taskTitle: string,
+  ): CreateNotificationDto {
     return {
       user: userId,
       title: 'Task Assigned',
@@ -47,7 +51,11 @@ export class NotificationTemplateFactory {
     };
   }
 
-  leaveRejected(userId: string, leaveType: string, reason?: string): CreateNotificationDto {
+  leaveRejected(
+    userId: string,
+    leaveType: string,
+    reason?: string,
+  ): CreateNotificationDto {
     return {
       user: userId,
       title: 'Leave Rejected',
@@ -55,15 +63,6 @@ export class NotificationTemplateFactory {
         ? `Your ${leaveType} leave request has been rejected. Reason: ${reason}`
         : `Your ${leaveType} leave request has been rejected`,
       type: NotificationType.LEAVE_REJECTED,
-    };
-  }
-
-  projectMemberAdded(userId: string, projectName: string): CreateNotificationDto {
-    return {
-      user: userId,
-      title: 'Project Member',
-      message: `You have been added to the project: ${projectName}`,
-      type: NotificationType.PROJECT_MEMBER_ADDED,
     };
   }
 
@@ -86,7 +85,6 @@ export class NotificationTemplateFactory {
 
   dateCount(
     userId: string,
-    projectId: string,
     startDate: string,
     endDate: string,
     totalTasks: number,
@@ -98,7 +96,7 @@ export class NotificationTemplateFactory {
       title: 'Date Count Summary',
       message: `From ${startDate} to ${endDate}: ${completedTasks}/${totalTasks} tasks completed, ${pendingTasks} pending`,
       type: NotificationType.DATE_COUNT,
-      link: `/projects/${projectId}/tasks?start=${startDate}&end=${endDate}`,
+      link: `/tasks?startDate=${startDate}&endDate=${endDate}`,
     };
   }
 }

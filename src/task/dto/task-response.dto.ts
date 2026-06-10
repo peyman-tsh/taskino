@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TaskStatus } from '../task.schema';
+import { TaskRecurrence, TaskStatus } from '../task.schema';
 
 export class TaskResponseDto {
   @ApiProperty()
@@ -14,17 +14,14 @@ export class TaskResponseDto {
   @ApiProperty({ type: [Object] })
   assignedTo: object[];
 
-  @ApiPropertyOptional({ type: Object })
-  projectId?: object;
-
   @ApiProperty({ enum: TaskStatus })
   status: TaskStatus;
 
   @ApiPropertyOptional()
-  fixedTaskTemplateId?: string;
-
-  @ApiPropertyOptional()
   file?: string;
+
+  @ApiPropertyOptional({ type: Object })
+  excelFile?: object;
 
   @ApiPropertyOptional()
   taskComment?: string;
@@ -48,6 +45,18 @@ export class TaskResponseDto {
     example: '2026-06-07T13:30:00.000Z',
   })
   dueDate?: Date;
+
+  @ApiPropertyOptional({ example: '09:00' })
+  startTime?: string;
+
+  @ApiPropertyOptional({ example: '17:00' })
+  endTime?: string;
+
+  @ApiPropertyOptional({ enum: TaskRecurrence })
+  recurrence?: TaskRecurrence;
+
+  @ApiPropertyOptional()
+  doneTime?: Date;
 }
 
 export class PaginatedTasksResponseDto {
@@ -88,9 +97,6 @@ export class TaskCompletionStatsResponseDto {
 }
 
 export class TaskDateCountResponseDto {
-  @ApiProperty()
-  projectId: string;
-
   @ApiProperty()
   userId: string;
 

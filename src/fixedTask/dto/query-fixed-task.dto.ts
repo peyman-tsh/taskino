@@ -38,12 +38,11 @@ export class QueryFixedTaskDto {
   @IsMongoId()
   assignedTo?: string;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsMongoId()
-  projectId?: string;
-
-  @ApiPropertyOptional({ enum: FixedTaskRecurrence })
+  @ApiPropertyOptional({
+    enum: FixedTaskRecurrence,
+    description: 'Filter by daily, weekly, or monthly recurrence',
+    example: FixedTaskRecurrence.WEEKLY,
+  })
   @IsOptional()
   @IsEnum(FixedTaskRecurrence)
   recurrence?: FixedTaskRecurrence;

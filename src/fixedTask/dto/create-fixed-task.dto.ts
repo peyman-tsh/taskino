@@ -1,6 +1,19 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsDateString, IsEnum, IsMongoId, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import { FixedTaskRecurrence } from '../fixed-task.schema';
+import {
+  IsBoolean,
+  IsDateString,
+  IsEnum,
+  IsMongoId,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Matches,
+} from 'class-validator';
+import { FixedTaskRecurrence, FixedTaskStatus } from '../fixed-task.schema';
+import {
+  TIME_MESSAGE,
+  TIME_PATTERN,
+} from '../../common/constants/time.constants';
 
 export class CreateFixedTaskDto {
   @ApiProperty({ example: 'بررسی گزارش روزانه فروش' })
@@ -12,14 +25,17 @@ export class CreateFixedTaskDto {
   @IsMongoId()
   assignedTo: string;
 
-  @ApiPropertyOptional({ description: 'Optional related project ID' })
-  @IsOptional()
-  @IsMongoId()
-  projectId?: string;
-
-  @ApiProperty({ enum: FixedTaskRecurrence, example: FixedTaskRecurrence.DAILY })
+  @ApiProperty({
+    enum: FixedTaskRecurrence,
+    example: FixedTaskRecurrence.DAILY,
+  })
   @IsEnum(FixedTaskRecurrence)
   recurrence: FixedTaskRecurrence;
+
+  @ApiPropertyOptional({ enum: FixedTaskStatus, default: FixedTaskStatus.TODO })
+  @IsOptional()
+  @IsEnum(FixedTaskStatus)
+  status?: FixedTaskStatus;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -35,4 +51,20 @@ export class CreateFixedTaskDto {
   @IsOptional()
   @IsDateString()
   nextRunAt?: string;
+
+  @ApiPropertyOptional({
+    description: 'Daily start time in 24-hour HH:mm format',
+    example: '09:00',
+  })
+  @IsOptional()
+  @Matches(TIME_PATTERN, { message: `startTime ${TIME_MESSAGE}` })
+  startTime?: string;
+
+  @ApiPropertyOptional({
+    description: 'Daily end time in 24-hour HH:mm format',
+    example: '17:00',
+  })
+  @IsOptional()
+  @Matches(TIME_PATTERN, { message: `endTime ${TIME_MESSAGE}` })
+  endTime?: string;
 }

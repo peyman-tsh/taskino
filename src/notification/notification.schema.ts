@@ -12,7 +12,6 @@ export enum NotificationType {
   LEAVE_REQUEST = 'leave_request',
   LEAVE_APPROVED = 'leave_approved',
   LEAVE_REJECTED = 'leave_rejected',
-  PROJECT_MEMBER_ADDED = 'project_member_added',
 }
 
 @Schema({ timestamps: true })
@@ -49,8 +48,7 @@ export class Notification {
   link?: string;
 }
 
-export const NotificationSchema =
-  SchemaFactory.createForClass(Notification);
+export const NotificationSchema = SchemaFactory.createForClass(Notification);
 
 NotificationSchema.index({ user: 1, createdAt: -1 });
 NotificationSchema.index({ user: 1, isRead: 1, createdAt: -1 });

@@ -1,18 +1,37 @@
 import * as bcrypt from 'bcryptjs';
-import { existsSync, mkdirSync, readFileSync, copyFileSync, statSync } from 'fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  copyFileSync,
+  statSync,
+} from 'fs';
 import { basename, join } from 'path';
 import mongoose, { Types } from 'mongoose';
 import * as XLSX from 'xlsx';
-import { ExcelFile, ExcelSchema, ExcelStatus, ExcelType } from '../../excel/excel.schema';
+import {
+  ExcelFile,
+  ExcelSchema,
+  ExcelStatus,
+  ExcelType,
+} from '../../excel/excel.schema';
 import {
   FixedTaskRecurrence,
   FixedTaskTemplate,
   FixedTaskTemplateSchema,
-} from '../../fixedTask/fixed-task.schema';
+} from '../fixed-task.schema';
 import { WorkField } from '../../common/enums/work-field.enum';
 import { User, UserRole, UserSchema } from '../../user/schemas/user.schema';
 
 type ExcelRow = Array<string | number | null>;
+type ParsedExcelRow = { sourceRow: number; values: ExcelRow };
+type SeededUser = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  mobile: string;
+  role: UserRole;
+};
 
 const recurrenceMap: Record<string, FixedTaskRecurrence> = {
   روزانه: FixedTaskRecurrence.DAILY,
@@ -21,23 +40,31 @@ const recurrenceMap: Record<string, FixedTaskRecurrence> = {
   ماهانه: FixedTaskRecurrence.MONTHLY,
 };
 
-const seededUsers: Record<string, { email: string; mobile: string; role: UserRole }> = {
+const seededUsers: Record<string, SeededUser> = {
   جلالیان: {
+    firstName: 'کاربر',
+    lastName: 'جلالیان',
     email: 'fixed-task.jalalian@taskino.local',
     mobile: '+989100000701',
     role: UserRole.SPECIALIST,
   },
   'امیر گنجی': {
+    firstName: 'امیر',
+    lastName: 'گنجی',
     email: 'fixed-task.amir-ganji@taskino.local',
     mobile: '+989100000702',
     role: UserRole.SPECIALIST,
   },
   اعلایی: {
+    firstName: 'سینا',
+    lastName: 'اعلایی',
     email: 'fixed-task.alaei@taskino.local',
     mobile: '+989100000703',
     role: UserRole.SUPERVISOR,
   },
   'اکبر گنجی': {
+    firstName: 'اکبر',
+    lastName: 'گنجی',
     email: 'fixed-task.akbar-ganji@taskino.local',
     mobile: '+989100000704',
     role: UserRole.SPECIALIST,
@@ -48,31 +75,44 @@ function loadEnv(): Record<string, string> {
   return Object.fromEntries(
     readFileSync('.env', 'utf8')
       .split(/\r?\n/)
-      .filter((line) => line && !line.trim().startsWith('#') && line.includes('='))
+      .filter(
+        (line) => line && !line.trim().startsWith('#') && line.includes('='),
+      )
       .map((line) => {
         const separatorIndex = line.indexOf('=');
-        return [line.slice(0, separatorIndex).trim(), line.slice(separatorIndex + 1).trim()];
+        return [
+          line.slice(0, separatorIndex).trim(),
+          line.slice(separatorIndex + 1).trim(),
+        ];
       }),
   );
 }
 
-function splitName(sheetName: string): { firstName: string; lastName: string } {
-  const parts = sheetName.trim().split(/\s+/);
-  if (parts.length === 1) {
-    return { firstName: 'کاربر', lastName: parts[0] };
-  }
-
-  return {
-    firstName: parts[0],
-    lastName: parts.slice(1).join(' '),
-  };
+function parseRows(sheet: XLSX.WorkSheet): ParsedExcelRow[] {
+  return XLSX.utils
+    .sheet_to_json<ExcelRow>(sheet, {
+      header: 1,
+      defval: null,
+      blankrows: true,
+    })
+    .map((values, index) => ({ sourceRow: index + 1, values }))
+    .filter(
+      ({ values }) =>
+        values[0] !== 'رديف' && Boolean(values[2]) && Boolean(values[6]),
+    );
 }
 
-function parseRows(sheet: XLSX.WorkSheet): ExcelRow[] {
-  return XLSX.utils
-    .sheet_to_json<ExcelRow>(sheet, { header: 1, defval: null, blankrows: false })
-    .slice(1)
-    .filter((row) => Boolean(row[2]) && Boolean(row[6]));
+function createDescription(row: ExcelRow): string {
+  return [
+    ['شرح فعالیت', row[3]],
+    ['خروجی فرایند', row[4]],
+    ['سمت انجام‌دهنده', row[5]],
+    ['تعداد دفعات', row[7]],
+    ['مدت هر دفعه (دقیقه)', row[8]],
+  ]
+    .filter(([, value]) => value !== null && String(value).trim())
+    .map(([label, value]) => `${label}: ${String(value).trim()}`)
+    .join('\n');
 }
 
 async function run(): Promise<void> {
@@ -85,9 +125,15 @@ async function run(): Promise<void> {
   await mongoose.connect(env.MONGODB_URI);
 
   const UserModel = mongoose.model(User.name, UserSchema);
-  const FixedTaskModel = mongoose.model(FixedTaskTemplate.name, FixedTaskTemplateSchema);
+  const FixedTaskModel = mongoose.model(
+    FixedTaskTemplate.name,
+    FixedTaskTemplateSchema,
+  );
   const ExcelModel = mongoose.model(ExcelFile.name, ExcelSchema);
-  const password = await bcrypt.hash('SeedPass1234', Number(env.BCRYPT_SALT_ROUNDS || 10));
+  const password = await bcrypt.hash(
+    'SeedPass1234',
+    Number(env.BCRYPT_SALT_ROUNDS || 10),
+  );
 
   const manager = await UserModel.findOneAndUpdate(
     { email: 'fixed-task.manager@taskino.local' },
@@ -119,28 +165,34 @@ async function run(): Promise<void> {
   let totalTemplates = 0;
   let createdTemplates = 0;
   let updatedTemplates = 0;
-  const sheetResults: Array<{ sheet: string; userId: string; templates: number }> = [];
+  const sheetResults: Array<{
+    sheet: string;
+    userId: string;
+    templates: number;
+  }> = [];
 
   for (const sheetName of workbook.SheetNames) {
     const userSeed = seededUsers[sheetName];
     if (!userSeed) {
-      throw new Error(`No user mapping is configured for sheet "${sheetName}".`);
+      throw new Error(
+        `No user mapping is configured for sheet "${sheetName}".`,
+      );
     }
 
-    const name = splitName(sheetName);
     const user = await UserModel.findOneAndUpdate(
       { email: userSeed.email },
       {
         $set: {
+          firstName: userSeed.firstName,
+          lastName: userSeed.lastName,
           mobile: userSeed.mobile,
-        },
-        $setOnInsert: {
-          ...name,
-          email: userSeed.email,
-          password,
           roles: userSeed.role,
           workField: WorkField.OPERATIONS,
           isActive: true,
+        },
+        $setOnInsert: {
+          email: userSeed.email,
+          password,
           score: 0,
         },
       },
@@ -150,15 +202,16 @@ async function run(): Promise<void> {
     const rows = parseRows(workbook.Sheets[sheetName]);
     totalTemplates += rows.length;
 
-    for (const [rowIndex, row] of rows.entries()) {
+    for (const { sourceRow, values: row } of rows) {
       const title = String(row[2]).trim();
       const recurrenceLabel = String(row[6]).trim();
       const recurrence = recurrenceMap[recurrenceLabel];
       if (!recurrence) {
-        throw new Error(`Unknown recurrence "${recurrenceLabel}" in sheet "${sheetName}".`);
+        throw new Error(
+          `Unknown recurrence "${recurrenceLabel}" in sheet "${sheetName}".`,
+        );
       }
 
-      const sourceRow = rowIndex + 2;
       const result = await FixedTaskModel.updateOne(
         {
           sourceExcel: basename(sourcePath),
@@ -171,7 +224,7 @@ async function run(): Promise<void> {
             createdBy: manager._id,
             assignedTo: user._id,
             recurrence,
-            description: '',
+            description: createDescription(row),
             isActive: true,
             sourceExcel: basename(sourcePath),
             sourceSheet: sheetName,
@@ -185,7 +238,11 @@ async function run(): Promise<void> {
       else updatedTemplates += 1;
     }
 
-    sheetResults.push({ sheet: sheetName, userId: user._id.toString(), templates: rows.length });
+    sheetResults.push({
+      sheet: sheetName,
+      userId: user._id.toString(),
+      templates: rows.length,
+    });
   }
 
   const sourceStats = statSync(sourcePath);
@@ -200,7 +257,8 @@ async function run(): Promise<void> {
         fileName: storedFileName,
         originalName: basename(sourcePath),
         filePath: storedFilePath,
-        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        mimeType:
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         fileSize: sourceStats.size,
         type: ExcelType.IMPORT,
         status: ExcelStatus.COMPLETED,
@@ -209,7 +267,15 @@ async function run(): Promise<void> {
         successRows: totalTemplates,
         errorRows: 0,
         errorMessage: '',
-        columns: ['ورودی فرایند', 'توالي'],
+        columns: [
+          'ورودی فرایند',
+          'شرح فعاليت (پردازش)',
+          'خروجی فرایند',
+          'سمت انجام دهنده',
+          'توالي',
+          'تعداد دفعات',
+          'مدت زمان انجام به ازای هر دفعه کاری (دقيقه)',
+        ],
       },
     },
     { returnDocument: 'after', upsert: true },

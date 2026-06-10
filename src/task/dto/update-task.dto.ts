@@ -9,11 +9,16 @@ import {
   IsDateString,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { TaskStatus } from '../task.schema';
+import { Transform } from 'class-transformer';
+import { TaskRecurrence, TaskStatus } from '../task.schema';
 import {
   TASK_DATE_TIME_MESSAGE,
   TASK_DATE_TIME_PATTERN,
 } from './task-date-time.constants';
+import {
+  TIME_MESSAGE,
+  TIME_PATTERN,
+} from '../../common/constants/time.constants';
 
 export class UpdateTaskDto {
   @ApiPropertyOptional({
@@ -31,6 +36,7 @@ export class UpdateTaskDto {
   })
   @IsOptional()
   @IsArray()
+  @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
   @ArrayMinSize(1, { message: 'A task must be assigned to exactly one user' })
   @ArrayMaxSize(1, {
     message: 'A task can currently be assigned to only one user',
@@ -74,4 +80,29 @@ export class UpdateTaskDto {
     message: `dueDate ${TASK_DATE_TIME_MESSAGE}`,
   })
   dueDate?: string;
+
+  @ApiPropertyOptional({
+    description: 'Daily start time in 24-hour HH:mm format',
+    example: '09:00',
+  })
+  @IsOptional()
+  @Matches(TIME_PATTERN, { message: `startTime ${TIME_MESSAGE}` })
+  startTime?: string;
+
+  @ApiPropertyOptional({
+    description: 'Daily end time in 24-hour HH:mm format',
+    example: '17:00',
+  })
+  @IsOptional()
+  @Matches(TIME_PATTERN, { message: `endTime ${TIME_MESSAGE}` })
+  endTime?: string;
+
+  @ApiPropertyOptional({
+    description: 'Optional task recurrence',
+    enum: TaskRecurrence,
+    example: TaskRecurrence.WEEKLY,
+  })
+  @IsOptional()
+  @IsEnum(TaskRecurrence)
+  recurrence?: TaskRecurrence;
 }

@@ -30,41 +30,18 @@ import { FixedTaskParamDto } from './dto/fixed-task-param.dto';
 import { QueryFixedTaskDto } from './dto/query-fixed-task.dto';
 import { UpdateFixedTaskDto } from './dto/update-fixed-task.dto';
 import { FixedTaskService } from './fixed-task.service';
-import { QueryIncompleteFixedTaskReportDto } from './dto/query-incomplete-fixed-task-report.dto';
 import {
   FixedTaskResponseDto,
-  IncompleteFixedTaskReportResponseDto,
   PaginatedFixedTasksResponseDto,
 } from './dto/fixed-task-response.dto';
-import { FixedTaskReportService } from './fixed-task-report.service';
 
 @ApiTags('Fixed Tasks')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.MANAGER)
+@Roles(UserRole.MANAGER, UserRole.SUPERVISOR)
 @Controller('fixed-tasks')
 export class FixedTaskController {
-  constructor(
-    private readonly fixedTaskService: FixedTaskService,
-    private readonly fixedTaskReportService: FixedTaskReportService,
-  ) {}
-
-  @Get('reports/incomplete')
-  @ApiOperation({
-    summary: 'Report incomplete recurring fixed tasks',
-    description:
-      'Reports incomplete daily, weekly, or monthly fixed task executions and indicates whether their deadline has passed.',
-  })
-  @ApiOkResponse({
-    description: 'Incomplete fixed task report retrieved successfully',
-    type: IncompleteFixedTaskReportResponseDto,
-  })
-  getIncompleteReport(
-    @CurrentUserId() managerId: string,
-    @Query() query: QueryIncompleteFixedTaskReportDto,
-  ) {
-    return this.fixedTaskReportService.getIncompleteReport(managerId, query);
-  }
+  constructor(private readonly fixedTaskService: FixedTaskService) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a fixed task template' })

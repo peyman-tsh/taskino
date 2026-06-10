@@ -9,6 +9,11 @@ export enum UserRole {
   SUPERVISOR = 'supervisor',
   MANAGER = 'manager',
 }
+
+export enum UserPerformanceStatus {
+  GOOD = 'good',
+  WEAK = 'weak',
+}
 @Schema({
   timestamps: true,
   toJSON: {
@@ -54,6 +59,19 @@ export class User {
 
   @Prop({ type: Boolean, default: false })
   isActive: boolean;
+
+  @Prop({ type: Number, default: 0, min: 0, max: 100 })
+  progressPercentage: number;
+
+  @Prop({
+    type: String,
+    enum: UserPerformanceStatus,
+    default: UserPerformanceStatus.WEAK,
+  })
+  performanceStatus: UserPerformanceStatus;
+
+  @Prop({ type: Date })
+  performanceEvaluatedAt?: Date;
 
   @Prop({ type: Date, default: Date.now })
   createdAt: Date;

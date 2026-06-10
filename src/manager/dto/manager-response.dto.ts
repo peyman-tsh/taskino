@@ -1,10 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  PaginatedProjectProgressResponseDto,
-  ProjectProgressResponseDto,
-  ProjectResponseDto,
-} from '../../project/dto/project-response.dto';
-import {
   TaskCountsByUserResponseDto,
   TaskStatusOverviewResponseDto,
 } from '../../task/dto/task-response.dto';
@@ -12,46 +7,17 @@ import {
   PaginatedUsersResponseDto,
   UserResponseDto,
 } from '../../user/dto/user-response.dto';
+import {
+  UserPerformanceStatus,
+  UserRole,
+} from '../../user/schemas/user.schema';
 
 export class ManagerStatisticsResponseDto {
-  @ApiProperty()
-  activeProjects: number;
-
   @ApiProperty()
   openTasks: number;
 
   @ApiProperty()
   activeUsers: number;
-}
-
-export class ProjectActivationResponseDto {
-  @ApiProperty()
-  message: string;
-
-  @ApiProperty({ type: ProjectResponseDto })
-  project: ProjectResponseDto;
-}
-
-export class ManagerProjectAssigneeDto {
-  @ApiProperty({ type: Object })
-  user: object;
-
-  @ApiProperty()
-  role: string;
-
-  @ApiProperty()
-  isActive: boolean;
-}
-
-export class ManagerProjectAssigneeResponseDto {
-  @ApiProperty()
-  projectId: string;
-
-  @ApiProperty()
-  projectName: string;
-
-  @ApiProperty({ type: ManagerProjectAssigneeDto, nullable: true })
-  assignee: ManagerProjectAssigneeDto | null;
 }
 
 export class MonthlyUserPerformanceItemDto {
@@ -93,17 +59,53 @@ export class MonthlyUserPerformanceResponseDto {
   @ApiProperty()
   year: number;
 
-  @ApiProperty({ required: false })
-  projectId?: string;
-
   @ApiProperty({ type: [MonthlyUserPerformanceItemDto] })
   users: MonthlyUserPerformanceItemDto[];
 }
 
+export class UserProgressResponseDto {
+  @ApiProperty()
+  userId: string;
+
+  @ApiProperty()
+  firstName: string;
+
+  @ApiProperty()
+  lastName: string;
+
+  @ApiProperty()
+  email: string;
+
+  @ApiProperty({ enum: UserRole })
+  role: UserRole;
+
+  @ApiProperty()
+  totalTasks: number;
+
+  @ApiProperty()
+  completedTasks: number;
+
+  @ApiProperty()
+  onTimeTasks: number;
+
+  @ApiProperty()
+  totalFixedTasks: number;
+
+  @ApiProperty()
+  completedFixedTasks: number;
+
+  @ApiProperty()
+  progressPercentage: number;
+
+  @ApiProperty({ enum: UserPerformanceStatus })
+  performanceStatus: UserPerformanceStatus;
+
+  @ApiProperty()
+  performanceEvaluatedAt: Date;
+}
+
 export {
-  PaginatedProjectProgressResponseDto,
   PaginatedUsersResponseDto,
-  ProjectProgressResponseDto,
   TaskCountsByUserResponseDto,
   TaskStatusOverviewResponseDto,
   UserResponseDto,

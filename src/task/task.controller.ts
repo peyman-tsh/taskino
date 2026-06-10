@@ -20,7 +20,7 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TaskCompletionStatsDto } from './dto/task-count.dto';
 import { DateCountDto } from './dto/dateCount.dto';
-import { TaskStatus } from './task.schema';
+import { TaskRecurrence, TaskStatus } from './task.schema';
 import {
   ApiTags,
   ApiOperation,
@@ -55,8 +55,7 @@ export class TaskController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Create a new task',
-    description:
-      'Creates a new task. Managers and supervisors can create standalone tasks; project tasks require ownership or supervision access.',
+    description: 'Creates an independent task assigned to exactly one user.',
   })
   @ApiResponse({
     status: 201,
@@ -139,6 +138,13 @@ export class TaskController {
       'Range end as ISO date-time. Returns tasks whose startDate is on or before this value.',
     example: '2026-06-07T23:59:59+03:30',
   })
+  @ApiQuery({
+    name: 'recurrence',
+    required: false,
+    enum: TaskRecurrence,
+    description: 'Filter by daily, weekly, or monthly recurrence',
+    example: TaskRecurrence.WEEKLY,
+  })
   @ApiResponse({
     status: 200,
     description: 'Tasks retrieved successfully',
@@ -152,6 +158,7 @@ export class TaskController {
     @Query('status') status?: TaskStatus,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
+    @Query('recurrence') recurrence?: TaskRecurrence,
   ) {
     return this.taskService.findAll(page, limit, {
       createdBy,
@@ -159,6 +166,7 @@ export class TaskController {
       status,
       startDate,
       endDate,
+      recurrence,
     });
   }
 
@@ -253,9 +261,8 @@ export class TaskController {
   @Roles(UserRole.MANAGER, UserRole.SUPERVISOR)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Get task count by project and date range',
-    description:
-      'Returns task statistics for a user in a project within a date range',
+    summary: 'Get task count by user and date range',
+    description: 'Returns task statistics for a user within a date range',
   })
   @ApiResponse({
     status: 200,
@@ -263,7 +270,7 @@ export class TaskController {
     type: TaskDateCountResponseDto,
   })
   @ApiResponse({ status: 400, description: 'Validation failed' })
-  findTasksByProjectAndCount(@Body() dateCountDto: DateCountDto) {
-    return this.taskService.findTasksByProjectAndCount(dateCountDto);
+  findTasksByUserAndCount(@Body() dateCountDto: DateCountDto) {
+    return this.taskService.findTasksByUserAndCount(dateCountDto);
   }
 }

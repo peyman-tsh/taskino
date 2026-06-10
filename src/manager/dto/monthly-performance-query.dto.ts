@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsMongoId, IsOptional, Max, Min } from 'class-validator';
+import { IsInt, IsOptional, Max, Min } from 'class-validator';
 
 export class MonthlyPerformanceQueryDto {
   @ApiPropertyOptional({
@@ -26,12 +26,4 @@ export class MonthlyPerformanceQueryDto {
   @IsInt()
   @Min(2000)
   year = new Date().getFullYear();
-
-  @ApiPropertyOptional({
-    description: 'Filter performance by project ID',
-    example: '64a7b1c2d3e4f5a6b7c8d9e1',
-  })
-  @IsOptional()
-  @IsMongoId()
-  projectId?: string;
 }

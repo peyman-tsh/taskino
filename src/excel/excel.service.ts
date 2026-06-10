@@ -1,11 +1,21 @@
-import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Inject,
+} from '@nestjs/common';
+import { InjectConnection, InjectModel } from '@nestjs/mongoose';
+import { Connection, Model, Types } from 'mongoose';
 import * as ExcelJS from 'exceljs';
 import { join } from 'path';
 import { CreateExcelDto } from './dto/create-excel.dto';
 import { UpdateExcelDto } from './dto/update-excel.dto';
-import { ExcelFile, ExcelDocument, ExcelType, ExcelStatus } from './excel.schema';
+import {
+  ExcelFile,
+  ExcelDocument,
+  ExcelType,
+  ExcelStatus,
+} from './excel.schema';
 import { NodeFileSystem } from './file-system.provider';
 import type { IFileSystem } from './file-system.provider';
 
@@ -35,6 +45,8 @@ export class ExcelService {
     private readonly excelModel: Model<ExcelDocument>,
     @Inject(NodeFileSystem.name)
     private readonly fileSystem: IFileSystem,
+    @InjectConnection()
+    private readonly connection: Connection,
   ) {
     this.uploadDir = join(process.cwd(), 'uploads', UPLOAD_DIR_SEGMENT);
   }
@@ -94,6 +106,7 @@ export class ExcelService {
         .limit(limit)
         .sort({ createdAt: -1 })
         .populate('createdBy', 'firstName lastName email')
+        .populate('relatedTask', 'title status startDate dueDate')
         .exec(),
       this.excelModel.countDocuments(query).exec(),
     ]);
@@ -111,6 +124,7 @@ export class ExcelService {
     const excelFile = await this.excelModel
       .findById(id)
       .populate('createdBy', 'firstName lastName email')
+      .populate('relatedTask', 'title status startDate dueDate')
       .exec();
 
     if (!excelFile) {
@@ -133,12 +147,15 @@ export class ExcelService {
 
     // Build update object only with defined values
     const updateData: Record<string, unknown> = Object.fromEntries(
-      Object.entries(updateExcelDto).filter(([_, value]) => value !== undefined),
+      Object.entries(updateExcelDto).filter(
+        ([_, value]) => value !== undefined,
+      ),
     );
 
     return this.excelModel
       .findByIdAndUpdate(id, updateData, { new: true })
       .populate('createdBy', 'firstName lastName email')
+      .populate('relatedTask', 'title status startDate dueDate')
       .exec() as Promise<ExcelFile>;
   }
 
@@ -162,6 +179,12 @@ export class ExcelService {
       }
     }
 
+    await this.connection
+      .collection('tasks')
+      .updateMany(
+        { excelFile: excelFile._id },
+        { $unset: { excelFile: '', file: '' } },
+      );
     await this.excelModel.findByIdAndDelete(id).exec();
   }
 
@@ -180,7 +203,7 @@ export class ExcelService {
     file: any,
     createdBy: string,
     type: ExcelType = ExcelType.IMPORT,
-  ): Promise<ExcelFile> {
+  ): Promise<ExcelDocument> {
     if (!file) {
       throw new BadRequestException('No file provided');
     }
@@ -230,7 +253,10 @@ export class ExcelService {
   /**
    * Extract column headers and row count from Excel file buffer
    */
-  private extractExcelMetadata(buffer: Buffer | Buffer[]): { columns: string[]; totalRows: number } {
+  private extractExcelMetadata(buffer: Buffer | Buffer[]): {
+    columns: string[];
+    totalRows: number;
+  } {
     let columns: string[] = [];
     let totalRows = 0;
 
@@ -307,7 +333,8 @@ export class ExcelService {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet(sheetName);
 
-    const columnKeys = columns || (objects.length > 0 ? Object.keys(objects[0]) : []);
+    const columnKeys =
+      columns || (objects.length > 0 ? Object.keys(objects[0]) : []);
 
     // Add header row
     worksheet.addRow(columnKeys);
@@ -377,7 +404,8 @@ export class ExcelService {
       excelFile.errorRows = errorCount;
       await excelFile.save();
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error occurred';
 
       excelFile.status = ExcelStatus.FAILED;
       excelFile.errorMessage = errorMessage;
@@ -405,7 +433,10 @@ export class ExcelService {
       this.excelModel.countDocuments(query),
       this.excelModel.countDocuments({ ...query, type: ExcelType.IMPORT }),
       this.excelModel.countDocuments({ ...query, type: ExcelType.EXPORT }),
-      this.excelModel.countDocuments({ ...query, status: ExcelStatus.COMPLETED }),
+      this.excelModel.countDocuments({
+        ...query,
+        status: ExcelStatus.COMPLETED,
+      }),
       this.excelModel.countDocuments({ ...query, status: ExcelStatus.FAILED }),
     ]);
 

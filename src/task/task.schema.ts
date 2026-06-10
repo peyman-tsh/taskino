@@ -1,12 +1,19 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
-import { Project } from '../project/project.schema';
 import { User } from '../user/schemas/user.schema';
+import { TIME_PATTERN } from '../common/constants/time.constants';
+import { ExcelFile } from '../excel/excel.schema';
 
 export enum TaskStatus {
   TODO = 'todo',
   IN_PROGRESS = 'in_progress',
   DONE = 'done',
+}
+
+export enum TaskRecurrence {
+  DAILY = 'daily',
+  WEEKLY = 'weekly',
+  MONTHLY = 'monthly',
 }
 
 @Schema({ timestamps: true })
@@ -27,9 +34,6 @@ export class Task {
   })
   assignedTo: Types.ObjectId[];
 
-  @Prop({ type: Types.ObjectId, ref: Project.name })
-  projectId?: Types.ObjectId;
-
   @Prop({
     type: String,
     enum: TaskStatus,
@@ -37,11 +41,16 @@ export class Task {
   })
   status: TaskStatus;
 
-  @Prop({ type: Types.ObjectId, ref: 'FixedTaskTemplate', index: true })
-  fixedTaskTemplateId?: Types.ObjectId;
-
   @Prop({ default: null, type: String })
   file?: string;
+
+  @Prop({
+    type: Types.ObjectId,
+    ref: ExcelFile.name,
+    unique: true,
+    sparse: true,
+  })
+  excelFile?: Types.ObjectId;
 
   @Prop({ type: String, default: null })
   taskComment?: string;
@@ -57,8 +66,25 @@ export class Task {
 
   @Prop({ type: Date, index: true })
   dueDate?: Date;
+
+  @Prop({ type: String, match: TIME_PATTERN })
+  startTime?: string;
+
+  @Prop({ type: String, match: TIME_PATTERN })
+  endTime?: string;
+
+  @Prop({ type: String, enum: TaskRecurrence, index: true })
+  recurrence?: TaskRecurrence;
+
+  @Prop({ type: Date })
+  doneTime?: Date;
+
+  @Prop({ type: Boolean, default: false })
+  scoreAdjusted: boolean;
 }
 
 export type TaskDocument = HydratedDocument<Task>;
 
 export const TaskSchema = SchemaFactory.createForClass(Task);
+
+TaskSchema.index({ recurrence: 1, startDate: 1, dueDate: 1 });

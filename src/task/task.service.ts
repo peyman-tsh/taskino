@@ -1,16 +1,14 @@
 import {
-  Inject,
   Injectable,
   NotFoundException,
   BadRequestException,
-  forwardRef,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { ClientSession, Model, Types } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TaskCompletionStatsDto } from './dto/task-count.dto';
-import { Task, TaskDocument, TaskStatus, TaskSchema } from './task.schema';
+import { Task, TaskDocument, TaskRecurrence, TaskStatus } from './task.schema';
 import { ExcelService } from '../excel/excel.service';
 import { ExcelFile, ExcelType } from '../excel/excel.schema';
 import { DateCountDto } from './dto/dateCount.dto';
@@ -21,8 +19,8 @@ import {
   TaskAssignedNotificationEvent,
   TaskCompletedNotificationEvent,
 } from '../notification/events/notification.events';
-import { ProjectService } from '../project/project.service';
 import { UserRole } from '../user/schemas/user.schema';
+import { isValidTimeRange } from '../common/constants/time.constants';
 
 // Constants
 const EXCEL_IMPORT_TYPE = 'import' as ExcelType;
@@ -39,8 +37,6 @@ export class TaskService {
     private readonly excelService: ExcelService,
     private readonly userService: UserService,
     private readonly eventBus: InternalEventBus,
-    @Inject(forwardRef(() => ProjectService))
-    private readonly projectService: ProjectService,
   ) {}
 
   private notifyAssignedUsers(
@@ -118,11 +114,17 @@ export class TaskService {
     }
   }
 
+  private assertValidTimeRange(startTime?: string, endTime?: string): void {
+    if (!isValidTimeRange(startTime, endTime)) {
+      throw new BadRequestException('endTime must be after startTime');
+    }
+  }
+
   private async assertStandaloneTaskParticipants(
     creatorId: string,
     assigneeIds: string[],
   ): Promise<void> {
-    const participants = await this.userService.findProjectParticipantsByIds([
+    const participants = await this.userService.findTaskParticipantsByIds([
       creatorId,
       ...assigneeIds,
     ]);
@@ -169,8 +171,15 @@ export class TaskService {
         excelUpload: ExcelFile;
       }
   > {
-    const { createdBy, assignedTo, projectId, startDate, dueDate, ...rest } =
-      createTaskDto;
+    const {
+      createdBy,
+      assignedTo,
+      startDate,
+      dueDate,
+      startTime,
+      endTime,
+      ...rest
+    } = createTaskDto;
 
     // Validate createdBy
     this.validateObjectId(createdBy);
@@ -187,16 +196,7 @@ export class TaskService {
       }
     }
 
-    if (projectId) {
-      this.validateObjectId(projectId);
-      await this.projectService.assertTaskParticipants(
-        projectId,
-        createdBy,
-        assignedToArray,
-      );
-    } else {
-      await this.assertStandaloneTaskParticipants(createdBy, assignedToArray);
-    }
+    await this.assertStandaloneTaskParticipants(createdBy, assignedToArray);
 
     const parsedStartDate = startDate
       ? this.parseTaskDateTime(startDate, 'startDate')
@@ -205,14 +205,18 @@ export class TaskService {
       ? this.parseTaskDateTime(dueDate, 'dueDate')
       : undefined;
     this.assertValidDeadline(parsedStartDate, parsedDueDate);
+    this.assertValidTimeRange(startTime, endTime);
 
     const createdTask = new this.taskModel({
+      _id: new Types.ObjectId(),
       ...rest,
       createdBy: new Types.ObjectId(createdBy),
       assignedTo: assignedToArray.map((userId) => new Types.ObjectId(userId)),
-      projectId: projectId ? new Types.ObjectId(projectId) : undefined,
       startDate: parsedStartDate,
       dueDate: parsedDueDate,
+      startTime,
+      endTime,
+      doneTime: rest.status === TaskStatus.DONE ? new Date() : undefined,
     });
 
     // Handle file upload if provided
@@ -223,6 +227,7 @@ export class TaskService {
         EXCEL_IMPORT_TYPE,
       );
       createdTask.file = excelUpload.fileName;
+      createdTask.excelFile = new Types.ObjectId(excelUpload._id.toString());
       const savedTask = await createdTask.save();
       this.notifyAssignedUsers(
         assignedToArray,
@@ -256,6 +261,7 @@ export class TaskService {
       status?: TaskStatus;
       startDate?: string;
       endDate?: string;
+      recurrence?: TaskRecurrence;
     },
   ): Promise<{
     data: TaskDocument[];
@@ -274,6 +280,12 @@ export class TaskService {
     }
     if (filters?.status) {
       query.status = filters.status;
+    }
+    if (filters?.recurrence) {
+      if (!Object.values(TaskRecurrence).includes(filters.recurrence)) {
+        throw new BadRequestException('Invalid task recurrence');
+      }
+      query.recurrence = filters.recurrence;
     }
     const rangeStart = filters?.startDate
       ? this.parseTaskDateTime(filters.startDate, 'startDate')
@@ -298,6 +310,10 @@ export class TaskService {
         .limit(limit)
         .populate('createdBy', 'firstName lastName email')
         .populate('assignedTo', 'firstName lastName email')
+        .populate(
+          'excelFile',
+          'fileName originalName mimeType fileSize type status',
+        )
         .exec(),
       this.taskModel.countDocuments(query).exec(),
     ]);
@@ -316,6 +332,10 @@ export class TaskService {
       .findById(id)
       .populate('createdBy', 'firstName lastName email')
       .populate('assignedTo', 'firstName lastName email')
+      .populate(
+        'excelFile',
+        'fileName originalName mimeType fileSize type status',
+      )
       .exec();
 
     if (!task) {
@@ -353,6 +373,10 @@ export class TaskService {
         ? this.parseTaskDateTime(updateTaskDto.dueDate, 'dueDate')
         : task.dueDate;
     this.assertValidDeadline(nextStartDate, nextDueDate);
+    this.assertValidTimeRange(
+      updateTaskDto.startTime ?? task.startTime,
+      updateTaskDto.endTime ?? task.endTime,
+    );
     if (updateTaskDto.startDate !== undefined) {
       updateData.startDate = nextStartDate;
     }
@@ -369,18 +393,10 @@ export class TaskService {
       if (invalidIds.length > 0) {
         throw new BadRequestException('Invalid assignedTo user IDs');
       }
-      if (task.projectId) {
-        await this.projectService.assertTaskParticipants(
-          task.projectId.toString(),
-          task.createdBy.toString(),
-          updateTaskDto.assignedTo,
-        );
-      } else {
-        await this.assertStandaloneTaskParticipants(
-          task.createdBy.toString(),
-          updateTaskDto.assignedTo,
-        );
-      }
+      await this.assertStandaloneTaskParticipants(
+        task.createdBy.toString(),
+        updateTaskDto.assignedTo,
+      );
       updateData.assignedTo = updateTaskDto.assignedTo.map(
         (userId) => new Types.ObjectId(userId),
       );
@@ -396,11 +412,23 @@ export class TaskService {
     const changedToDone =
       updateTaskDto.status === TaskStatus.DONE &&
       task.status !== TaskStatus.DONE;
+    if (changedToDone) {
+      updateData.doneTime = new Date();
+    } else if (
+      updateTaskDto.status !== undefined &&
+      updateTaskDto.status !== TaskStatus.DONE
+    ) {
+      updateData.doneTime = null;
+    }
 
     const updatedTask = await this.taskModel
       .findByIdAndUpdate(id, updateData, { new: true })
       .populate('createdBy', 'firstName lastName email')
       .populate('assignedTo', 'firstName lastName email')
+      .populate(
+        'excelFile',
+        'fileName originalName mimeType fileSize type status',
+      )
       .exec();
 
     if (!updatedTask) {
@@ -430,11 +458,17 @@ export class TaskService {
   async delete(id: string): Promise<void> {
     this.validateObjectId(id);
 
-    const task = await this.taskModel.findByIdAndDelete(id).exec();
+    const task = await this.taskModel.findById(id).exec();
 
     if (!task) {
       throw new NotFoundException('Task not found');
     }
+
+    if (task.excelFile) {
+      await this.excelService.delete(task.excelFile.toString());
+    }
+
+    await this.taskModel.findByIdAndDelete(id).exec();
   }
 
   /**
@@ -450,60 +484,27 @@ export class TaskService {
     }
 
     const task = await this.taskModel
-      .findByIdAndUpdate(id, { status }, { new: true })
-      .populate('createdBy', 'firstName lastName email')
-      .populate('assignedTo', 'firstName lastName email')
-      .exec();
-
-    if (!task) {
-      throw new NotFoundException('Task not found');
-    }
-
-    if (status === TaskStatus.DONE && existingTask.status !== TaskStatus.DONE) {
-      this.notifyCreatorWhenCompleted(
-        existingTask.createdBy.toString(),
-        task._id.toString(),
-        task.title,
-      );
-    }
-
-    return task;
-  }
-
-  async updateStatusInProject(
-    taskId: string,
-    projectId: string,
-    status: TaskStatus,
-  ): Promise<TaskDocument> {
-    this.validateObjectId(taskId);
-    this.validateObjectId(projectId);
-
-    const existingTask = await this.taskModel
-      .findOne({
-        _id: new Types.ObjectId(taskId),
-        $expr: { $eq: [{ $toString: '$projectId' }, projectId] },
-      })
-      .exec();
-
-    if (!existingTask) {
-      throw new NotFoundException('Task not found in the selected project');
-    }
-
-    const task = await this.taskModel
-      .findOneAndUpdate(
+      .findByIdAndUpdate(
+        id,
         {
-          _id: new Types.ObjectId(taskId),
-          $expr: { $eq: [{ $toString: '$projectId' }, projectId] },
+          status,
+          doneTime:
+            status === TaskStatus.DONE
+              ? (existingTask.doneTime ?? new Date())
+              : null,
         },
-        { status },
         { new: true },
       )
       .populate('createdBy', 'firstName lastName email')
       .populate('assignedTo', 'firstName lastName email')
+      .populate(
+        'excelFile',
+        'fileName originalName mimeType fileSize type status',
+      )
       .exec();
 
     if (!task) {
-      throw new NotFoundException('Task not found in the selected project');
+      throw new NotFoundException('Task not found');
     }
 
     if (status === TaskStatus.DONE && existingTask.status !== TaskStatus.DONE) {
@@ -534,7 +535,7 @@ export class TaskService {
       done: number;
     };
   }> {
-    const { projectId, managerId, expertId } = dto;
+    const { managerId, expertId } = dto;
 
     this.validateObjectId(managerId);
     this.validateObjectId(expertId);
@@ -546,11 +547,6 @@ export class TaskService {
       createdBy: managerObjectId,
       assignedTo: expertObjectId,
     };
-
-    if (projectId) {
-      this.validateObjectId(projectId);
-      managerExpertQuery.projectId = new Types.ObjectId(projectId);
-    }
 
     // Total tasks
     const totalTasks = await this.taskModel
@@ -597,11 +593,10 @@ export class TaskService {
   }
 
   /**
-   * Find tasks by project and user within a date range and return count statistics
+   * Find tasks by user within a date range and return count statistics
    * A task overlaps with the date range if: task.startDate <= range.end AND task.dueDate >= range.start
    */
-  async findTasksByProjectAndCount(dateCountDto: DateCountDto): Promise<{
-    projectId: string;
+  async findTasksByUserAndCount(dateCountDto: DateCountDto): Promise<{
     userId: string;
     startDate: string;
     endDate: string;
@@ -610,7 +605,6 @@ export class TaskService {
     completedTasks: number;
     pendingTasks: number;
   }> {
-    this.validateObjectId(dateCountDto.projectId);
     this.validateObjectId(dateCountDto.userId);
 
     const userObjectId = new Types.ObjectId(dateCountDto.userId);
@@ -622,7 +616,6 @@ export class TaskService {
 
     const tasks = await this.taskModel
       .find({
-        projectId: new Types.ObjectId(dateCountDto.projectId),
         assignedTo: userObjectId,
         startDate: { $lte: rangeEnd },
         dueDate: { $gte: rangeStart },
@@ -638,11 +631,10 @@ export class TaskService {
     ).length;
     const pendingTasks = totalTasks - completedTasks;
 
-    // Adjust user score based on task performance
-    // await this.adjustUserScore(dateCountDto.userId, tasks);
+    //Adjust user score based on task performance
+    await this.adjustUserScore(dateCountDto.userId, tasks);
 
     return {
-      projectId: dateCountDto.projectId,
       userId: dateCountDto.userId,
       startDate: dateCountDto.startdate,
       endDate: dateCountDto.enddate,
@@ -658,27 +650,59 @@ export class TaskService {
    * +10 if all tasks are completed on or before the current date.
    * -10 if any task is overdue (dueDate passed and not DONE) or not all tasks are completed by due date.
    */
-  // private async adjustUserScore(userId: string, tasks: TaskDocument[]): Promise<void> {
-  //   if (!tasks.length) return;
-  //   const now = new Date();
-  //   const allCompletedOnTime = tasks.every(
-  //     (t) => t.status === TaskStatus.DONE && new Date(t.dueDate) >= now,
-  //   );
-  //   const anyOverdue = tasks.some(
-  //     (t) => t.status !== TaskStatus.DONE && new Date(t.dueDate) < now,
-  //   );
-  //   if (allCompletedOnTime) {
-  //     await this.userService.increaseScore({ userId, score: 10 });
-  //   } else if (anyOverdue) {
-  //     await this.userService.increaseScore({ userId, score: -10 });
-  //   }
-  // }
-
-  async findTaskByProjectId(projectId: string): Promise<TaskDocument[]> {
-    this.validateObjectId(projectId);
-    return this.taskModel
-      .find({ projectId: new Types.ObjectId(projectId) })
-      .exec();
+  private async adjustUserScore(
+    userId: string,
+    tasks: TaskDocument[],
+  ): Promise<void> {
+    if (!tasks.length) return;
+    const now = new Date();
+    const allCompletedOnTime = tasks.every(
+      (task) =>
+        task.status === TaskStatus.DONE &&
+        task.dueDate !== undefined &&
+        task.dueDate >= now,
+    );
+    const anyOverdue = tasks.some(
+      (task) =>
+        task.status !== TaskStatus.DONE &&
+        task.dueDate !== undefined &&
+        task.dueDate < now,
+    );
+    if (allCompletedOnTime) {
+      const result = await this.taskModel
+        .updateMany(
+          {
+            _id: { $in: tasks.map((task) => task._id) },
+            scoreAdjusted: { $ne: true },
+          },
+          { $set: { scoreAdjusted: true } },
+        )
+        .exec();
+      if (result.modifiedCount > 0) {
+        await this.userService.increaseScore({ userId, score: 10 });
+      }
+    } else if (anyOverdue) {
+      const overdueTaskIds = tasks
+        .filter(
+          (task) =>
+            task.status !== TaskStatus.DONE &&
+            task.dueDate !== undefined &&
+            task.dueDate < now,
+        )
+        .map((task) => task._id);
+      const result = await this.taskModel
+        .updateMany(
+          {
+            _id: { $in: overdueTaskIds },
+            scoreAdjusted: { $ne: true },
+          },
+          { $set: { scoreAdjusted: true } },
+        )
+        .exec();
+      if (result.modifiedCount > 0) {
+        await this.userService.increaseScore({ userId, score: -10 });
+      }
+    }
   }
 
   async countOpenTasks(): Promise<number> {
@@ -687,51 +711,6 @@ export class TaskService {
         status: { $in: [TaskStatus.TODO, TaskStatus.IN_PROGRESS] },
       })
       .exec();
-  }
-
-  async reassignProjectTasks(
-    projectId: string,
-    assigneeId: string,
-    session?: ClientSession,
-  ): Promise<number> {
-    this.validateObjectId(projectId);
-    this.validateObjectId(assigneeId);
-
-    const result = await this.taskModel
-      .updateMany(
-        { projectId: new Types.ObjectId(projectId) },
-        { $set: { assignedTo: [new Types.ObjectId(assigneeId)] } },
-        { runValidators: true, session },
-      )
-      .exec();
-
-    return result.modifiedCount;
-  }
-
-  async countByProjectIdsAndStatus(
-    projectIds: string[],
-    status: TaskStatus,
-  ): Promise<number> {
-    if (projectIds.length === 0) {
-      return 0;
-    }
-
-    projectIds.forEach((projectId) => this.validateObjectId(projectId));
-
-    return this.taskModel
-      .countDocuments({
-        $expr: { $in: [{ $toString: '$projectId' }, projectIds] },
-        status,
-      })
-      .exec();
-  }
-
-  countInProgressByProjectIds(projectIds: string[]): Promise<number> {
-    return this.countByProjectIdsAndStatus(projectIds, TaskStatus.IN_PROGRESS);
-  }
-
-  countDoneByProjectIds(projectIds: string[]): Promise<number> {
-    return this.countByProjectIdsAndStatus(projectIds, TaskStatus.DONE);
   }
 
   async countByAssigneeAndStatus(
@@ -752,280 +731,13 @@ export class TaskService {
     return this.countByAssigneeAndStatus(userId, TaskStatus.DONE);
   }
 
-  async getStatusCountsByProjectIds(projectIds: string[]): Promise<
-    Array<{
-      projectId: string;
-      totalTasks: number;
-      inProgressTasks: number;
-      doneTasks: number;
-    }>
-  > {
-    if (projectIds.length === 0) {
-      return [];
-    }
-
-    projectIds.forEach((projectId) => this.validateObjectId(projectId));
-
-    return this.taskModel
-      .aggregate([
-        {
-          $match: {
-            $expr: { $in: [{ $toString: '$projectId' }, projectIds] },
-          },
-        },
-        {
-          $group: {
-            _id: '$projectId',
-            totalTasks: { $sum: 1 },
-            inProgressTasks: {
-              $sum: {
-                $cond: [{ $eq: ['$status', TaskStatus.IN_PROGRESS] }, 1, 0],
-              },
-            },
-            doneTasks: {
-              $sum: { $cond: [{ $eq: ['$status', TaskStatus.DONE] }, 1, 0] },
-            },
-          },
-        },
-        {
-          $project: {
-            _id: 0,
-            projectId: { $toString: '$_id' },
-            totalTasks: 1,
-            inProgressTasks: 1,
-            doneTasks: 1,
-          },
-        },
-      ])
-      .exec();
-  }
-
-  async getAssigneeStatusCounts(
-    projectId: string,
-    assigneeIds: string[],
-  ): Promise<
-    Array<{
-      userId: string;
-      totalTasks: number;
-      todoTasks: number;
-      inProgressTasks: number;
-      doneTasks: number;
-    }>
-  > {
-    this.validateObjectId(projectId);
-    assigneeIds.forEach((assigneeId) => this.validateObjectId(assigneeId));
-
-    if (assigneeIds.length === 0) {
-      return [];
-    }
-
-    const assigneeObjectIds = assigneeIds.map(
-      (assigneeId) => new Types.ObjectId(assigneeId),
-    );
-
-    return this.taskModel
-      .aggregate([
-        {
-          $match: {
-            $expr: { $eq: [{ $toString: '$projectId' }, projectId] },
-            assignedTo: { $in: assigneeObjectIds },
-          },
-        },
-        { $unwind: '$assignedTo' },
-        { $match: { assignedTo: { $in: assigneeObjectIds } } },
-        {
-          $group: {
-            _id: '$assignedTo',
-            totalTasks: { $sum: 1 },
-            todoTasks: {
-              $sum: { $cond: [{ $eq: ['$status', TaskStatus.TODO] }, 1, 0] },
-            },
-            inProgressTasks: {
-              $sum: {
-                $cond: [{ $eq: ['$status', TaskStatus.IN_PROGRESS] }, 1, 0],
-              },
-            },
-            doneTasks: {
-              $sum: { $cond: [{ $eq: ['$status', TaskStatus.DONE] }, 1, 0] },
-            },
-          },
-        },
-        {
-          $project: {
-            _id: 0,
-            userId: { $toString: '$_id' },
-            totalTasks: 1,
-            todoTasks: 1,
-            inProgressTasks: 1,
-            doneTasks: 1,
-          },
-        },
-      ])
-      .exec();
-  }
-
-  async findOverdueByProjectIds(
-    projectIds: string[],
-    page: number,
-    limit: number,
-  ) {
-    if (projectIds.length === 0) {
-      return { data: [], total: 0, page, limit };
-    }
-
-    projectIds.forEach((projectId) => this.validateObjectId(projectId));
-    const now = new Date();
-    const match = {
-      projectId: {
-        $in: projectIds.map((projectId) => new Types.ObjectId(projectId)),
-      },
-      dueDate: { $lt: now },
-      status: { $ne: TaskStatus.DONE },
-    };
-    const skip = (page - 1) * limit;
-    const [data, total] = await Promise.all([
-      this.taskModel
-        .find(match)
-        .sort({ dueDate: 1 })
-        .skip(skip)
-        .limit(limit)
-        .populate('assignedTo', 'firstName lastName email')
-        .populate('projectId', 'title status')
-        .exec(),
-      this.taskModel.countDocuments(match).exec(),
-    ]);
-
-    return { data, total, page, limit };
-  }
-
-  async getProjectReport(projectId: string) {
-    this.validateObjectId(projectId);
-    const now = new Date();
-
-    const [statusOverview, overdueTasks] = await Promise.all([
-      this.getTaskStatusOverview(projectId),
-      this.taskModel
-        .countDocuments({
-          projectId: new Types.ObjectId(projectId),
-          dueDate: { $lt: now },
-          status: { $ne: TaskStatus.DONE },
-        })
-        .exec(),
-    ]);
-
-    return {
-      ...statusOverview,
-      overdueTasks,
-      completionRate:
-        statusOverview.totalTasks > 0
-          ? Math.round(
-              (statusOverview.doneTasks / statusOverview.totalTasks) * 100,
-            )
-          : 0,
-    };
-  }
-
-  async getAssigneeStatusCountsAcrossProjects(
-    projectIds: string[],
-    assigneeIds: string[],
-  ): Promise<
-    Array<{
-      userId: string;
-      projectIds: string[];
-      totalTasks: number;
-      todoTasks: number;
-      inProgressTasks: number;
-      doneTasks: number;
-      overdueTasks: number;
-    }>
-  > {
-    if (projectIds.length === 0 || assigneeIds.length === 0) {
-      return [];
-    }
-
-    projectIds.forEach((projectId) => this.validateObjectId(projectId));
-    assigneeIds.forEach((assigneeId) => this.validateObjectId(assigneeId));
-    const assigneeObjectIds = assigneeIds.map(
-      (assigneeId) => new Types.ObjectId(assigneeId),
-    );
-    const now = new Date();
-
-    return this.taskModel
-      .aggregate([
-        {
-          $match: {
-            $expr: { $in: [{ $toString: '$projectId' }, projectIds] },
-            assignedTo: { $in: assigneeObjectIds },
-          },
-        },
-        { $unwind: '$assignedTo' },
-        { $match: { assignedTo: { $in: assigneeObjectIds } } },
-        {
-          $group: {
-            _id: '$assignedTo',
-            projectIds: { $addToSet: '$projectId' },
-            totalTasks: { $sum: 1 },
-            todoTasks: {
-              $sum: { $cond: [{ $eq: ['$status', TaskStatus.TODO] }, 1, 0] },
-            },
-            inProgressTasks: {
-              $sum: {
-                $cond: [{ $eq: ['$status', TaskStatus.IN_PROGRESS] }, 1, 0],
-              },
-            },
-            doneTasks: {
-              $sum: { $cond: [{ $eq: ['$status', TaskStatus.DONE] }, 1, 0] },
-            },
-            overdueTasks: {
-              $sum: {
-                $cond: [
-                  {
-                    $and: [
-                      { $ne: ['$status', TaskStatus.DONE] },
-                      { $lt: ['$dueDate', now] },
-                    ],
-                  },
-                  1,
-                  0,
-                ],
-              },
-            },
-          },
-        },
-        {
-          $project: {
-            _id: 0,
-            userId: { $toString: '$_id' },
-            projectIds: {
-              $map: {
-                input: '$projectIds',
-                as: 'projectId',
-                in: { $toString: '$$projectId' },
-              },
-            },
-            totalTasks: 1,
-            todoTasks: 1,
-            inProgressTasks: 1,
-            doneTasks: 1,
-            overdueTasks: 1,
-          },
-        },
-      ])
-      .exec();
-  }
-
-  async getTaskStatusOverview(projectId?: string): Promise<{
+  async getTaskStatusOverview(): Promise<{
     totalTasks: number;
     todoTasks: number;
     inProgressTasks: number;
     doneTasks: number;
   }> {
     const match: Record<string, unknown> = {};
-
-    if (projectId) {
-      this.validateObjectId(projectId);
-      match.$expr = { $eq: [{ $toString: '$projectId' }, projectId] };
-    }
 
     const statusCounts = await this.taskModel
       .aggregate<{
@@ -1060,7 +772,7 @@ export class TaskService {
     };
   }
 
-  async getTaskCountsByAssignee(projectId?: string): Promise<
+  async getTaskCountsByAssignee(): Promise<
     Array<{
       userId: string;
       firstName: string;
@@ -1073,11 +785,6 @@ export class TaskService {
     }>
   > {
     const match: Record<string, unknown> = {};
-
-    if (projectId) {
-      this.validateObjectId(projectId);
-      match.projectId = new Types.ObjectId(projectId);
-    }
 
     return this.taskModel
       .aggregate([
@@ -1130,11 +837,9 @@ export class TaskService {
   async getMonthlyUserPerformance(query: {
     month: number;
     year: number;
-    projectId?: string;
   }): Promise<{
     month: number;
     year: number;
-    projectId?: string;
     users: Array<{
       userId: string;
       firstName: string;
@@ -1156,11 +861,6 @@ export class TaskService {
         $lt: endDate,
       },
     };
-
-    if (query.projectId) {
-      this.validateObjectId(query.projectId);
-      match.projectId = new Types.ObjectId(query.projectId);
-    }
 
     const users = await this.taskModel
       .aggregate([
@@ -1230,7 +930,6 @@ export class TaskService {
     return {
       month: query.month,
       year: query.year,
-      projectId: query.projectId,
       users,
     };
   }

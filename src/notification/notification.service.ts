@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { UserService } from '../user/user.service';
@@ -15,7 +19,9 @@ export class NotificationService {
     private readonly templateFactory: NotificationTemplateFactory,
   ) {}
 
-  async create(notificationDto: CreateNotificationDto): Promise<NotificationDocument> {
+  async create(
+    notificationDto: CreateNotificationDto,
+  ): Promise<NotificationDocument> {
     const userId = this.toObjectId(notificationDto.user, 'user ID');
     await this.userService.findById(notificationDto.user);
 
@@ -25,17 +31,23 @@ export class NotificationService {
     }).save();
   }
 
-  async createBulk(notifications: CreateNotificationDto[]): Promise<NotificationDocument[]> {
-    const uniqueUserIds = [...new Set(notifications.map((notification) => notification.user))];
-    await Promise.all(uniqueUserIds.map((userId) => this.userService.findById(userId)));
+  async createBulk(
+    notifications: CreateNotificationDto[],
+  ): Promise<NotificationDocument[]> {
+    const uniqueUserIds = [
+      ...new Set(notifications.map((notification) => notification.user)),
+    ];
+    await Promise.all(
+      uniqueUserIds.map((userId) => this.userService.findById(userId)),
+    );
 
     const notificationDocuments = notifications.map(
       (notification) =>
         new this.notificationModel({
-        ...notification,
-        user: this.toObjectId(notification.user, 'user ID'),
-        isRead: notification.isRead ?? false,
-      }),
+          ...notification,
+          user: this.toObjectId(notification.user, 'user ID'),
+          isRead: notification.isRead ?? false,
+        }),
     );
 
     return this.notificationModel.insertMany(notificationDocuments);
@@ -89,7 +101,9 @@ export class NotificationService {
     }
   }
 
-  async deleteMyReadNotifications(userId: string): Promise<{ deletedCount: number }> {
+  async deleteMyReadNotifications(
+    userId: string,
+  ): Promise<{ deletedCount: number }> {
     const result = await this.notificationModel.deleteMany({
       user: this.toObjectId(userId, 'user ID'),
       isRead: true,
@@ -98,8 +112,14 @@ export class NotificationService {
     return { deletedCount: result.deletedCount };
   }
 
-  createTaskAssignedNotification(userId: string, taskId: string, taskTitle: string) {
-    return this.create(this.templateFactory.taskAssigned(userId, taskId, taskTitle));
+  createTaskAssignedNotification(
+    userId: string,
+    taskId: string,
+    taskTitle: string,
+  ) {
+    return this.create(
+      this.templateFactory.taskAssigned(userId, taskId, taskTitle),
+    );
   }
 
   createTaskCompletedNotification(
@@ -108,7 +128,14 @@ export class NotificationService {
     taskTitle: string,
     completedBy: string,
   ) {
-    return this.create(this.templateFactory.taskCompleted(userId, taskId, taskTitle, completedBy));
+    return this.create(
+      this.templateFactory.taskCompleted(
+        userId,
+        taskId,
+        taskTitle,
+        completedBy,
+      ),
+    );
   }
 
   createLeaveRequestNotification(userId: string, requestTitle: string) {
@@ -119,12 +146,14 @@ export class NotificationService {
     return this.create(this.templateFactory.leaveApproved(userId, leaveType));
   }
 
-  createLeaveRejectedNotification(userId: string, leaveType: string, reason?: string) {
-    return this.create(this.templateFactory.leaveRejected(userId, leaveType, reason));
-  }
-
-  createProjectMemberAddedNotification(userId: string, projectName: string) {
-    return this.create(this.templateFactory.projectMemberAdded(userId, projectName));
+  createLeaveRejectedNotification(
+    userId: string,
+    leaveType: string,
+    reason?: string,
+  ) {
+    return this.create(
+      this.templateFactory.leaveRejected(userId, leaveType, reason),
+    );
   }
 
   createTaskCompletionStatsNotification(
@@ -149,7 +178,6 @@ export class NotificationService {
 
   createDateCountNotification(
     userId: string,
-    projectId: string,
     startDate: string,
     endDate: string,
     totalTasks: number,
@@ -159,7 +187,6 @@ export class NotificationService {
     return this.create(
       this.templateFactory.dateCount(
         userId,
-        projectId,
         startDate,
         endDate,
         totalTasks,

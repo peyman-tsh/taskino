@@ -8,12 +8,10 @@ import { AppService } from './app.service';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { TaskModule } from './task/task.module';
-import { ProjectModule } from './project/project.module';
 import { LeaveRequestModule } from './LeaveRequest/LeaveRequest.module';
 import { ExcelModule } from './excel/excel.module';
 import { NotificationModule } from './notification/notification.module';
 import { ManagerModule } from './manager/manager.module';
-import { SupervisorModule } from './supervisor/supervisor.module';
 import { InternalEventBusModule } from './common/events/internal-event-bus.module';
 import { FixedTaskModule } from './fixedTask/fixed-task.module';
 
@@ -36,12 +34,10 @@ import { FixedTaskModule } from './fixedTask/fixed-task.module';
     UserModule,
     AuthModule,
     TaskModule,
-    ProjectModule,
     LeaveRequestModule,
     ExcelModule,
     NotificationModule,
     ManagerModule,
-    SupervisorModule,
     FixedTaskModule,
   ],
   controllers: [AppController],

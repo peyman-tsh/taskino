@@ -108,13 +108,13 @@ export class UserService {
     }));
   }
 
-  async findProjectParticipantsByIds(userIds: string[]) {
+  async findTaskParticipantsByIds(userIds: string[]) {
     const uniqueUserIds = [...new Set(userIds)];
     const invalidUserIds = uniqueUserIds.filter(
       (userId) => !Types.ObjectId.isValid(userId),
     );
     if (invalidUserIds.length > 0) {
-      throw new BadRequestException('Invalid project participant user IDs');
+      throw new BadRequestException('Invalid task participant user IDs');
     }
 
     const users = await this.userModel
@@ -127,7 +127,7 @@ export class UserService {
 
     if (users.length !== uniqueUserIds.length) {
       throw new NotFoundException(
-        'One or more project participants were not found',
+        'One or more task participants were not found',
       );
     }
 

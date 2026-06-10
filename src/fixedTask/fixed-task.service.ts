@@ -4,14 +4,16 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { ClientSession, Model, Types } from 'mongoose';
-import { ProjectService } from '../project/project.service';
+import { Model, Types } from 'mongoose';
 import { UserRole } from '../user/schemas/user.schema';
 import { UserService } from '../user/user.service';
+import { isValidTimeRange } from '../common/constants/time.constants';
 import { CreateFixedTaskDto } from './dto/create-fixed-task.dto';
 import { QueryFixedTaskDto } from './dto/query-fixed-task.dto';
 import { UpdateFixedTaskDto } from './dto/update-fixed-task.dto';
 import {
+  FixedTaskRecurrence,
+  FixedTaskStatus,
   FixedTaskTemplate,
   FixedTaskTemplateDocument,
 } from './fixed-task.schema';
@@ -22,7 +24,6 @@ export class FixedTaskService {
     @InjectModel(FixedTaskTemplate.name)
     private readonly fixedTaskModel: Model<FixedTaskTemplateDocument>,
     private readonly userService: UserService,
-    private readonly projectService: ProjectService,
   ) {}
 
   private toObjectId(id: string, label: string): Types.ObjectId {
@@ -39,23 +40,14 @@ export class FixedTaskService {
         'assignedTo',
         'firstName lastName email mobile roles workField isActive',
       )
-      .populate('createdBy', 'firstName lastName email roles workField')
-      .populate('projectId', 'title status workField isArchived');
+      .populate('createdBy', 'firstName lastName email roles workField');
   }
 
   private async validateParticipants(
     creatorId: string,
     assignedTo: string,
-    projectId?: string,
   ): Promise<void> {
-    if (projectId) {
-      await this.projectService.assertTaskParticipants(projectId, creatorId, [
-        assignedTo,
-      ]);
-      return;
-    }
-
-    const participants = await this.userService.findProjectParticipantsByIds([
+    const participants = await this.userService.findTaskParticipantsByIds([
       creatorId,
       assignedTo,
     ]);
@@ -66,9 +58,13 @@ export class FixedTaskService {
       (participant) => participant.userId === assignedTo,
     );
 
-    if (creator?.role !== UserRole.MANAGER) {
+    if (
+      ![UserRole.MANAGER, UserRole.SUPERVISOR].includes(
+        creator?.role as UserRole,
+      )
+    ) {
       throw new BadRequestException(
-        'Fixed task creator must have the manager role',
+        'Fixed task creator must have the manager or supervisor role',
       );
     }
 
@@ -89,12 +85,17 @@ export class FixedTaskService {
     }
   }
 
+  private assertValidTimeRange(startTime?: string, endTime?: string): void {
+    if (!isValidTimeRange(startTime, endTime)) {
+      throw new BadRequestException('endTime must be after startTime');
+    }
+  }
+
   async create(creatorId: string, dto: CreateFixedTaskDto) {
     this.toObjectId(creatorId, 'creator user ID');
     this.toObjectId(dto.assignedTo, 'assigned user ID');
-    if (dto.projectId) this.toObjectId(dto.projectId, 'project ID');
-
-    await this.validateParticipants(creatorId, dto.assignedTo, dto.projectId);
+    await this.validateParticipants(creatorId, dto.assignedTo);
+    this.assertValidTimeRange(dto.startTime, dto.endTime);
 
     const templateId = new Types.ObjectId();
     const template = new this.fixedTaskModel({
@@ -102,11 +103,14 @@ export class FixedTaskService {
       title: dto.title,
       assignedTo: new Types.ObjectId(dto.assignedTo),
       createdBy: new Types.ObjectId(creatorId),
-      projectId: dto.projectId ? new Types.ObjectId(dto.projectId) : undefined,
       recurrence: dto.recurrence,
+      status: dto.status ?? FixedTaskStatus.TODO,
+      doneTime: dto.status === FixedTaskStatus.DONE ? new Date() : undefined,
       description: dto.description ?? '',
       isActive: dto.isActive ?? true,
       nextRunAt: dto.nextRunAt ? new Date(dto.nextRunAt) : undefined,
+      startTime: dto.startTime,
+      endTime: dto.endTime,
       sourceExcel: `manual:${templateId.toString()}`,
       sourceSheet: 'manual',
       sourceRow: 0,
@@ -130,10 +134,12 @@ export class FixedTaskService {
         'assigned user ID',
       );
     }
-    if (queryDto.projectId) {
-      query.projectId = this.toObjectId(queryDto.projectId, 'project ID');
+    if (queryDto.recurrence) {
+      if (!Object.values(FixedTaskRecurrence).includes(queryDto.recurrence)) {
+        throw new BadRequestException('Invalid fixed task recurrence');
+      }
+      query.recurrence = queryDto.recurrence;
     }
-    if (queryDto.recurrence) query.recurrence = queryDto.recurrence;
     if (queryDto.isActive !== undefined) query.isActive = queryDto.isActive;
 
     const skip = (queryDto.page - 1) * queryDto.limit;
@@ -172,24 +178,30 @@ export class FixedTaskService {
     }
 
     const assignedTo = dto.assignedTo ?? template.assignedTo.toString();
-    const projectId =
-      dto.projectId !== undefined
-        ? dto.projectId
-        : template.projectId?.toString();
-
-    await this.validateParticipants(creatorId, assignedTo, projectId);
+    await this.validateParticipants(creatorId, assignedTo);
+    this.assertValidTimeRange(
+      dto.startTime ?? template.startTime,
+      dto.endTime ?? template.endTime,
+    );
 
     const updateData: Record<string, unknown> = {};
     if (dto.title !== undefined) updateData.title = dto.title;
     if (dto.assignedTo !== undefined)
       updateData.assignedTo = new Types.ObjectId(dto.assignedTo);
-    if (dto.projectId !== undefined)
-      updateData.projectId = new Types.ObjectId(dto.projectId);
     if (dto.recurrence !== undefined) updateData.recurrence = dto.recurrence;
+    if (dto.status !== undefined) {
+      updateData.status = dto.status;
+      updateData.doneTime =
+        dto.status === FixedTaskStatus.DONE
+          ? (template.doneTime ?? new Date())
+          : null;
+    }
     if (dto.description !== undefined) updateData.description = dto.description;
     if (dto.isActive !== undefined) updateData.isActive = dto.isActive;
     if (dto.nextRunAt !== undefined)
       updateData.nextRunAt = new Date(dto.nextRunAt);
+    if (dto.startTime !== undefined) updateData.startTime = dto.startTime;
+    if (dto.endTime !== undefined) updateData.endTime = dto.endTime;
 
     const updatedTemplate = await this.fixedTaskModel
       .findByIdAndUpdate(template._id, updateData, {
@@ -219,24 +231,5 @@ export class FixedTaskService {
     return this.populateTemplate(
       this.fixedTaskModel.find({ isActive: true }),
     ).exec();
-  }
-
-  async reassignProjectTemplates(
-    projectId: string,
-    assigneeId: string,
-    session?: ClientSession,
-  ): Promise<number> {
-    const projectObjectId = this.toObjectId(projectId, 'project ID');
-    const assigneeObjectId = this.toObjectId(assigneeId, 'assigned user ID');
-
-    const result = await this.fixedTaskModel
-      .updateMany(
-        { projectId: projectObjectId },
-        { $set: { assignedTo: assigneeObjectId } },
-        { runValidators: true, session },
-      )
-      .exec();
-
-    return result.modifiedCount;
   }
 }

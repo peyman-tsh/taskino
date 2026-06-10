@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { WorkField } from '../../common/enums/work-field.enum';
-import { UserRole } from '../schemas/user.schema';
+import { UserPerformanceStatus, UserRole } from '../schemas/user.schema';
 
 export class UserResponseDto {
   @ApiProperty()
@@ -29,6 +29,15 @@ export class UserResponseDto {
 
   @ApiProperty()
   isActive: boolean;
+
+  @ApiProperty()
+  progressPercentage: number;
+
+  @ApiProperty({ enum: UserPerformanceStatus })
+  performanceStatus: UserPerformanceStatus;
+
+  @ApiPropertyOptional()
+  performanceEvaluatedAt?: Date;
 
   @ApiProperty()
   createdAt: Date;

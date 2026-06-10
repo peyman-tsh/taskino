@@ -19,6 +19,7 @@ export enum ExcelStatus {
 @Schema({
   timestamps: true,
   toJSON: {
+    virtuals: true,
     transform: (_doc: any, ret: any) => {
       ret.id = ret._id.toString();
       delete ret.__v;
@@ -115,12 +116,6 @@ export class ExcelFile {
 
   @Prop({
     type: Types.ObjectId,
-    ref: 'Project',
-  })
-  relatedProject?: Types.ObjectId;
-
-  @Prop({
-    type: Types.ObjectId,
     ref: 'Leave',
   })
   relatedLeave?: Types.ObjectId;
@@ -136,3 +131,9 @@ ExcelSchema.index({ createdBy: 1, createdAt: -1 });
 ExcelSchema.index({ status: 1 });
 ExcelSchema.index({ type: 1 });
 ExcelSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+ExcelSchema.virtual('relatedTask', {
+  ref: 'Task',
+  localField: '_id',
+  foreignField: 'excelFile',
+  justOne: true,
+});
