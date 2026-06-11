@@ -1,0 +1,99 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { TaskRecurrence } from '../../task/task.schema';
+import {
+  UserPerformanceStatus,
+  UserRole,
+} from '../../user/schemas/user.schema';
+
+export class SupervisorStatisticsResponseDto {
+  @ApiProperty({ nullable: true, enum: TaskRecurrence })
+  recurrence: TaskRecurrence | null;
+
+  @ApiProperty()
+  supervisedTasks: number;
+
+  @ApiProperty()
+  supervisedFixedTasks: number;
+
+  @ApiProperty()
+  supervisedInProgressTasks: number;
+
+  @ApiProperty()
+  supervisedInProgressFixedTasks: number;
+
+  @ApiProperty()
+  myInProgressTasks: number;
+
+  @ApiProperty()
+  myInProgressFixedTasks: number;
+
+  @ApiProperty()
+  mySuccessfulTasks: number;
+
+  @ApiProperty()
+  myOnTimeSuccessfulTasks: number;
+}
+
+export class SupervisorMemberResponseDto {
+  @ApiProperty()
+  userId: string;
+
+  @ApiProperty()
+  firstName: string;
+
+  @ApiProperty()
+  lastName: string;
+
+  @ApiProperty()
+  email: string;
+
+  @ApiProperty({ required: false })
+  mobile?: string;
+
+  @ApiProperty({ enum: UserRole })
+  role: UserRole;
+
+  @ApiProperty()
+  isActive: boolean;
+
+  @ApiProperty()
+  score: number;
+
+  @ApiProperty()
+  progressPercentage: number;
+
+  @ApiProperty({ enum: UserPerformanceStatus })
+  performanceStatus: UserPerformanceStatus;
+
+  @ApiProperty({ required: false })
+  performanceEvaluatedAt?: Date;
+
+  @ApiProperty()
+  totalTasks: number;
+
+  @ApiProperty()
+  completedTasks: number;
+
+  @ApiProperty()
+  totalFixedTasks: number;
+
+  @ApiProperty()
+  completedFixedTasks: number;
+}
+
+export class PaginatedSupervisorMembersResponseDto {
+  @ApiProperty({ type: [SupervisorMemberResponseDto] })
+  data: SupervisorMemberResponseDto[];
+
+  @ApiProperty()
+  total: number;
+
+  @ApiProperty()
+  page: number;
+
+  @ApiProperty()
+  limit: number;
+
+  @ApiProperty({ nullable: true, enum: TaskRecurrence })
+  recurrence: TaskRecurrence | null;
+}

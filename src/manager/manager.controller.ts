@@ -94,6 +94,7 @@ export class ManagerController {
   }
 
   @Get('users/progress')
+  @Roles(UserRole.MANAGER, UserRole.SUPERVISOR)
   @ApiOperation({
     summary: 'Evaluate specialist and supervisor progress',
     description:
