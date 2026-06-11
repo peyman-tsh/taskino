@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, PipelineStage, Types } from 'mongoose';
-import { Task, TaskDocument } from '../task.schema';
+import { Task, TaskDocument, TaskStatus } from '../task.schema';
 
 @Injectable()
 export class TaskRepository {
@@ -55,6 +55,26 @@ export class TaskRepository {
 
   updateMany(filter: Record<string, unknown>, update: Record<string, unknown>) {
     return this.model.updateMany(filter, update).exec();
+  }
+
+  claimScoreAdjustment(id: Types.ObjectId) {
+    return this.model
+      .findOneAndUpdate(
+        { _id: id, scoreAdjusted: { $ne: true } },
+        { $set: { scoreAdjusted: true } },
+        { new: true },
+      )
+      .exec();
+  }
+
+  findUnadjustedOverdue(now: Date) {
+    return this.model
+      .find({
+        status: { $ne: TaskStatus.DONE },
+        dueDate: { $lt: now },
+        scoreAdjusted: { $ne: true },
+      })
+      .exec();
   }
 
   count(filter: Record<string, unknown>) {

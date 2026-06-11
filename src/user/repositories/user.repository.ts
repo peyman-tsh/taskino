@@ -30,6 +30,42 @@ export class UserRepository {
     return this.userModel.findByIdAndUpdate(id, update, { new: true }).exec();
   }
 
+  adjustScoreWithFloor(id: string, score: number) {
+    return this.userModel
+      .findByIdAndUpdate(
+        id,
+        [
+          {
+            $set: {
+              score: {
+                $max: [0, { $add: [{ $ifNull: ['$score', 0] }, score] }],
+              },
+            },
+          },
+        ],
+        { new: true },
+      )
+      .exec();
+  }
+
+  adjustSpecialistScoreWithFloor(id: string, score: number) {
+    return this.userModel
+      .findOneAndUpdate(
+        { _id: id, roles: UserRole.SPECIALIST },
+        [
+          {
+            $set: {
+              score: {
+                $max: [0, { $add: [{ $ifNull: ['$score', 0] }, score] }],
+              },
+            },
+          },
+        ],
+        { new: true },
+      )
+      .exec();
+  }
+
   deleteById(id: string) {
     return this.userModel.findByIdAndDelete(id).exec();
   }

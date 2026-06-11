@@ -227,15 +227,20 @@ export class UserService {
       throw new NotFoundException('Invalid user ID');
     }
 
-    const user = await this.userRepository.findRawById(userId);
+    const user = await this.userRepository.adjustScoreWithFloor(userId, score);
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    user.score = (user.score || 0) + score;
-    await user.save();
-
     return user;
+  }
+
+  async adjustSpecialistScore(userId: string, score: number): Promise<void> {
+    if (!Types.ObjectId.isValid(userId)) {
+      return;
+    }
+
+    await this.userRepository.adjustSpecialistScoreWithFloor(userId, score);
   }
 }

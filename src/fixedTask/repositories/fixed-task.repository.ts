@@ -4,6 +4,7 @@ import { Model, Types } from 'mongoose';
 import {
   FixedTaskTemplate,
   FixedTaskTemplateDocument,
+  FixedTaskStatus,
 } from '../fixed-task.schema';
 
 @Injectable()
@@ -48,6 +49,26 @@ export class FixedTaskRepository {
       .findByIdAndUpdate(id, update, {
         returnDocument: 'after',
         runValidators: true,
+      })
+      .exec();
+  }
+
+  claimScoreAdjustment(id: Types.ObjectId) {
+    return this.model
+      .findOneAndUpdate(
+        { _id: id, scoreAdjusted: { $ne: true } },
+        { $set: { scoreAdjusted: true } },
+        { new: true },
+      )
+      .exec();
+  }
+
+  findUnadjustedWithDeadline(now: Date) {
+    return this.model
+      .find({
+        status: { $ne: FixedTaskStatus.DONE },
+        nextRunAt: { $lt: now },
+        scoreAdjusted: { $ne: true },
       })
       .exec();
   }

@@ -11,46 +11,71 @@ export class TaskScoreService {
   ) {}
 
   async adjustUserScore(userId: string, tasks: TaskDocument[]): Promise<void> {
-    if (!tasks.length) {
-      return;
-    }
-
-    const now = new Date();
-    const allCompletedOnTime = tasks.every(
-      (task) =>
-        task.status === TaskStatus.DONE &&
-        task.dueDate !== undefined &&
-        task.dueDate >= now,
-    );
-    const overdueTasks = tasks.filter(
-      (task) =>
-        task.status !== TaskStatus.DONE &&
-        task.dueDate !== undefined &&
-        task.dueDate < now,
-    );
-
-    if (allCompletedOnTime) {
-      await this.applyScoreOnce(userId, tasks, 10);
-    } else if (overdueTasks.length > 0) {
-      await this.applyScoreOnce(userId, overdueTasks, -10);
+    for (const task of tasks) {
+      await this.adjustTaskScore(userId, task);
     }
   }
 
-  private async applyScoreOnce(
-    userId: string,
-    tasks: TaskDocument[],
-    score: number,
-  ): Promise<void> {
-    const result = await this.repository.updateMany(
-        {
-          _id: { $in: tasks.map((task) => task._id) },
-          scoreAdjusted: { $ne: true },
-        },
-        { $set: { scoreAdjusted: true } },
-      );
-
-    if (result.modifiedCount > 0) {
-      await this.userService.increaseScore({ userId, score });
+  async adjustCompletedTaskScore(task: TaskDocument): Promise<void> {
+    const assigneeId = this.getAssigneeId(task);
+    if (!assigneeId) {
+      return;
     }
+
+    await this.adjustTaskScore(assigneeId, task);
+  }
+
+  async adjustOverdueTasks(): Promise<void> {
+    const tasks = await this.repository.findUnadjustedOverdue(new Date());
+    for (const task of tasks) {
+      const assigneeId = this.getAssigneeId(task);
+      if (assigneeId) {
+        await this.adjustTaskScore(assigneeId, task);
+      }
+    }
+  }
+
+  private async adjustTaskScore(
+    userId: string,
+    task: TaskDocument,
+  ): Promise<void> {
+    const score = this.calculateScore(task);
+    if (score === null) {
+      return;
+    }
+
+    const claimedTask = await this.repository.claimScoreAdjustment(task._id);
+    if (!claimedTask) {
+      return;
+    }
+
+    await this.userService.adjustSpecialistScore(userId, score);
+  }
+
+  private calculateScore(task: TaskDocument): 10 | -10 | null {
+    if (!task.dueDate) {
+      return null;
+    }
+
+    if (task.status === TaskStatus.DONE) {
+      return task.doneTime && task.doneTime.getTime() <= task.dueDate.getTime()
+        ? 10
+        : -10;
+    }
+
+    return task.dueDate.getTime() < Date.now() ? -10 : null;
+  }
+
+  private getAssigneeId(task: TaskDocument): string | null {
+    const assignee = task.assignedTo[0] as unknown as {
+      _id?: { toString(): string };
+      toString(): string;
+    };
+
+    if (!assignee) {
+      return null;
+    }
+
+    return assignee._id?.toString() ?? assignee.toString();
   }
 }

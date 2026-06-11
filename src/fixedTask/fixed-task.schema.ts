@@ -51,6 +51,9 @@ export class FixedTaskTemplate {
   @Prop({ type: Date })
   doneTime?: Date;
 
+  @Prop({ type: Boolean, default: false })
+  scoreAdjusted: boolean;
+
   @Prop({ type: Date })
   lastGeneratedAt?: Date;
 

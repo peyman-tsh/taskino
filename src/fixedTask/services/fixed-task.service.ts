@@ -13,12 +13,14 @@ import {
 } from '../fixed-task.schema';
 import { FixedTaskPolicyService } from './fixed-task-policy.service';
 import { FixedTaskRepository } from '../repositories/fixed-task.repository';
+import { FixedTaskScoreService } from './fixed-task-score.service';
 
 @Injectable()
 export class FixedTaskService {
   constructor(
     private readonly repository: FixedTaskRepository,
     private readonly policy: FixedTaskPolicyService,
+    private readonly scoreService: FixedTaskScoreService,
   ) {}
 
   async create(creatorId: string, dto: CreateFixedTaskDto) {
@@ -38,7 +40,9 @@ export class FixedTaskService {
       doneTime: dto.status === FixedTaskStatus.DONE ? new Date() : undefined,
       description: dto.description ?? '',
       isActive: dto.isActive ?? true,
-      nextRunAt: dto.nextRunAt ? new Date(dto.nextRunAt) : undefined,
+      nextRunAt: dto.nextRunAt
+        ? new Date(dto.nextRunAt)
+        : this.scoreService.getNextDeadline(dto.recurrence),
       startTime: dto.startTime,
       endTime: dto.endTime,
       sourceExcel: `manual:${templateId.toString()}`,
@@ -46,10 +50,15 @@ export class FixedTaskService {
       sourceRow: 0,
     });
 
+    if (template.status === FixedTaskStatus.DONE) {
+      await this.scoreService.adjustTaskScore(template);
+    }
+
     return this.findById(template._id.toString());
   }
 
   async findAll(queryDto: QueryFixedTaskDto) {
+    await this.scoreService.adjustOverdueTasks();
     const query: Record<string, unknown> = {};
     if (queryDto.title) {
       query.title = {
@@ -121,8 +130,11 @@ export class FixedTaskService {
     }
     if (dto.description !== undefined) updateData.description = dto.description;
     if (dto.isActive !== undefined) updateData.isActive = dto.isActive;
-    if (dto.nextRunAt !== undefined)
+    if (dto.nextRunAt !== undefined) {
       updateData.nextRunAt = new Date(dto.nextRunAt);
+    } else if (dto.recurrence !== undefined) {
+      updateData.nextRunAt = this.scoreService.getNextDeadline(dto.recurrence);
+    }
     if (dto.startTime !== undefined) updateData.startTime = dto.startTime;
     if (dto.endTime !== undefined) updateData.endTime = dto.endTime;
 
@@ -133,6 +145,10 @@ export class FixedTaskService {
 
     if (!updatedTemplate) {
       throw new NotFoundException('Fixed task template not found');
+    }
+
+    if (dto.status !== undefined) {
+      await this.scoreService.adjustTaskScore(updatedTemplate);
     }
 
     return this.findById(updatedTemplate._id.toString());

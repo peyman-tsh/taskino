@@ -15,6 +15,7 @@ import { TaskNotificationService } from './task-notification.service';
 import { TaskPolicyService } from './task-policy.service';
 import { TaskReportService } from './task-report.service';
 import { TaskRepository } from '../repositories/task.repository';
+import { TaskScoreService } from './task-score.service';
 
 // Constants
 const EXCEL_IMPORT_TYPE = 'import' as ExcelType;
@@ -31,6 +32,7 @@ export class TaskService {
     private readonly taskPolicy: TaskPolicyService,
     private readonly taskNotificationService: TaskNotificationService,
     private readonly taskReportService: TaskReportService,
+    private readonly taskScoreService: TaskScoreService,
   ) {}
 
   /**
@@ -96,6 +98,9 @@ export class TaskService {
       taskData.file = excelUpload.fileName;
       taskData.excelFile = new Types.ObjectId(excelUpload._id.toString());
       const savedTask = await this.repository.create(taskData);
+      if (savedTask.status === TaskStatus.DONE) {
+        await this.taskScoreService.adjustCompletedTaskScore(savedTask);
+      }
       this.taskNotificationService.notifyAssignedUsers(
         assignedToArray,
         savedTask._id.toString(),
@@ -108,6 +113,9 @@ export class TaskService {
     }
 
     const savedTask = await this.repository.create(taskData);
+    if (savedTask.status === TaskStatus.DONE) {
+      await this.taskScoreService.adjustCompletedTaskScore(savedTask);
+    }
     this.taskNotificationService.notifyAssignedUsers(
       assignedToArray,
       savedTask._id.toString(),
@@ -144,6 +152,7 @@ export class TaskService {
     page: number;
     limit: number;
   }> {
+    await this.taskScoreService.adjustOverdueTasks();
     const query: Record<string, unknown> = {};
 
     if (filters?.createdBy && Types.ObjectId.isValid(filters.createdBy)) {
@@ -285,6 +294,7 @@ export class TaskService {
       updatedTask.title,
     );
     if (changedToDone) {
+      await this.taskScoreService.adjustCompletedTaskScore(updatedTask);
       this.taskNotificationService.notifyCreatorWhenCompleted(
         task.createdBy.toString(),
         updatedTask._id.toString(),
@@ -338,6 +348,7 @@ export class TaskService {
     }
 
     if (status === TaskStatus.DONE && existingTask.status !== TaskStatus.DONE) {
+      await this.taskScoreService.adjustCompletedTaskScore(task);
       this.taskNotificationService.notifyCreatorWhenCompleted(
         existingTask.createdBy.toString(),
         task._id.toString(),
