@@ -29,8 +29,10 @@ export interface ProgressMetrics {
   totalTasks: number;
   completedTasks: number;
   onTimeTasks: number;
+  inProgressTasks: number;
   totalFixedTasks: number;
   completedFixedTasks: number;
+  inProgressFixedTasks: number;
   progressPercentage: number;
   performanceStatus: UserPerformanceStatus;
 }

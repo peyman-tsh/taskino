@@ -12,6 +12,7 @@ export enum UserRole {
 
 export enum UserPerformanceStatus {
   GOOD = 'good',
+  NORMAL = 'normal',
   WEAK = 'weak',
 }
 @Schema({

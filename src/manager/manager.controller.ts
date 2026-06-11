@@ -98,7 +98,7 @@ export class ManagerController {
   @ApiOperation({
     summary: 'Evaluate specialist and supervisor progress',
     description:
-      'Calculates progress, stores good/weak performance in the database, and returns the result.',
+      'Calculates weighted progress, stores good/normal/weak performance in the database, and returns the result.',
   })
   @ApiOkResponse({ type: [UserProgressResponseDto] })
   evaluateUserProgress() {

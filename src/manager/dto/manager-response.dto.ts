@@ -89,10 +89,16 @@ export class UserProgressResponseDto {
   onTimeTasks: number;
 
   @ApiProperty()
+  inProgressTasks: number;
+
+  @ApiProperty()
   totalFixedTasks: number;
 
   @ApiProperty()
   completedFixedTasks: number;
+
+  @ApiProperty()
+  inProgressFixedTasks: number;
 
   @ApiProperty()
   progressPercentage: number;
