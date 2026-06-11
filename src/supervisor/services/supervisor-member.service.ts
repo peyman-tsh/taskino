@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { SupervisorPaginationQueryDto } from '../dto/supervisor-query.dto';
 import { SupervisorPolicyService } from './supervisor-policy.service';
-import { SupervisorMemberRepository } from './supervisor-member.repository';
+import { SupervisorMemberRepository } from '../repositories/supervisor-member.repository';
 import { SupervisorMemberWorkCounts } from './supervisor-member.types';
 
 @Injectable()

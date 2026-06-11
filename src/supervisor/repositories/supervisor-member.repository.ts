@@ -17,7 +17,7 @@ import { User, UserDocument, UserRole } from '../../user/schemas/user.schema';
 import {
   SupervisorMemberProfile,
   SupervisorMemberWorkCounts,
-} from './supervisor-member.types';
+} from '../services/supervisor-member.types';
 
 @Injectable()
 export class SupervisorMemberRepository {

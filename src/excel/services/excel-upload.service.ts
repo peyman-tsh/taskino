@@ -5,7 +5,7 @@ import {
   ExcelStatus,
   ExcelType,
 } from '../excel.schema';
-import { ExcelRecordService } from './excel-record.service';
+import { ExcelRepository } from '../repositories/excel.repository';
 import { ExcelStorageService } from './excel-storage.service';
 import { ExcelWorkbookService } from './excel-workbook.service';
 
@@ -20,7 +20,7 @@ const ALLOWED_MIME_TYPES = [
 @Injectable()
 export class ExcelUploadService {
   constructor(
-    private readonly recordService: ExcelRecordService,
+    private readonly recordService: ExcelRepository,
     private readonly storageService: ExcelStorageService,
     private readonly workbookService: ExcelWorkbookService,
   ) {}

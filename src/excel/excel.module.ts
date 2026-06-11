@@ -5,7 +5,7 @@ import { ExcelController } from './excel.controller';
 import { ExcelFile, ExcelSchema } from './excel.schema';
 import { NodeFileSystem } from './file-system.provider';
 import { ExcelWorkbookService } from './services/excel-workbook.service';
-import { ExcelRecordService } from './services/excel-record.service';
+import { ExcelRepository } from './repositories/excel.repository';
 import { ExcelStorageService } from './services/excel-storage.service';
 import { ExcelUploadService } from './services/excel-upload.service';
 import { ExcelImportService } from './services/excel-import.service';
@@ -20,7 +20,7 @@ import { ExcelImportService } from './services/excel-import.service';
   providers: [
     ExcelService,
     ExcelWorkbookService,
-    ExcelRecordService,
+    ExcelRepository,
     ExcelStorageService,
     ExcelUploadService,
     ExcelImportService,

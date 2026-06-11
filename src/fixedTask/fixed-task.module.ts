@@ -8,6 +8,7 @@ import { FixedTaskService } from './services/fixed-task.service';
 import { UserModule } from '../user/user.module';
 import { FixedTaskController } from './fixed-task.controller';
 import { FixedTaskPolicyService } from './services/fixed-task-policy.service';
+import { FixedTaskRepository } from './repositories/fixed-task.repository';
 
 @Module({
   imports: [
@@ -17,7 +18,7 @@ import { FixedTaskPolicyService } from './services/fixed-task-policy.service';
     ]),
   ],
   controllers: [FixedTaskController],
-  providers: [FixedTaskService, FixedTaskPolicyService],
+  providers: [FixedTaskService, FixedTaskPolicyService, FixedTaskRepository],
   exports: [FixedTaskService],
 })
 export class FixedTaskModule {}

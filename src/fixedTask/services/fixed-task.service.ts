@@ -3,36 +3,23 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Types } from 'mongoose';
 import { CreateFixedTaskDto } from '../dto/create-fixed-task.dto';
 import { QueryFixedTaskDto } from '../dto/query-fixed-task.dto';
 import { UpdateFixedTaskDto } from '../dto/update-fixed-task.dto';
 import {
   FixedTaskRecurrence,
   FixedTaskStatus,
-  FixedTaskTemplate,
-  FixedTaskTemplateDocument,
 } from '../fixed-task.schema';
 import { FixedTaskPolicyService } from './fixed-task-policy.service';
+import { FixedTaskRepository } from '../repositories/fixed-task.repository';
 
 @Injectable()
 export class FixedTaskService {
   constructor(
-    @InjectModel(FixedTaskTemplate.name)
-    private readonly fixedTaskModel: Model<FixedTaskTemplateDocument>,
+    private readonly repository: FixedTaskRepository,
     private readonly policy: FixedTaskPolicyService,
   ) {}
-
-  private populateTemplate(query: any) {
-    return query
-      .populate(
-        'assignedTo',
-        'firstName lastName email mobile roles workField isActive',
-      )
-      .populate('createdBy', 'firstName lastName email roles workField');
-  }
-
 
   async create(creatorId: string, dto: CreateFixedTaskDto) {
     this.policy.toObjectId(creatorId, 'creator user ID');
@@ -41,7 +28,7 @@ export class FixedTaskService {
     this.policy.assertValidTimeRange(dto.startTime, dto.endTime);
 
     const templateId = new Types.ObjectId();
-    const template = new this.fixedTaskModel({
+    const template = await this.repository.create({
       _id: templateId,
       title: dto.title,
       assignedTo: new Types.ObjectId(dto.assignedTo),
@@ -59,7 +46,6 @@ export class FixedTaskService {
       sourceRow: 0,
     });
 
-    await template.save();
     return this.findById(template._id.toString());
   }
 
@@ -85,25 +71,19 @@ export class FixedTaskService {
     }
     if (queryDto.isActive !== undefined) query.isActive = queryDto.isActive;
 
-    const skip = (queryDto.page - 1) * queryDto.limit;
-    const [data, total] = await Promise.all([
-      this.populateTemplate(
-        this.fixedTaskModel
-          .find(query)
-          .sort({ createdAt: -1 })
-          .skip(skip)
-          .limit(queryDto.limit),
-      ).exec(),
-      this.fixedTaskModel.countDocuments(query).exec(),
-    ]);
+    const { data, total } = await this.repository.findPaginated(
+      query,
+      queryDto.page,
+      queryDto.limit,
+    );
 
     return { data, total, page: queryDto.page, limit: queryDto.limit };
   }
 
   async findById(id: string) {
-    const template = await this.populateTemplate(
-      this.fixedTaskModel.findById(this.policy.toObjectId(id, 'fixed task ID')),
-    ).exec();
+    const template = await this.repository.findById(
+      this.policy.toObjectId(id, 'fixed task ID'),
+    );
 
     if (!template) {
       throw new NotFoundException('Fixed task template not found');
@@ -113,9 +93,9 @@ export class FixedTaskService {
   }
 
   async update(id: string, creatorId: string, dto: UpdateFixedTaskDto) {
-    const template = await this.fixedTaskModel
-      .findById(this.policy.toObjectId(id, 'fixed task ID'))
-      .exec();
+    const template = await this.repository.findRawById(
+      this.policy.toObjectId(id, 'fixed task ID'),
+    );
     if (!template) {
       throw new NotFoundException('Fixed task template not found');
     }
@@ -146,12 +126,10 @@ export class FixedTaskService {
     if (dto.startTime !== undefined) updateData.startTime = dto.startTime;
     if (dto.endTime !== undefined) updateData.endTime = dto.endTime;
 
-    const updatedTemplate = await this.fixedTaskModel
-      .findByIdAndUpdate(template._id, updateData, {
-        returnDocument: 'after',
-        runValidators: true,
-      })
-      .exec();
+    const updatedTemplate = await this.repository.updateById(
+      template._id,
+      updateData,
+    );
 
     if (!updatedTemplate) {
       throw new NotFoundException('Fixed task template not found');
@@ -161,9 +139,9 @@ export class FixedTaskService {
   }
 
   async delete(id: string): Promise<void> {
-    const result = await this.fixedTaskModel
-      .findByIdAndDelete(this.policy.toObjectId(id, 'fixed task ID'))
-      .exec();
+    const result = await this.repository.deleteById(
+      this.policy.toObjectId(id, 'fixed task ID'),
+    );
 
     if (!result) {
       throw new NotFoundException('Fixed task template not found');
@@ -171,8 +149,6 @@ export class FixedTaskService {
   }
 
   findActiveTemplates() {
-    return this.populateTemplate(
-      this.fixedTaskModel.find({ isActive: true }),
-    ).exec();
+    return this.repository.findActive();
   }
 }

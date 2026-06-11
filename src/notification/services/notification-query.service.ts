@@ -1,40 +1,32 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Types } from 'mongoose';
 import { QueryNotificationDto } from '../dto/query-notification.dto';
-import { Notification, NotificationDocument } from '../notification.schema';
+import { NotificationDocument } from '../notification.schema';
+import { NotificationRepository } from '../repositories/notification.repository';
 
 @Injectable()
 export class NotificationQueryService {
   constructor(
-    @InjectModel(Notification.name)
-    private readonly notificationModel: Model<NotificationDocument>,
+    private readonly repository: NotificationRepository,
   ) {}
 
   async findMine(userId: string, queryDto: QueryNotificationDto) {
     const userObjectId = this.toObjectId(userId, 'user ID');
     const query = this.buildQuery(userObjectId, queryDto);
-    const skip = (queryDto.page - 1) * queryDto.limit;
-    const [data, total] = await Promise.all([
-      this.notificationModel
-        .find(query)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(queryDto.limit)
-        .exec(),
-      this.notificationModel.countDocuments(query).exec(),
-    ]);
+    const { data, total } = await this.repository.findPaginated(
+      query,
+      queryDto.page,
+      queryDto.limit,
+    );
 
     return { data, total, page: queryDto.page, limit: queryDto.limit };
   }
 
   async findMineById(userId: string, notificationId: string): Promise<NotificationDocument> {
-    const notification = await this.notificationModel
-      .findOne({
+    const notification = await this.repository.findOne({
         _id: this.toObjectId(notificationId, 'notification ID'),
         user: this.toObjectId(userId, 'user ID'),
-      })
-      .exec();
+      });
 
     if (!notification) {
       throw new NotFoundException('Notification not found');
@@ -44,12 +36,10 @@ export class NotificationQueryService {
   }
 
   async getMyUnreadCount(userId: string): Promise<{ unreadCount: number }> {
-    const unreadCount = await this.notificationModel
-      .countDocuments({
+    const unreadCount = await this.repository.count({
         user: this.toObjectId(userId, 'user ID'),
         isRead: false,
-      })
-      .exec();
+      });
 
     return { unreadCount };
   }

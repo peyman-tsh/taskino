@@ -1,14 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
 import { UserService } from '../../user/services/user.service';
-import { Task, TaskDocument, TaskStatus } from '../task.schema';
+import { TaskDocument, TaskStatus } from '../task.schema';
+import { TaskRepository } from '../repositories/task.repository';
 
 @Injectable()
 export class TaskScoreService {
   constructor(
-    @InjectModel(Task.name)
-    private readonly taskModel: Model<TaskDocument>,
+    private readonly repository: TaskRepository,
     private readonly userService: UserService,
   ) {}
 
@@ -43,15 +41,13 @@ export class TaskScoreService {
     tasks: TaskDocument[],
     score: number,
   ): Promise<void> {
-    const result = await this.taskModel
-      .updateMany(
+    const result = await this.repository.updateMany(
         {
           _id: { $in: tasks.map((task) => task._id) },
           scoreAdjusted: { $ne: true },
         },
         { $set: { scoreAdjusted: true } },
-      )
-      .exec();
+      );
 
     if (result.modifiedCount > 0) {
       await this.userService.increaseScore({ userId, score });

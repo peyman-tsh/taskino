@@ -21,7 +21,7 @@ export interface ExcelFilters {
 }
 
 @Injectable()
-export class ExcelRecordService {
+export class ExcelRepository {
   constructor(
     @InjectModel(ExcelFile.name)
     private readonly excelModel: Model<ExcelDocument>,

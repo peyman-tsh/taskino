@@ -3,18 +3,18 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Types } from 'mongoose';
 import { CreateTaskDto } from '../dto/create-task.dto';
 import { UpdateTaskDto } from '../dto/update-task.dto';
 import { TaskCompletionStatsDto } from '../dto/task-count.dto';
-import { Task, TaskDocument, TaskRecurrence, TaskStatus } from '../task.schema';
+import { TaskDocument, TaskRecurrence, TaskStatus } from '../task.schema';
 import { ExcelService } from '../../excel/services/excel.service';
 import { ExcelFile, ExcelType } from '../../excel/excel.schema';
 import { DateCountDto } from '../dto/dateCount.dto';
 import { TaskNotificationService } from './task-notification.service';
 import { TaskPolicyService } from './task-policy.service';
 import { TaskReportService } from './task-report.service';
+import { TaskRepository } from '../repositories/task.repository';
 
 // Constants
 const EXCEL_IMPORT_TYPE = 'import' as ExcelType;
@@ -26,8 +26,7 @@ const EXCEL_IMPORT_TYPE = 'import' as ExcelType;
 @Injectable()
 export class TaskService {
   constructor(
-    @InjectModel(Task.name)
-    private readonly taskModel: Model<TaskDocument>,
+    private readonly repository: TaskRepository,
     private readonly excelService: ExcelService,
     private readonly taskPolicy: TaskPolicyService,
     private readonly taskNotificationService: TaskNotificationService,
@@ -75,7 +74,7 @@ export class TaskService {
     this.taskPolicy.assertValidDeadline(parsedStartDate, parsedDueDate);
     this.taskPolicy.assertValidTimeRange(startTime, endTime);
 
-    const createdTask = new this.taskModel({
+    const taskData: Record<string, unknown> = {
       _id: new Types.ObjectId(),
       ...rest,
       createdBy: new Types.ObjectId(createdBy),
@@ -85,7 +84,7 @@ export class TaskService {
       startTime,
       endTime,
       doneTime: rest.status === TaskStatus.DONE ? new Date() : undefined,
-    });
+    };
 
     // Handle file upload if provided
     if (file) {
@@ -94,9 +93,9 @@ export class TaskService {
         createdBy,
         EXCEL_IMPORT_TYPE,
       );
-      createdTask.file = excelUpload.fileName;
-      createdTask.excelFile = new Types.ObjectId(excelUpload._id.toString());
-      const savedTask = await createdTask.save();
+      taskData.file = excelUpload.fileName;
+      taskData.excelFile = new Types.ObjectId(excelUpload._id.toString());
+      const savedTask = await this.repository.create(taskData);
       this.taskNotificationService.notifyAssignedUsers(
         assignedToArray,
         savedTask._id.toString(),
@@ -108,7 +107,7 @@ export class TaskService {
       };
     }
 
-    const savedTask = await createdTask.save();
+    const savedTask = await this.repository.create(taskData);
     this.taskNotificationService.notifyAssignedUsers(
       assignedToArray,
       savedTask._id.toString(),
@@ -126,7 +125,7 @@ export class TaskService {
     lastName: string,
   ): Promise<TaskDocument[]> {
     const user = await this.taskPolicy.findUserByName(userName, lastName);
-    return this.taskModel.find({ assignedTo: user._id }).exec();
+    return this.repository.find({ assignedTo: user._id });
   }
   async findAll(
     page: number = 1,
@@ -145,7 +144,6 @@ export class TaskService {
     page: number;
     limit: number;
   }> {
-    const skip = (page - 1) * limit;
     const query: Record<string, unknown> = {};
 
     if (filters?.createdBy && Types.ObjectId.isValid(filters.createdBy)) {
@@ -179,20 +177,11 @@ export class TaskService {
       query.startDate = { $lte: rangeEnd };
     }
 
-    const [data, total] = await Promise.all([
-      this.taskModel
-        .find(query)
-        .skip(skip)
-        .limit(limit)
-        .populate('createdBy', 'firstName lastName email')
-        .populate('assignedTo', 'firstName lastName email')
-        .populate(
-          'excelFile',
-          'fileName originalName mimeType fileSize type status',
-        )
-        .exec(),
-      this.taskModel.countDocuments(query).exec(),
-    ]);
+    const { data, total } = await this.repository.findPaginated(
+      query,
+      page,
+      limit,
+    );
 
     return { data, total, page, limit };
   }
@@ -204,15 +193,7 @@ export class TaskService {
   async findById(id: string): Promise<TaskDocument> {
     this.taskPolicy.validateObjectId(id);
 
-    const task = await this.taskModel
-      .findById(id)
-      .populate('createdBy', 'firstName lastName email')
-      .populate('assignedTo', 'firstName lastName email')
-      .populate(
-        'excelFile',
-        'fileName originalName mimeType fileSize type status',
-      )
-      .exec();
+    const task = await this.repository.findById(id);
 
     if (!task) {
       throw new NotFoundException('Task not found');
@@ -231,7 +212,7 @@ export class TaskService {
   ): Promise<TaskDocument> {
     this.taskPolicy.validateObjectId(id);
 
-    const task = await this.taskModel.findById(id).exec();
+    const task = await this.repository.findRawById(id);
     if (!task) {
       throw new NotFoundException('Task not found');
     }
@@ -292,15 +273,7 @@ export class TaskService {
       updateData.doneTime = null;
     }
 
-    const updatedTask = await this.taskModel
-      .findByIdAndUpdate(id, updateData, { new: true })
-      .populate('createdBy', 'firstName lastName email')
-      .populate('assignedTo', 'firstName lastName email')
-      .populate(
-        'excelFile',
-        'fileName originalName mimeType fileSize type status',
-      )
-      .exec();
+    const updatedTask = await this.repository.updateById(id, updateData);
 
     if (!updatedTask) {
       throw new NotFoundException('Task not found');
@@ -329,7 +302,7 @@ export class TaskService {
   async delete(id: string): Promise<void> {
     this.taskPolicy.validateObjectId(id);
 
-    const task = await this.taskModel.findById(id).exec();
+    const task = await this.repository.findRawById(id);
 
     if (!task) {
       throw new NotFoundException('Task not found');
@@ -339,7 +312,7 @@ export class TaskService {
       await this.excelService.delete(task.excelFile.toString());
     }
 
-    await this.taskModel.findByIdAndDelete(id).exec();
+    await this.repository.deleteById(id);
   }
 
   /**
@@ -349,30 +322,16 @@ export class TaskService {
   async updateStatus(id: string, status: TaskStatus): Promise<TaskDocument> {
     this.taskPolicy.validateObjectId(id);
 
-    const existingTask = await this.taskModel.findById(id).exec();
+    const existingTask = await this.repository.findRawById(id);
     if (!existingTask) {
       throw new NotFoundException('Task not found');
     }
 
-    const task = await this.taskModel
-      .findByIdAndUpdate(
-        id,
-        {
-          status,
-          doneTime:
-            status === TaskStatus.DONE
-              ? (existingTask.doneTime ?? new Date())
-              : null,
-        },
-        { new: true },
-      )
-      .populate('createdBy', 'firstName lastName email')
-      .populate('assignedTo', 'firstName lastName email')
-      .populate(
-        'excelFile',
-        'fileName originalName mimeType fileSize type status',
-      )
-      .exec();
+    const task = await this.repository.updateById(id, {
+      status,
+      doneTime:
+        status === TaskStatus.DONE ? (existingTask.doneTime ?? new Date()) : null,
+    });
 
     if (!task) {
       throw new NotFoundException('Task not found');

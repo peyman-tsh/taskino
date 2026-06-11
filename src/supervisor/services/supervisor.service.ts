@@ -7,7 +7,7 @@ import {
 } from '../dto/supervisor-query.dto';
 import { SupervisorStatisticsService } from './supervisor-statistics.service';
 import { SupervisorPolicyService } from './supervisor-policy.service';
-import { SupervisorWorkRepository } from './supervisor-work.repository';
+import { SupervisorWorkRepository } from '../repositories/supervisor-work.repository';
 import { SupervisorMemberService } from './supervisor-member.service';
 
 @Injectable()

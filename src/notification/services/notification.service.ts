@@ -3,18 +3,17 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Types } from 'mongoose';
 import { UserService } from '../../user/services/user.service';
 import { CreateNotificationDto } from '../dto/create-notification.dto';
-import { Notification, NotificationDocument } from '../notification.schema';
+import { NotificationDocument } from '../notification.schema';
 import { NotificationTemplateFactory } from '../notification-template.factory';
+import { NotificationRepository } from '../repositories/notification.repository';
 
 @Injectable()
 export class NotificationService {
   constructor(
-    @InjectModel(Notification.name)
-    private readonly notificationModel: Model<NotificationDocument>,
+    private readonly repository: NotificationRepository,
     private readonly userService: UserService,
     private readonly templateFactory: NotificationTemplateFactory,
   ) {}
@@ -25,10 +24,7 @@ export class NotificationService {
     const userId = this.toObjectId(notificationDto.user, 'user ID');
     await this.userService.findById(notificationDto.user);
 
-    return new this.notificationModel({
-      ...notificationDto,
-      user: userId,
-    }).save();
+    return this.repository.create(notificationDto, userId);
   }
 
   async createBulk(
@@ -41,26 +37,21 @@ export class NotificationService {
       uniqueUserIds.map((userId) => this.userService.findById(userId)),
     );
 
-    const notificationDocuments = notifications.map(
-      (notification) =>
-        new this.notificationModel({
-          ...notification,
-          user: this.toObjectId(notification.user, 'user ID'),
-          isRead: notification.isRead ?? false,
-        }),
+    return this.repository.createBulk(
+      notifications.map((notification) => ({
+        ...notification,
+        user: this.toObjectId(notification.user, 'user ID'),
+        isRead: notification.isRead ?? false,
+      })),
     );
-
-    return this.notificationModel.insertMany(notificationDocuments);
   }
 
 
   async findOneUnread(userId: string) {
-    const notification = await this.notificationModel
-      .findOne({
+    const notification = await this.repository.findOne({
         user: this.toObjectId(userId, 'user ID'),
         isRead: false,
-      })
-      .exec();
+      });
 
     if (!notification) {
       throw new NotFoundException('Notification not found');
@@ -74,16 +65,13 @@ export class NotificationService {
     notificationId: string,
     isRead: boolean,
   ): Promise<NotificationDocument> {
-    const notification = await this.notificationModel
-      .findOneAndUpdate(
+    const notification = await this.repository.findOneAndUpdate(
         {
           _id: this.toObjectId(notificationId, 'notification ID'),
           user: this.toObjectId(userId, 'user ID'),
         },
         { isRead },
-        { new: true },
-      )
-      .exec();
+      );
 
     if (!notification) {
       throw new NotFoundException('Notification not found');
@@ -93,7 +81,7 @@ export class NotificationService {
   }
 
   async markAllMineAsRead(userId: string): Promise<{ modifiedCount: number }> {
-    const result = await this.notificationModel.updateMany(
+    const result = await this.repository.updateMany(
       {
         user: this.toObjectId(userId, 'user ID'),
         isRead: false,
@@ -105,12 +93,10 @@ export class NotificationService {
   }
 
   async deleteMine(userId: string, notificationId: string): Promise<void> {
-    const notification = await this.notificationModel
-      .findOneAndDelete({
+    const notification = await this.repository.findOneAndDelete({
         _id: this.toObjectId(notificationId, 'notification ID'),
         user: this.toObjectId(userId, 'user ID'),
-      })
-      .exec();
+      });
 
     if (!notification) {
       throw new NotFoundException('Notification not found');
@@ -120,7 +106,7 @@ export class NotificationService {
   async deleteMyReadNotifications(
     userId: string,
   ): Promise<{ deletedCount: number }> {
-    const result = await this.notificationModel.deleteMany({
+    const result = await this.repository.deleteMany({
       user: this.toObjectId(userId, 'user ID'),
       isRead: true,
     });

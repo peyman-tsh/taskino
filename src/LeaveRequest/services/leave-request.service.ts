@@ -1,16 +1,15 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Types } from 'mongoose';
 import { CreateLeaveRequestDto } from '../dto/create-leave-request.dto';
 import { UpdateLeaveRequestDto } from '../dto/update-leave-request.dto';
-import { Leave, LeaveDocument, LeaveStatus } from '../LeaveRequest.schema';
+import { LeaveDocument, LeaveStatus } from '../LeaveRequest.schema';
 import { LeaveRequestWorkflowService } from './leave-request-workflow.service';
+import { LeaveRequestRepository } from '../repositories/leave-request.repository';
 
 @Injectable()
 export class LeaveRequestService {
   constructor(
-    @InjectModel(Leave.name)
-    private readonly leaveModel: Model<LeaveDocument>,
+    private readonly repository: LeaveRequestRepository,
     private readonly workflowService: LeaveRequestWorkflowService,
   ) {}
 
@@ -37,14 +36,13 @@ export class LeaveRequestService {
       throw new BadRequestException('End date must be after start date');
     }
 
-    const leaveRequest = new this.leaveModel({
+    return this.repository.create({
       ...rest,
       user: new Types.ObjectId(user),
       startDate,
       endDate,
     });
 
-    return leaveRequest.save();
   }
 
   /**
@@ -64,8 +62,6 @@ export class LeaveRequestService {
     page: number;
     limit: number;
   }> {
-    const skip = (page - 1) * limit;
-
     const query: Record<string, unknown> = {};
 
     if (filters?.user && Types.ObjectId.isValid(filters.user)) {
@@ -80,17 +76,11 @@ export class LeaveRequestService {
       query.approvedBy = new Types.ObjectId(filters.approvedBy);
     }
 
-    const [data, total] = await Promise.all([
-      this.leaveModel
-        .find(query)
-        .skip(skip)
-        .limit(limit)
-        .sort({ startDate: -1 })
-        .populate('user', 'firstName lastName email')
-        .populate('approvedBy', 'firstName lastName email')
-        .exec(),
-      this.leaveModel.countDocuments(query).exec(),
-    ]);
+    const { data, total } = await this.repository.findPaginated(
+      query,
+      page,
+      limit,
+    );
 
     return {
       data,
@@ -108,11 +98,7 @@ export class LeaveRequestService {
       throw new BadRequestException('Invalid leave request ID');
     }
 
-    const leaveRequest = await this.leaveModel
-      .findById(id)
-      .populate('user', 'firstName lastName email')
-      .populate('approvedBy', 'firstName lastName email')
-      .exec();
+    const leaveRequest = await this.repository.findById(id);
 
     if (!leaveRequest) {
       throw new NotFoundException('Leave request not found');
@@ -138,19 +124,11 @@ export class LeaveRequestService {
       throw new BadRequestException('Invalid user ID');
     }
 
-    const skip = (page - 1) * limit;
-
-    const [data, total] = await Promise.all([
-      this.leaveModel
-        .find({ user: new Types.ObjectId(userId) })
-        .skip(skip)
-        .limit(limit)
-        .sort({ startDate: -1 })
-        .populate('user', 'firstName lastName email')
-        .populate('approvedBy', 'firstName lastName email')
-        .exec(),
-      this.leaveModel.countDocuments({ user: new Types.ObjectId(userId) }).exec(),
-    ]);
+    const { data, total } = await this.repository.findPaginated(
+      { user: new Types.ObjectId(userId) },
+      page,
+      limit,
+    );
 
     return {
       data,
@@ -267,7 +245,7 @@ export class LeaveRequestService {
   }
 
   private async ensureLeaveExists(id: string): Promise<void> {
-    const leaveRequest = await this.leaveModel.exists({ _id: id }).exec();
+    const leaveRequest = await this.repository.exists(id);
     if (!leaveRequest) {
       throw new NotFoundException('Leave request not found');
     }
@@ -292,11 +270,7 @@ export class LeaveRequestService {
     id: string,
     updateData: Record<string, unknown>,
   ): Promise<LeaveDocument> {
-    const updatedLeave = await this.leaveModel
-      .findByIdAndUpdate(id, updateData, { new: true })
-      .populate('user', 'firstName lastName email')
-      .populate('approvedBy', 'firstName lastName email')
-      .exec();
+    const updatedLeave = await this.repository.updateById(id, updateData);
 
     if (!updatedLeave) {
       throw new NotFoundException('Leave request not found');
@@ -313,7 +287,7 @@ export class LeaveRequestService {
       throw new BadRequestException('Invalid leave request ID');
     }
 
-    const leaveRequest = await this.leaveModel.findByIdAndDelete(id).exec();
+    const leaveRequest = await this.repository.deleteById(id);
 
     if (!leaveRequest) {
       throw new NotFoundException('Leave request not found');

@@ -5,7 +5,7 @@ import { TaskModule } from '../task/task.module';
 import { UserModule } from '../user/user.module';
 import { UserProgressService } from './services/user-progress.service';
 import { UserProgressCalculatorService } from './services/user-progress-calculator.service';
-import { UserProgressRepositoryService } from './services/user-progress-repository.service';
+import { UserProgressRepository } from './repositories/user-progress.repository';
 
 @Module({
   imports: [UserModule, TaskModule],
@@ -14,7 +14,7 @@ import { UserProgressRepositoryService } from './services/user-progress-reposito
     ManagerService,
     UserProgressService,
     UserProgressCalculatorService,
-    UserProgressRepositoryService,
+    UserProgressRepository,
   ],
 })
 export class ManagerModule {}

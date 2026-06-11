@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { TaskRecurrence } from '../../task/task.schema';
 import { SupervisorPolicyService } from './supervisor-policy.service';
-import { SupervisorWorkRepository } from './supervisor-work.repository';
+import { SupervisorWorkRepository } from '../repositories/supervisor-work.repository';
 
 @Injectable()
 export class SupervisorStatisticsService {

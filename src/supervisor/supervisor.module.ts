@@ -6,12 +6,12 @@ import {
 } from '../fixedTask/fixed-task.schema';
 import { Task, TaskSchema } from '../task/task.schema';
 import { SupervisorStatisticsService } from './services/supervisor-statistics.service';
-import { SupervisorWorkRepository } from './services/supervisor-work.repository';
+import { SupervisorWorkRepository } from './repositories/supervisor-work.repository';
 import { SupervisorService } from './services/supervisor.service';
 import { SupervisorPolicyService } from './services/supervisor-policy.service';
 import { SupervisorController } from './supervisor.controller';
 import { User, UserSchema } from '../user/schemas/user.schema';
-import { SupervisorMemberRepository } from './services/supervisor-member.repository';
+import { SupervisorMemberRepository } from './repositories/supervisor-member.repository';
 import { SupervisorMemberService } from './services/supervisor-member.service';
 
 @Module({

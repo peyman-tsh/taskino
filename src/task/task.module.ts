@@ -9,6 +9,7 @@ import { TaskNotificationService } from './services/task-notification.service';
 import { TaskPolicyService } from './services/task-policy.service';
 import { TaskReportService } from './services/task-report.service';
 import { TaskScoreService } from './services/task-score.service';
+import { TaskRepository } from './repositories/task.repository';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { TaskScoreService } from './services/task-score.service';
     TaskNotificationService,
     TaskScoreService,
     TaskReportService,
+    TaskRepository,
   ],
   exports: [TaskService, TaskReportService],
 })

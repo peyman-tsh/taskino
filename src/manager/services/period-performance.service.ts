@@ -3,14 +3,14 @@ import { Types } from 'mongoose';
 import { EvaluateUserPerformanceDto } from '../dto/evaluate-user-performance.dto';
 import { PerformancePeriodService } from './performance-period.service';
 import { PeriodPerformanceCalculatorService } from './period-performance-calculator.service';
-import { PeriodPerformanceRepositoryService } from './period-performance-repository.service';
+import { PeriodPerformanceRepository } from '../repositories/period-performance.repository';
 
 @Injectable()
 export class PeriodPerformanceService {
   constructor(
     private readonly periodService: PerformancePeriodService,
     private readonly calculator: PeriodPerformanceCalculatorService,
-    private readonly repository: PeriodPerformanceRepositoryService,
+    private readonly repository: PeriodPerformanceRepository,
   ) {}
 
   async evaluateSpecialist(userId: Types.ObjectId, dto: EvaluateUserPerformanceDto) {

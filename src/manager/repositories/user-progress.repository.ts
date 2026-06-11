@@ -6,10 +6,10 @@ import {
   ProgressFixedTask,
   ProgressTask,
   ProgressUser,
-} from './user-progress.types';
+} from '../services/user-progress.types';
 
 @Injectable()
-export class UserProgressRepositoryService {
+export class UserProgressRepository {
   constructor(@InjectConnection() private readonly connection: Connection) {}
 
   async findEvaluableUsers(): Promise<ProgressUser[]> {

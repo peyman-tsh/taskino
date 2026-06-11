@@ -9,8 +9,8 @@ import {
 } from '../excel.schema';
 import {
   ExcelFilters,
-  ExcelRecordService,
-} from './excel-record.service';
+  ExcelRepository,
+} from '../repositories/excel.repository';
 import { ExcelImportService } from './excel-import.service';
 import { ExcelStorageService } from './excel-storage.service';
 import { ExcelUploadService } from './excel-upload.service';
@@ -25,7 +25,7 @@ const DEFAULT_SHEET_NAME = 'Sheet1';
 @Injectable()
 export class ExcelService {
   constructor(
-    private readonly recordService: ExcelRecordService,
+    private readonly recordService: ExcelRepository,
     private readonly storageService: ExcelStorageService,
     private readonly uploadService: ExcelUploadService,
     private readonly importService: ExcelImportService,

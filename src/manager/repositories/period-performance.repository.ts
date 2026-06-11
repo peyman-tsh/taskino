@@ -6,15 +6,15 @@ import {
   UserPerformanceStatus,
   UserRole,
 } from '../../user/schemas/user.schema';
-import { PerformancePeriod } from './performance-period.service';
+import { PerformancePeriod } from '../services/performance-period.service';
 import {
   PeriodPerformanceFixedTask,
   PeriodPerformanceTask,
   PeriodPerformanceUser,
-} from './period-performance.types';
+} from '../services/period-performance.types';
 
 @Injectable()
-export class PeriodPerformanceRepositoryService {
+export class PeriodPerformanceRepository {
   constructor(@InjectConnection() private readonly connection: Connection) {}
 
   async findSpecialist(userId: Types.ObjectId): Promise<PeriodPerformanceUser> {

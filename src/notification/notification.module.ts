@@ -7,6 +7,7 @@ import { NotificationQueryService } from './services/notification-query.service'
 import { NotificationTemplateFactory } from './notification-template.factory';
 import { UserModule } from '../user/user.module';
 import { NotificationEventListener } from './notification-event.listener';
+import { NotificationRepository } from './repositories/notification.repository';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { NotificationEventListener } from './notification-event.listener';
     NotificationQueryService,
     NotificationTemplateFactory,
     NotificationEventListener,
+    NotificationRepository,
   ],
   exports: [NotificationService],
 })

@@ -4,7 +4,7 @@ import { AuthModule } from '../auth/auth.module';
 import { UserController } from './user.controller';
 import { UserService } from './services/user.service';
 import { User, UserSchema } from './schemas/user.schema';
-import { UserQueryService } from './services/user-query.service';
+import { UserRepository } from './repositories/user.repository';
 
 @Module({
   imports: [
@@ -12,7 +12,7 @@ import { UserQueryService } from './services/user-query.service';
     forwardRef(() => AuthModule),
   ],
   controllers: [UserController],
-  providers: [UserService, UserQueryService],
-  exports: [UserService, UserQueryService],
+  providers: [UserService, UserRepository],
+  exports: [UserService, UserRepository],
 })
 export class UserModule {}

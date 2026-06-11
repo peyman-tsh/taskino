@@ -1,13 +1,13 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ExcelFile, ExcelStatus, ExcelType } from '../excel.schema';
-import { ExcelRecordService } from './excel-record.service';
+import { ExcelRepository } from '../repositories/excel.repository';
 import { ExcelStorageService } from './excel-storage.service';
 import { ExcelWorkbookService } from './excel-workbook.service';
 
 @Injectable()
 export class ExcelImportService {
   constructor(
-    private readonly recordService: ExcelRecordService,
+    private readonly recordService: ExcelRepository,
     private readonly storageService: ExcelStorageService,
     private readonly workbookService: ExcelWorkbookService,
   ) {}

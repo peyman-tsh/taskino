@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { UserProgressCalculatorService } from './user-progress-calculator.service';
-import { UserProgressRepositoryService } from './user-progress-repository.service';
+import { UserProgressRepository } from '../repositories/user-progress.repository';
 import { ProgressUser } from './user-progress.types';
 
 @Injectable()
 export class UserProgressService {
   constructor(
-    private readonly repository: UserProgressRepositoryService,
+    private readonly repository: UserProgressRepository,
     private readonly calculator: UserProgressCalculatorService,
   ) {}
 

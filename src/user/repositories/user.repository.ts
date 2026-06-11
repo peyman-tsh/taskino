@@ -8,11 +8,31 @@ import { Model, Types } from 'mongoose';
 import { User, UserDocument, UserRole } from '../schemas/user.schema';
 
 @Injectable()
-export class UserQueryService {
+export class UserRepository {
   constructor(
     @InjectModel(User.name)
     private readonly userModel: Model<UserDocument>,
   ) {}
+
+  create(data: Record<string, unknown>): Promise<UserDocument> {
+    return new this.userModel(data).save();
+  }
+
+  findByEmail(email: string): Promise<UserDocument | null> {
+    return this.userModel.findOne({ email }).exec();
+  }
+
+  findRawById(id: string): Promise<UserDocument | null> {
+    return this.userModel.findById(id).exec();
+  }
+
+  updateById(id: string, update: Record<string, unknown>) {
+    return this.userModel.findByIdAndUpdate(id, update, { new: true }).exec();
+  }
+
+  deleteById(id: string) {
+    return this.userModel.findByIdAndDelete(id).exec();
+  }
 
   async findByName(firstName: string, lastName: string): Promise<UserDocument> {
     const user = await this.userModel.findOne({ firstName, lastName }).exec();

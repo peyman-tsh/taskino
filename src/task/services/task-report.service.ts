@@ -1,17 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { PipelineStage, Types } from 'mongoose';
 import { DateCountDto } from '../dto/dateCount.dto';
 import { TaskCompletionStatsDto } from '../dto/task-count.dto';
-import { Task, TaskDocument, TaskStatus } from '../task.schema';
+import { TaskStatus } from '../task.schema';
 import { TaskPolicyService } from './task-policy.service';
 import { TaskScoreService } from './task-score.service';
+import { TaskRepository } from '../repositories/task.repository';
 
 @Injectable()
 export class TaskReportService {
   constructor(
-    @InjectModel(Task.name)
-    private readonly taskModel: Model<TaskDocument>,
+    private readonly repository: TaskRepository,
     private readonly taskPolicy: TaskPolicyService,
     private readonly taskScoreService: TaskScoreService,
   ) {}
@@ -27,19 +26,13 @@ export class TaskReportService {
     };
     const [totalTasks, completedTasks, pendingTodo, pendingInProgress] =
       await Promise.all([
-        this.taskModel.countDocuments(managerExpertQuery).exec(),
-        this.taskModel
-          .countDocuments({ ...managerExpertQuery, status: TaskStatus.DONE })
-          .exec(),
-        this.taskModel
-          .countDocuments({ ...managerExpertQuery, status: TaskStatus.TODO })
-          .exec(),
-        this.taskModel
-          .countDocuments({
+        this.repository.count(managerExpertQuery),
+        this.repository.count({ ...managerExpertQuery, status: TaskStatus.DONE }),
+        this.repository.count({ ...managerExpertQuery, status: TaskStatus.TODO }),
+        this.repository.count({
             ...managerExpertQuery,
             status: TaskStatus.IN_PROGRESS,
-          })
-          .exec(),
+          }),
       ]);
 
     return {
@@ -65,13 +58,11 @@ export class TaskReportService {
     const rangeEnd = new Date(dateCountDto.enddate);
     rangeEnd.setUTCHours(23, 59, 59, 999);
 
-    const tasks = await this.taskModel
-      .find({
+    const tasks = await this.repository.find({
         assignedTo: new Types.ObjectId(dateCountDto.userId),
         startDate: { $lte: rangeEnd },
         dueDate: { $gte: rangeStart },
-      })
-      .exec();
+      });
 
     const completedTasks = tasks.filter(
       (task) => task.status === TaskStatus.DONE,
@@ -94,19 +85,18 @@ export class TaskReportService {
   }
 
   countOpenTasks(): Promise<number> {
-    return this.taskModel
-      .countDocuments({
+    return this.repository.count({
         status: { $in: [TaskStatus.TODO, TaskStatus.IN_PROGRESS] },
-      })
-      .exec();
+      });
   }
 
   async getTaskStatusOverview() {
-    const statusCounts = await this.taskModel
-      .aggregate<{ _id: TaskStatus; count: number }>([
+    const statusCounts = await this.repository.aggregate<{
+      _id: TaskStatus;
+      count: number;
+    }>([
         { $group: { _id: '$status', count: { $sum: 1 } } },
-      ])
-      .exec();
+      ]);
     const counts = statusCounts.reduce(
       (result, item) => ({ ...result, [item._id]: item.count }),
       {
@@ -128,8 +118,7 @@ export class TaskReportService {
   }
 
   getTaskCountsByAssignee() {
-    return this.taskModel
-      .aggregate([
+    return this.repository.aggregate([
         { $unwind: '$assignedTo' },
         {
           $group: {
@@ -171,15 +160,13 @@ export class TaskReportService {
           },
         },
         { $sort: { totalTasks: -1, doneTasks: -1 } },
-      ])
-      .exec();
+      ] as PipelineStage[]);
   }
 
   async getMonthlyUserPerformance(query: { month: number; year: number }) {
     const startDate = new Date(query.year, query.month - 1, 1);
     const endDate = new Date(query.year, query.month, 1);
-    const users = await this.taskModel
-      .aggregate([
+    const users = await this.repository.aggregate([
         {
           $match: {
             createdAt: {
@@ -247,8 +234,7 @@ export class TaskReportService {
           },
         },
         { $sort: { completionRate: -1, score: -1, completedTasks: -1 } },
-      ])
-      .exec();
+      ] as PipelineStage[]);
 
     return {
       month: query.month,

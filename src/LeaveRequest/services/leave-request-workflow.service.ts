@@ -3,19 +3,17 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Types } from 'mongoose';
 import {
-  Leave,
   LeaveDocument,
   LeaveStatus,
 } from '../LeaveRequest.schema';
+import { LeaveRequestRepository } from '../repositories/leave-request.repository';
 
 @Injectable()
 export class LeaveRequestWorkflowService {
   constructor(
-    @InjectModel(Leave.name)
-    private readonly leaveModel: Model<LeaveDocument>,
+    private readonly repository: LeaveRequestRepository,
   ) {}
 
   approve(id: string, approvedBy: string): Promise<LeaveDocument> {
@@ -48,7 +46,7 @@ export class LeaveRequestWorkflowService {
     this.validateId(id, 'leave request ID');
     this.validateId(approvedBy, 'approver user ID');
 
-    const leaveRequest = await this.leaveModel.findById(id).exec();
+    const leaveRequest = await this.repository.findRawById(id);
     if (!leaveRequest) {
       throw new NotFoundException('Leave request not found');
     }
@@ -56,20 +54,12 @@ export class LeaveRequestWorkflowService {
       throw new BadRequestException('Leave request is already approved');
     }
 
-    const updatedLeave = await this.leaveModel
-      .findByIdAndUpdate(
-        id,
-        {
-          status,
-          approvedBy: new Types.ObjectId(approvedBy),
-          approvedAt: new Date(),
-          ...(rejectionReason ? { rejectionReason } : {}),
-        },
-        { new: true },
-      )
-      .populate('user', 'firstName lastName email')
-      .populate('approvedBy', 'firstName lastName email')
-      .exec();
+    const updatedLeave = await this.repository.updateById(id, {
+      status,
+      approvedBy: new Types.ObjectId(approvedBy),
+      approvedAt: new Date(),
+      ...(rejectionReason ? { rejectionReason } : {}),
+    });
 
     if (!updatedLeave) {
       throw new NotFoundException('Leave request not found');
