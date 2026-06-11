@@ -29,7 +29,7 @@ import { CreateFixedTaskDto } from './dto/create-fixed-task.dto';
 import { FixedTaskParamDto } from './dto/fixed-task-param.dto';
 import { QueryFixedTaskDto } from './dto/query-fixed-task.dto';
 import { UpdateFixedTaskDto } from './dto/update-fixed-task.dto';
-import { FixedTaskService } from './fixed-task.service';
+import { FixedTaskService } from './services/fixed-task.service';
 import {
   FixedTaskResponseDto,
   PaginatedFixedTasksResponseDto,

@@ -5,7 +5,7 @@ import {
   TaskAssignedNotificationEvent,
   TaskCompletedNotificationEvent,
 } from './events/notification.events';
-import { NotificationService } from './notification.service';
+import { NotificationService } from './services/notification.service';
 
 @Injectable()
 export class NotificationEventListener implements OnModuleInit, OnModuleDestroy {

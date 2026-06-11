@@ -2,10 +2,10 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
-import { UserService } from '../user/user.service';
-import { UserDocument, UserRole } from '../user/schemas/user.schema';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
+import { UserService } from '../../user/services/user.service';
+import { UserDocument, UserRole } from '../../user/schemas/user.schema';
+import { RegisterDto } from '../dto/register.dto';
+import { LoginDto } from '../dto/login.dto';
 
 /**
  * Response structure for registration

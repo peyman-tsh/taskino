@@ -16,7 +16,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
-import { ExcelService } from './excel.service';
+import { ExcelService } from './services/excel.service';
 import { CreateExcelDto } from './dto/create-excel.dto';
 import { UpdateExcelDto } from './dto/update-excel.dto';
 import { GenerateExportDto } from './dto/generate-export.dto';

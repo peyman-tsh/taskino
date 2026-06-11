@@ -15,7 +15,7 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { TaskService } from './task.service';
+import { TaskService } from './services/task.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TaskCompletionStatsDto } from './dto/task-count.dto';

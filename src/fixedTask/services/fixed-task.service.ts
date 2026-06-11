@@ -5,34 +5,24 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { UserRole } from '../user/schemas/user.schema';
-import { UserService } from '../user/user.service';
-import { isValidTimeRange } from '../common/constants/time.constants';
-import { CreateFixedTaskDto } from './dto/create-fixed-task.dto';
-import { QueryFixedTaskDto } from './dto/query-fixed-task.dto';
-import { UpdateFixedTaskDto } from './dto/update-fixed-task.dto';
+import { CreateFixedTaskDto } from '../dto/create-fixed-task.dto';
+import { QueryFixedTaskDto } from '../dto/query-fixed-task.dto';
+import { UpdateFixedTaskDto } from '../dto/update-fixed-task.dto';
 import {
   FixedTaskRecurrence,
   FixedTaskStatus,
   FixedTaskTemplate,
   FixedTaskTemplateDocument,
-} from './fixed-task.schema';
+} from '../fixed-task.schema';
+import { FixedTaskPolicyService } from './fixed-task-policy.service';
 
 @Injectable()
 export class FixedTaskService {
   constructor(
     @InjectModel(FixedTaskTemplate.name)
     private readonly fixedTaskModel: Model<FixedTaskTemplateDocument>,
-    private readonly userService: UserService,
+    private readonly policy: FixedTaskPolicyService,
   ) {}
-
-  private toObjectId(id: string, label: string): Types.ObjectId {
-    if (!Types.ObjectId.isValid(id)) {
-      throw new BadRequestException(`Invalid ${label}`);
-    }
-
-    return new Types.ObjectId(id);
-  }
 
   private populateTemplate(query: any) {
     return query
@@ -43,59 +33,12 @@ export class FixedTaskService {
       .populate('createdBy', 'firstName lastName email roles workField');
   }
 
-  private async validateParticipants(
-    creatorId: string,
-    assignedTo: string,
-  ): Promise<void> {
-    const participants = await this.userService.findTaskParticipantsByIds([
-      creatorId,
-      assignedTo,
-    ]);
-    const creator = participants.find(
-      (participant) => participant.userId === creatorId,
-    );
-    const assignee = participants.find(
-      (participant) => participant.userId === assignedTo,
-    );
-
-    if (
-      ![UserRole.MANAGER, UserRole.SUPERVISOR].includes(
-        creator?.role as UserRole,
-      )
-    ) {
-      throw new BadRequestException(
-        'Fixed task creator must have the manager or supervisor role',
-      );
-    }
-
-    if (
-      ![UserRole.SPECIALIST, UserRole.SUPERVISOR].includes(
-        assignee?.role as UserRole,
-      )
-    ) {
-      throw new BadRequestException(
-        'Fixed task assignee must have the specialist or supervisor role',
-      );
-    }
-
-    if (creator?.workField !== assignee?.workField) {
-      throw new BadRequestException(
-        'Fixed task creator and assignee must have the same work field',
-      );
-    }
-  }
-
-  private assertValidTimeRange(startTime?: string, endTime?: string): void {
-    if (!isValidTimeRange(startTime, endTime)) {
-      throw new BadRequestException('endTime must be after startTime');
-    }
-  }
 
   async create(creatorId: string, dto: CreateFixedTaskDto) {
-    this.toObjectId(creatorId, 'creator user ID');
-    this.toObjectId(dto.assignedTo, 'assigned user ID');
-    await this.validateParticipants(creatorId, dto.assignedTo);
-    this.assertValidTimeRange(dto.startTime, dto.endTime);
+    this.policy.toObjectId(creatorId, 'creator user ID');
+    this.policy.toObjectId(dto.assignedTo, 'assigned user ID');
+    await this.policy.validateParticipants(creatorId, dto.assignedTo);
+    this.policy.assertValidTimeRange(dto.startTime, dto.endTime);
 
     const templateId = new Types.ObjectId();
     const template = new this.fixedTaskModel({
@@ -129,7 +72,7 @@ export class FixedTaskService {
       };
     }
     if (queryDto.assignedTo) {
-      query.assignedTo = this.toObjectId(
+      query.assignedTo = this.policy.toObjectId(
         queryDto.assignedTo,
         'assigned user ID',
       );
@@ -159,7 +102,7 @@ export class FixedTaskService {
 
   async findById(id: string) {
     const template = await this.populateTemplate(
-      this.fixedTaskModel.findById(this.toObjectId(id, 'fixed task ID')),
+      this.fixedTaskModel.findById(this.policy.toObjectId(id, 'fixed task ID')),
     ).exec();
 
     if (!template) {
@@ -171,15 +114,15 @@ export class FixedTaskService {
 
   async update(id: string, creatorId: string, dto: UpdateFixedTaskDto) {
     const template = await this.fixedTaskModel
-      .findById(this.toObjectId(id, 'fixed task ID'))
+      .findById(this.policy.toObjectId(id, 'fixed task ID'))
       .exec();
     if (!template) {
       throw new NotFoundException('Fixed task template not found');
     }
 
     const assignedTo = dto.assignedTo ?? template.assignedTo.toString();
-    await this.validateParticipants(creatorId, assignedTo);
-    this.assertValidTimeRange(
+    await this.policy.validateParticipants(creatorId, assignedTo);
+    this.policy.assertValidTimeRange(
       dto.startTime ?? template.startTime,
       dto.endTime ?? template.endTime,
     );
@@ -219,7 +162,7 @@ export class FixedTaskService {
 
   async delete(id: string): Promise<void> {
     const result = await this.fixedTaskModel
-      .findByIdAndDelete(this.toObjectId(id, 'fixed task ID'))
+      .findByIdAndDelete(this.policy.toObjectId(id, 'fixed task ID'))
       .exec();
 
     if (!result) {

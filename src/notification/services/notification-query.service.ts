@@ -1,8 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { QueryNotificationDto } from './dto/query-notification.dto';
-import { Notification, NotificationDocument } from './notification.schema';
+import { QueryNotificationDto } from '../dto/query-notification.dto';
+import { Notification, NotificationDocument } from '../notification.schema';
 
 @Injectable()
 export class NotificationQueryService {

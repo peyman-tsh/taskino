@@ -10,7 +10,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { LeaveRequestService } from './LeaveRequest.service';
+import { LeaveRequestService } from './services/leave-request.service';
 import { CreateLeaveRequestDto } from './dto/create-leave-request.dto';
 import { UpdateLeaveRequestDto } from './dto/update-leave-request.dto';
 import { LeaveStatus } from './LeaveRequest.schema';

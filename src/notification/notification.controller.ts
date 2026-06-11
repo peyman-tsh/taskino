@@ -15,9 +15,8 @@ import { JwtAuthGuard } from '../auth/guard/jwt.guard';
 import { NotificationParamDto } from './dto/notification-param.dto';
 import { QueryNotificationDto } from './dto/query-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
-import { NotificationQueryService } from './notification-query.service';
-import { NotificationService } from './notification.service';
-import { log } from 'console';
+import { NotificationQueryService } from './services/notification-query.service';
+import { NotificationService } from './services/notification.service';
 
 @ApiTags('Notifications')
 @ApiBearerAuth()
@@ -51,9 +50,8 @@ export class NotificationController {
   @Get('me/unread')
   @ApiOperation({ summary: 'Get one unread notification of current user' })
   @ApiOkResponse({ description: 'Unread notification retrieved successfully' })
-  findUnReadById(@CurrentUserId() userId: string) {
-    log('Finding unread notifications for user:', userId);
-    return this.notificationService.findUnReadById(userId);
+  findOneUnread(@CurrentUserId() userId: string) {
+    return this.notificationService.findOneUnread(userId);
   }
 
   @Patch('me/read-all')

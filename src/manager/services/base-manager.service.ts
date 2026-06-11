@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { Types } from 'mongoose';
-import { PaginationQueryDto } from './dto/pagination-query.dto';
+import { PaginationQueryDto } from '../dto/pagination-query.dto';
 
 export abstract class BaseManagerService {
   protected toObjectId(id: string, label = 'ID'): Types.ObjectId {

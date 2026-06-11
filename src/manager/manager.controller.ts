@@ -33,7 +33,7 @@ import {
 import { MongoIdParamDto } from './dto/mongo-id-param.dto';
 import { MonthlyPerformanceQueryDto } from './dto/monthly-performance-query.dto';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto';
-import { ManagerService } from './manager.service';
+import { ManagerService } from './services/manager.service';
 
 @ApiTags('Manager')
 @ApiBearerAuth()

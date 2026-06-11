@@ -5,10 +5,10 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { UserService } from '../user/user.service';
-import { CreateNotificationDto } from './dto/create-notification.dto';
-import { Notification, NotificationDocument } from './notification.schema';
-import { NotificationTemplateFactory } from './notification-template.factory';
+import { UserService } from '../../user/services/user.service';
+import { CreateNotificationDto } from '../dto/create-notification.dto';
+import { Notification, NotificationDocument } from '../notification.schema';
+import { NotificationTemplateFactory } from '../notification-template.factory';
 
 @Injectable()
 export class NotificationService {
@@ -54,7 +54,7 @@ export class NotificationService {
   }
 
 
-  async findUnReadById(userId: string) {
+  async findOneUnread(userId: string) {
     const notification = await this.notificationModel
       .findOne({
         user: this.toObjectId(userId, 'user ID'),

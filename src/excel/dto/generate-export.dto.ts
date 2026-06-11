@@ -12,7 +12,7 @@ export class GenerateExportDto {
   @IsArray()
   @ArrayMinSize(1)
   @IsNotEmpty({ each: true })
-  data: Record<string, any>[];
+  data: Record<string, unknown>[];
 
   @ApiPropertyOptional({
     description: 'Column headers to include in export',

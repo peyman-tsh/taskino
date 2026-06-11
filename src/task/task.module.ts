@@ -1,10 +1,14 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { TaskController } from './task.controller';
-import { TaskService } from './task.service';
+import { TaskService } from './services/task.service';
 import { Task, TaskSchema } from './task.schema';
 import { ExcelModule } from '../excel/excel.module';
 import { UserModule } from 'src/user/user.module';
+import { TaskNotificationService } from './services/task-notification.service';
+import { TaskPolicyService } from './services/task-policy.service';
+import { TaskReportService } from './services/task-report.service';
+import { TaskScoreService } from './services/task-score.service';
 
 @Module({
   imports: [
@@ -13,7 +17,13 @@ import { UserModule } from 'src/user/user.module';
     MongooseModule.forFeature([{ name: Task.name, schema: TaskSchema }]),
   ],
   controllers: [TaskController],
-  providers: [TaskService],
-  exports: [TaskService],
+  providers: [
+    TaskService,
+    TaskPolicyService,
+    TaskNotificationService,
+    TaskScoreService,
+    TaskReportService,
+  ],
+  exports: [TaskService, TaskReportService],
 })
 export class TaskModule {}

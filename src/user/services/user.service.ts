@@ -2,16 +2,16 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
-  BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { IncreaseScoreDto } from './dto/increase-score.dto';
-import { User, UserDocument, UserRole } from './schemas/user.schema';
+import { CreateUserDto } from '../dto/create-user.dto';
+import { UpdateUserDto } from '../dto/update-user.dto';
+import { IncreaseScoreDto } from '../dto/increase-score.dto';
+import { User, UserDocument, UserRole } from '../schemas/user.schema';
 import * as bcrypt from 'bcryptjs';
+import { UserQueryService } from './user-query.service';
 
 @Injectable()
 export class UserService {
@@ -21,6 +21,7 @@ export class UserService {
     @InjectModel(User.name)
     private readonly userModel: Model<UserDocument>,
     private readonly configService: ConfigService,
+    private readonly userQueryService: UserQueryService,
   ) {
     this.bcryptSaltRounds =
       this.configService.get<number>('app.bcryptSaltRounds') ?? 10;
@@ -54,12 +55,8 @@ export class UserService {
    * Find all users with pagination
    */
 
-  async findByName(userName:string,lastname:string): Promise<UserDocument> {
-    const user = await this.userModel.findOne({ firstName: userName, lastName:lastname }).exec(); 
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-   return user;
+  findByName(userName: string, lastName: string): Promise<UserDocument> {
+    return this.userQueryService.findByName(userName, lastName);
   }
   async findAll(
     page: number = 1,
@@ -70,101 +67,23 @@ export class UserService {
     page: number;
     limit: number;
   }> {
-    const skip = (page - 1) * limit;
-
-    const [data, total] = await Promise.all([
-      this.userModel.find().skip(skip).limit(limit).exec(),
-      this.userModel.countDocuments().exec(),
-    ]);
-
-    return {
-      data,
-      total,
-      page,
-      limit,
-    };
+    return this.userQueryService.findAll(page, limit);
   }
 
   async countActiveUsers(): Promise<number> {
-    return this.userModel.countDocuments({ isActive: true }).exec();
+    return this.userQueryService.countActiveUsers();
   }
 
   async findProfilesByIds(userIds: string[]) {
-    const validUserIds = userIds.filter((userId) =>
-      Types.ObjectId.isValid(userId),
-    );
-    if (validUserIds.length === 0) {
-      return [];
-    }
-
-    const users = await this.userModel
-      .find({
-        _id: { $in: validUserIds.map((userId) => new Types.ObjectId(userId)) },
-      })
-      .select('firstName lastName email mobile isActive score')
-      .lean()
-      .exec();
-
-    return users.map((user) => ({
-      userId: user._id.toString(),
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      mobile: user.mobile,
-      isActive: user.isActive,
-      score: user.score ?? 0,
-    }));
+    return this.userQueryService.findProfilesByIds(userIds);
   }
 
   async findTaskParticipantsByIds(userIds: string[]) {
-    const uniqueUserIds = [...new Set(userIds)];
-    const invalidUserIds = uniqueUserIds.filter(
-      (userId) => !Types.ObjectId.isValid(userId),
-    );
-    if (invalidUserIds.length > 0) {
-      throw new BadRequestException('Invalid task participant user IDs');
-    }
-
-    const users = await this.userModel
-      .find({
-        _id: { $in: uniqueUserIds.map((userId) => new Types.ObjectId(userId)) },
-      })
-      .select('roles workField isActive')
-      .lean()
-      .exec();
-
-    if (users.length !== uniqueUserIds.length) {
-      throw new NotFoundException(
-        'One or more task participants were not found',
-      );
-    }
-
-    return users.map((user) => ({
-      userId: user._id.toString(),
-      role: user.roles,
-      workField: user.workField,
-      isActive: user.isActive,
-    }));
+    return this.userQueryService.findTaskParticipantsByIds(userIds);
   }
 
   async assertUsersExist(userIds: string[]): Promise<void> {
-    const uniqueUserIds = [...new Set(userIds)];
-    const invalidUserIds = uniqueUserIds.filter(
-      (userId) => !Types.ObjectId.isValid(userId),
-    );
-    if (invalidUserIds.length > 0) {
-      throw new BadRequestException('Invalid user IDs');
-    }
-
-    const existingUsersCount = await this.userModel
-      .countDocuments({
-        _id: { $in: uniqueUserIds.map((userId) => new Types.ObjectId(userId)) },
-      })
-      .exec();
-
-    if (existingUsersCount !== uniqueUserIds.length) {
-      throw new NotFoundException('One or more users were not found');
-    }
+    return this.userQueryService.assertUsersExist(userIds);
   }
 
   async findForManager(
@@ -181,73 +100,21 @@ export class UserService {
     page: number;
     limit: number;
   }> {
-    const skip = (page - 1) * limit;
-    const query: Record<string, unknown> = {};
-
-    if (filters?.isActive !== undefined) {
-      query.isActive = filters.isActive;
-    }
-
-    if (filters?.role) {
-      query.roles = filters.role;
-    }
-
-    const nameTerms = filters?.name?.trim().split(/\s+/).filter(Boolean) ?? [];
-    if (nameTerms.length > 0) {
-      query.$and = nameTerms.map((term) => {
-        const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const namePattern = new RegExp(escapedTerm, 'i');
-        return {
-          $or: [{ firstName: namePattern }, { lastName: namePattern }],
-        };
-      });
-    }
-
-    const [data, total] = await Promise.all([
-      this.userModel
-        .find(query)
-        .skip(skip)
-        .limit(limit)
-        .sort({ createdAt: -1 })
-        .exec(),
-      this.userModel.countDocuments(query).exec(),
-    ]);
-
-    return {
-      data,
-      total,
-      page,
-      limit,
-    };
+    return this.userQueryService.findForManager(page, limit, filters);
   }
 
   /**
    * Find a user by ID
    */
   async findById(id: string): Promise<Omit<UserDocument, 'password'>> {
-    const user = await this.userModel.findById(id).exec();
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    return user;
+    return this.userQueryService.findById(id);
   }
 
   /**
    * Find a user by mobile number (with password for authentication)
    */
   async findByMobile(mobile: string): Promise<UserDocument> {
-    const user = await this.userModel
-      .findOne({ mobile })
-      .select('+password')
-      .exec();
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    return user;
+    return this.userQueryService.findByMobile(mobile);
   }
 
   /**
@@ -308,7 +175,6 @@ export class UserService {
 
     const updatedUser = await this.findById(id);
 
-    console.log(updateData.mobile, updatedUser.mobile);
     return updatedUser;
   }
 
@@ -346,10 +212,7 @@ export class UserService {
   }
 
   async approveExpert(userId: string) {
-    console.log('in');
-
     const user = await this.userModel.findById(userId);
-    console.log(user);
 
     if (!user) {
       throw new NotFoundException('User not found');
