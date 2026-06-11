@@ -14,6 +14,9 @@ import { UserRole } from '../../user/schemas/user.schema';
 type ExcelRow = Array<string | number | null>;
 
 const PASSWORD = '123456';
+export const FIXED_TASK_SEED_EXCEL_PATH =
+  'C:\\Users\\Zarnegar\\Downloads\\-1408847228164432127_81294547954101.xlsx';
+
 const recurrenceMap: Record<string, FixedTaskRecurrence> = {
   روزانه: FixedTaskRecurrence.DAILY,
   هفتگی: FixedTaskRecurrence.WEEKLY,
@@ -67,7 +70,7 @@ export class FixedTaskSeedService {
     private readonly configService: ConfigService,
   ) {}
 
-  async seed(sourcePath: string) {
+  async seed(sourcePath = FIXED_TASK_SEED_EXCEL_PATH) {
     if (!existsSync(sourcePath)) {
       throw new BadRequestException('Excel file path does not exist');
     }

@@ -1,6 +1,9 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../../app.module';
-import { FixedTaskSeedService } from '../services/fixed-task-seed.service';
+import {
+  FIXED_TASK_SEED_EXCEL_PATH,
+  FixedTaskSeedService,
+} from '../services/fixed-task-seed.service';
 /*
 import * as bcrypt from 'bcryptjs';
 import {
@@ -305,10 +308,7 @@ async function run(): Promise<void> {
 */
 
 async function runSeed(): Promise<void> {
-  const sourcePath = process.argv[2];
-  if (!sourcePath) {
-    throw new Error('Excel file path is required.');
-  }
+  const sourcePath = process.argv[2] ?? FIXED_TASK_SEED_EXCEL_PATH;
 
   const app = await NestFactory.createApplicationContext(AppModule, {
     logger: false,
