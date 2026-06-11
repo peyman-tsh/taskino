@@ -34,6 +34,8 @@ import {
   FixedTaskResponseDto,
   PaginatedFixedTasksResponseDto,
 } from './dto/fixed-task-response.dto';
+import { SeedFixedTasksDto } from './dto/seed-fixed-tasks.dto';
+import { FixedTaskSeedService } from './services/fixed-task-seed.service';
 
 @ApiTags('Fixed Tasks')
 @ApiBearerAuth()
@@ -41,7 +43,22 @@ import {
 @Roles(UserRole.MANAGER, UserRole.SUPERVISOR)
 @Controller('fixed-tasks')
 export class FixedTaskController {
-  constructor(private readonly fixedTaskService: FixedTaskService) {}
+  constructor(
+    private readonly fixedTaskService: FixedTaskService,
+    private readonly fixedTaskSeedService: FixedTaskSeedService,
+  ) {}
+
+  @Post('seed/excel')
+  // @Roles(UserRole.MANAGER)
+  @ApiOperation({
+    summary: 'Seed users and fixed tasks from the configured four-sheet Excel',
+  })
+  @ApiCreatedResponse({
+    description: 'Users and fixed tasks seeded successfully',
+  })
+  seedFromExcel(@Body() dto: SeedFixedTasksDto) {
+    return this.fixedTaskSeedService.seed(dto.sourcePath);
+  }
 
   @Post()
   @ApiOperation({ summary: 'Create a fixed task template' })

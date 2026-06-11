@@ -1,3 +1,7 @@
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from '../../app.module';
+import { FixedTaskSeedService } from '../services/fixed-task-seed.service';
+/*
 import * as bcrypt from 'bcryptjs';
 import {
   existsSync,
@@ -298,11 +302,27 @@ async function run(): Promise<void> {
   );
 }
 
-run()
+*/
+
+async function runSeed(): Promise<void> {
+  const sourcePath = process.argv[2];
+  if (!sourcePath) {
+    throw new Error('Excel file path is required.');
+  }
+
+  const app = await NestFactory.createApplicationContext(AppModule, {
+    logger: false,
+  });
+  try {
+    const result = await app.get(FixedTaskSeedService).seed(sourcePath);
+    console.log(JSON.stringify(result, null, 2));
+  } finally {
+    await app.close();
+  }
+}
+
+runSeed()
   .catch((error: unknown) => {
     console.error(error instanceof Error ? error.message : error);
     process.exitCode = 1;
-  })
-  .finally(async () => {
-    await mongoose.disconnect();
   });
