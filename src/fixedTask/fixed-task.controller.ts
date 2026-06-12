@@ -94,6 +94,7 @@ export class FixedTaskController {
   }
 
   @Patch(':id')
+  @Roles(UserRole.MANAGER, UserRole.SUPERVISOR, UserRole.SPECIALIST)
   @ApiOperation({ summary: 'Update a fixed task template' })
   @ApiOkResponse({
     description: 'Fixed task template updated successfully',

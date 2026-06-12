@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -28,16 +29,20 @@ export class FixedTaskService {
     this.policy.toObjectId(dto.assignedTo, 'assigned user ID');
     await this.policy.validateParticipants(creatorId, dto.assignedTo);
     this.policy.assertValidTimeRange(dto.startTime, dto.endTime);
+    if (dto.status !== undefined && dto.status !== FixedTaskStatus.TODO) {
+      throw new BadRequestException(
+        'A fixed task must be created with todo status',
+      );
+    }
 
     const templateId = new Types.ObjectId();
-    const template = await this.repository.create({
+    await this.repository.create({
       _id: templateId,
       title: dto.title,
       assignedTo: new Types.ObjectId(dto.assignedTo),
       createdBy: new Types.ObjectId(creatorId),
       recurrence: dto.recurrence,
-      status: dto.status ?? FixedTaskStatus.TODO,
-      doneTime: dto.status === FixedTaskStatus.DONE ? new Date() : undefined,
+      status: FixedTaskStatus.TODO,
       description: dto.description ?? '',
       isActive: dto.isActive ?? true,
       nextRunAt: dto.nextRunAt
@@ -51,11 +56,7 @@ export class FixedTaskService {
       sourceRow: 0,
     });
 
-    if (template.status === FixedTaskStatus.DONE) {
-      await this.scoreService.adjustTaskScore(template);
-    }
-
-    return this.findById(template._id.toString());
+    return this.findById(templateId.toString());
   }
 
   async findAll(queryDto: QueryFixedTaskDto) {
@@ -110,12 +111,22 @@ export class FixedTaskService {
       throw new NotFoundException('Fixed task template not found');
     }
 
-    const assignedTo = dto.assignedTo ?? template.assignedTo.toString();
-    await this.policy.validateParticipants(creatorId, assignedTo);
-    this.policy.assertValidTimeRange(
-      dto.startTime ?? template.startTime,
-      dto.endTime ?? template.endTime,
-    );
+    const isAssignee = template.assignedTo.toString() === creatorId;
+    if (isAssignee) {
+      this.assertAssigneeStatusOnlyUpdate(dto);
+    } else {
+      if (dto.status !== undefined) {
+        throw new ForbiddenException(
+          'Only the fixed task assignee can update the status',
+        );
+      }
+      const assignedTo = dto.assignedTo ?? template.assignedTo.toString();
+      await this.policy.validateParticipants(creatorId, assignedTo);
+      this.policy.assertValidTimeRange(
+        dto.startTime ?? template.startTime,
+        dto.endTime ?? template.endTime,
+      );
+    }
 
     const updateData: Record<string, unknown> = {};
     if (dto.title !== undefined) updateData.title = dto.title;
@@ -133,11 +144,6 @@ export class FixedTaskService {
     if (dto.isActive !== undefined) updateData.isActive = dto.isActive;
     if (dto.nextRunAt !== undefined) {
       updateData.nextRunAt = new Date(dto.nextRunAt);
-    } else if (dto.recurrence !== undefined || dto.endTime !== undefined) {
-      updateData.nextRunAt = this.scoreService.getNextDeadline(
-        dto.recurrence ?? template.recurrence,
-        dto.endTime ?? template.endTime,
-      );
     }
     if (dto.startTime !== undefined) updateData.startTime = dto.startTime;
     if (dto.endTime !== undefined) updateData.endTime = dto.endTime;
@@ -152,7 +158,7 @@ export class FixedTaskService {
       throw new NotFoundException('Fixed task template not found');
     }
 
-    if (dto.status !== undefined) {
+    if (dto.status === FixedTaskStatus.DONE && isAssignee) {
       await this.scoreService.adjustTaskScore(updatedTemplate);
     }
 
@@ -171,5 +177,14 @@ export class FixedTaskService {
 
   findActiveTemplates() {
     return this.repository.findActive();
+  }
+
+  private assertAssigneeStatusOnlyUpdate(dto: UpdateFixedTaskDto): void {
+    const fields = Object.keys(dto);
+    if (dto.status === undefined || fields.some((field) => field !== 'status')) {
+      throw new ForbiddenException(
+        'Fixed task assignee can only update the status',
+      );
+    }
   }
 }
