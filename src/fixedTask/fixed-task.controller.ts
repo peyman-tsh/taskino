@@ -18,6 +18,8 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { CurrentUserId } from '../auth/decorators/current-user-id.decorator';
@@ -36,6 +38,7 @@ import {
 } from './dto/fixed-task-response.dto';
 import { FixedTaskSeedService } from './services/fixed-task-seed.service';
 import { Public } from '../auth/decorators/public.decorator';
+import { SpecialistFixedTaskQueryService } from './services/specialist-fixed-task-query.service';
 
 @ApiTags('Fixed Tasks')
 @ApiBearerAuth()
@@ -46,6 +49,7 @@ export class FixedTaskController {
   constructor(
     private readonly fixedTaskService: FixedTaskService,
     private readonly fixedTaskSeedService: FixedTaskSeedService,
+    private readonly specialistFixedTaskQueryService: SpecialistFixedTaskQueryService,
   ) {}
 
   @Post('seed/excel')
@@ -80,6 +84,25 @@ export class FixedTaskController {
   })
   findAll(@Query() query: QueryFixedTaskDto) {
     return this.fixedTaskService.findAll(query);
+  }
+
+  @Get('specialist/:userId')
+  @Public()
+  @ApiOperation({ summary: 'Get fixed tasks assigned to a specialist' })
+  @ApiParam({ name: 'userId', description: 'Specialist user ID' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiOkResponse({ type: PaginatedFixedTasksResponseDto })
+  getSpecialistFixedTasks(
+    @Param('userId') userId: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
+    return this.specialistFixedTaskQueryService.findBySpecialist(
+      userId,
+      page,
+      limit,
+    );
   }
 
   @Get(':id')

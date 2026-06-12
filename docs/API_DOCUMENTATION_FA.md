@@ -159,6 +159,7 @@ GET /api/tasks?page=1&limit=20
 | POST | `/api/tasks` | Manager / Supervisor | `multipart/form-data`؛ فیلدهای Task و فایل اختیاری `file` | `201`؛ Task یا `{ task, excelUpload }` |
 | GET | `/api/tasks` | Authenticated | queryهای فیلتر و pagination | `200`؛ لیست صفحه‌بندی‌شده |
 | GET | `/api/tasks/user` | Authenticated | query: `userName`, `lastName` | `200`؛ Taskهای کاربر پیدا‌شده |
+| GET | `/api/tasks/specialist/:userId` | Public؛ فقط داده کاربر با نقش Specialist | path: `userId`، query: `page`, `limit` | `200`؛ Taskهای تخصیص‌یافته به کارشناس |
 | GET | `/api/tasks/:id` | Authenticated | path: `id` | `200`؛ یک Task |
 | PATCH | `/api/tasks/:id` | Manager | path: `id`، body: `UpdateTaskDto` | `200`؛ Task ویرایش‌شده |
 | DELETE | `/api/tasks/:id` | Manager | path: `id` | `204`؛ بدون body |
@@ -176,6 +177,7 @@ GET /api/tasks?page=1&limit=20
 | POST | `/api/fixed-tasks` | Manager / Supervisor | body: `CreateFixedTaskDto` | `201`؛ FixedTask ساخته‌شده با وضعیت `todo` |
 | GET | `/api/fixed-tasks` | Manager / Supervisor | queryهای فیلتر و pagination | `200`؛ لیست صفحه‌بندی‌شده |
 | GET | `/api/fixed-tasks/:id` | Manager / Supervisor | path: `id` | `200`؛ یک FixedTask |
+| GET | `/api/fixed-tasks/specialist/:userId` | Public؛ فقط داده کاربر با نقش Specialist | path: `userId`، query: `page`, `limit` | `200`؛ FixedTaskهای تخصیص‌یافته به کارشناس |
 | PATCH | `/api/fixed-tasks/:id` | Manager / Supervisor / Specialist مسئول | path: `id`، body: `UpdateFixedTaskDto` | `200`؛ FixedTask ویرایش‌شده |
 | DELETE | `/api/fixed-tasks/:id` | Manager / Supervisor | path: `id` | `204`؛ بدون body |
 

@@ -42,13 +42,18 @@ import {
 import { RolesGuard } from '../user/roles.guard';
 import { Roles } from '../user/roles.decorator';
 import { UserRole } from '../user/schemas/user.schema';
+import { Public } from '../auth/decorators/public.decorator';
+import { SpecialistTaskQueryService } from './services/specialist-task-query.service';
 
 @ApiTags('Tasks')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('tasks')
 export class TaskController {
-  constructor(private readonly taskService: TaskService) {}
+  constructor(
+    private readonly taskService: TaskService,
+    private readonly specialistTaskQueryService: SpecialistTaskQueryService,
+  ) {}
 
   @Post()
   @Roles(UserRole.MANAGER, UserRole.SUPERVISOR)
@@ -184,6 +189,21 @@ export class TaskController {
   })
   getUserTasksByName(@Query('userName') userName: string, @Query('lastName') lastName: string) {
     return this.taskService.getUserTasksByName(userName, lastName);
+  }
+
+  @Get('specialist/:userId')
+  @Public()
+  @ApiOperation({ summary: 'Get tasks assigned to a specialist' })
+  @ApiParam({ name: 'userId', description: 'Specialist user ID' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, type: PaginatedTasksResponseDto })
+  getSpecialistTasks(
+    @Param('userId') userId: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
+    return this.specialistTaskQueryService.findBySpecialist(userId, page, limit);
   }
 
   @Get(':id')
