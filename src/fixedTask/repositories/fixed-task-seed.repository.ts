@@ -71,7 +71,7 @@ export class FixedTaskSeedRepository {
           recurrence: data.recurrence,
           description: data.description,
           nextRunAt: data.nextRunAt,
-          isActive: true,
+          isActive: false,
           sourceExcel: data.sourceExcel,
           sourceSheet: data.sourceSheet,
           sourceRow: data.sourceRow,
