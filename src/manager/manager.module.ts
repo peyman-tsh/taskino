@@ -14,11 +14,14 @@ import {
 } from '../fixedTask/fixed-task.schema';
 import { ManagerTasksRepository } from './repositories/manager-tasks.repository';
 import { ManagerTasksService } from './services/manager-tasks.service';
+import { LeaveRequestModule } from '../LeaveRequest/LeaveRequest.module';
+import { ManagerLeaveRequestService } from './services/manager-leave-request.service';
 
 @Module({
   imports: [
     UserModule,
     TaskModule,
+    LeaveRequestModule,
     MongooseModule.forFeature([
       { name: Task.name, schema: TaskSchema },
       { name: FixedTaskTemplate.name, schema: FixedTaskTemplateSchema },
@@ -32,6 +35,7 @@ import { ManagerTasksService } from './services/manager-tasks.service';
     UserProgressRepository,
     ManagerTasksRepository,
     ManagerTasksService,
+    ManagerLeaveRequestService,
   ],
 })
 export class ManagerModule {}

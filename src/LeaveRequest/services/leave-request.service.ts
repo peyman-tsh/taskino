@@ -303,6 +303,10 @@ export class LeaveRequestService {
     return this.workflowService.approve(id, approvedBy);
   }
 
+  approveLeaveByManager(id: string, managerId: string): Promise<LeaveDocument> {
+    return this.workflowService.approveByManager(id, managerId);
+  }
+
   /**
    * Reject a leave request
    */

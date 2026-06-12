@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
-import { User } from 'src/user/schemas/user.schema';
+import { User } from '../user/schemas/user.schema';
 
 export type LeaveDocument = HydratedDocument<Leave>;
 
@@ -54,6 +54,9 @@ export class Leave {
 
   @Prop()
   rejectionReason?: string;
+
+  @Prop({ type: Boolean, default: false })
+  approvedByManger: boolean;
 }
 
 export const LeaveSchema = SchemaFactory.createForClass(Leave);

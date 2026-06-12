@@ -20,6 +20,12 @@ export class LeaveRequestWorkflowService {
     return this.changeStatus(id, approvedBy, LeaveStatus.APPROVED);
   }
 
+  approveByManager(id: string, managerId: string): Promise<LeaveDocument> {
+    return this.changeStatus(id, managerId, LeaveStatus.APPROVED, undefined, {
+      approvedByManger: true,
+    });
+  }
+
   reject(
     id: string,
     approvedBy: string,
@@ -42,6 +48,7 @@ export class LeaveRequestWorkflowService {
     approvedBy: string,
     status: LeaveStatus,
     rejectionReason?: string,
+    additionalUpdates: Record<string, unknown> = {},
   ): Promise<LeaveDocument> {
     this.validateId(id, 'leave request ID');
     this.validateId(approvedBy, 'approver user ID');
@@ -59,6 +66,7 @@ export class LeaveRequestWorkflowService {
       approvedBy: new Types.ObjectId(approvedBy),
       approvedAt: new Date(),
       ...(rejectionReason ? { rejectionReason } : {}),
+      ...additionalUpdates,
     });
 
     if (!updatedLeave) {

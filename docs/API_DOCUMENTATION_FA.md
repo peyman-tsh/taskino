@@ -214,6 +214,8 @@ GET /api/manager/tasks?recurrence=monthly
 | GET | `/api/manager/tasks` | query اختیاری: `recurrence` | `200`؛ تمام Taskها و FixedTaskها |
 | GET | `/api/manager/tasks/status` | ندارد | `200`؛ تعداد Taskها براساس وضعیت |
 | GET | `/api/manager/tasks/users/counts` | ندارد | `200`؛ تعداد Taskهای هر کاربر |
+| GET | `/api/manager/leave-requests` | query: `page`, `limit` | `200`؛ تمام درخواست‌های مرخصی کارکنان |
+| PATCH | `/api/manager/leave-requests/:id/approve` | path: `id` | `200`؛ تأیید مرخصی توسط مدیر |
 | GET | `/api/manager/users/monthly-performance` | query: `month`, `year` | `200`؛ عملکرد ماهانه |
 | GET | `/api/manager/users/progress` | دسترسی: Manager / Supervisor؛ ورودی ندارد | `200`؛ ارزیابی و ذخیره پیشرفت کاربران |
 
@@ -444,6 +446,24 @@ GET /api/manager/tasks?recurrence=weekly
 #### `GET /api/manager/tasks/users/counts`
 
 Taskها را براساس مسئول گروه‌بندی می‌کند. برای هر کاربر، اطلاعات هویتی و تعداد کل Taskها به تفکیک وضعیت بازگردانده می‌شود و کاربران با Task بیشتر در ابتدای نتیجه قرار می‌گیرند.
+
+#### `GET /api/manager/leave-requests`
+
+تمام درخواست‌های مرخصی کارکنان را به‌صورت صفحه‌بندی‌شده برای مدیر برمی‌گرداند.
+
+```http
+GET /api/manager/leave-requests?page=1&limit=10
+Authorization: Bearer MANAGER_TOKEN
+```
+
+#### `PATCH /api/manager/leave-requests/:id/approve`
+
+درخواست مرخصی مشخص‌شده را توسط مدیر جاری تأیید می‌کند. شناسه مدیر از JWT گرفته می‌شود و `status` برابر `approved`، فیلد `approvedByManger` برابر `true` و اطلاعات `approvedBy` و `approvedAt` ثبت می‌شوند.
+
+```http
+PATCH /api/manager/leave-requests/LEAVE_REQUEST_ID/approve
+Authorization: Bearer MANAGER_TOKEN
+```
 
 #### `GET /api/manager/users/monthly-performance`
 
@@ -972,6 +992,7 @@ indexها:
 | `approvedBy` | ObjectId → User | خیر | ندارد | کاربری که درخواست را تأیید یا رد کرده است |
 | `approvedAt` | string | خیر | ندارد | زمان تأیید یا رد |
 | `rejectionReason` | string | خیر | ندارد | دلیل رد درخواست |
+| `approvedByManger` | boolean | خیر | `false` | مشخص می‌کند درخواست مرخصی توسط مدیر تأیید شده است |
 | `createdAt` | Date | خودکار | زمان ایجاد | توسط timestamps ساخته می‌شود |
 | `updatedAt` | Date | خودکار | زمان تغییر | توسط timestamps به‌روز می‌شود |
 
@@ -1374,6 +1395,8 @@ GET /api/fixed-tasks?title=گزارش&assignedTo=USER_ID&recurrence=daily&isActi
 | GET | `/api/manager/tasks` | تمام Taskها و FixedTaskها با فیلتر اختیاری تناوب |
 | GET | `/api/manager/tasks/status` | آمار Taskها براساس وضعیت |
 | GET | `/api/manager/tasks/users/counts` | تعداد Taskهای هر مسئول |
+| GET | `/api/manager/leave-requests` | تمام درخواست‌های مرخصی کارکنان |
+| PATCH | `/api/manager/leave-requests/:id/approve` | تأیید مرخصی توسط مدیر |
 | GET | `/api/manager/users/monthly-performance` | عملکرد ماهانه کاربران |
 | GET | `/api/manager/users/progress` | محاسبه و ذخیره پیشرفت و عملکرد؛ قابل دسترسی برای مدیر و سرپرست |
 

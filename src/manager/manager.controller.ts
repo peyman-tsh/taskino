@@ -37,6 +37,8 @@ import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 import { ManagerService } from './services/manager.service';
 import { ManagerTasksQueryDto } from './dto/manager-tasks-query.dto';
 import { FindUserByNameQueryDto } from './dto/find-user-by-name-query.dto';
+import { PaginationQueryDto } from './dto/pagination-query.dto';
+import { CurrentUserId } from '../auth/decorators/current-user-id.decorator';
 
 @ApiTags('Manager')
 @ApiBearerAuth()
@@ -109,6 +111,25 @@ export class ManagerController {
   @ApiOkResponse({ type: ManagerAllTasksResponseDto })
   getAllTasks(@Query() query: ManagerTasksQueryDto) {
     return this.managerService.findAllTasks(query);
+  }
+
+  @Get('leave-requests')
+  @ApiOperation({ summary: 'Get all employee leave requests' })
+  @ApiOkResponse({ description: 'Leave requests retrieved successfully' })
+  getAllLeaveRequests(@Query() query: PaginationQueryDto) {
+    return this.managerService.findAllLeaveRequests(query);
+  }
+
+  @Patch('leave-requests/:id/approve')
+  @ApiOperation({ summary: 'Approve an employee leave request by manager' })
+  @ApiParam({ name: 'id', description: 'Leave request ID' })
+  @ApiOkResponse({ description: 'Leave request approved by manager' })
+  @ApiNotFoundResponse({ description: 'Leave request not found' })
+  approveLeaveRequest(
+    @Param() params: MongoIdParamDto,
+    @CurrentUserId() managerId: string,
+  ) {
+    return this.managerService.approveLeaveRequest(params.id, managerId);
   }
 
   @Get('users/monthly-performance')
