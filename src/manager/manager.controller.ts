@@ -36,6 +36,7 @@ import { MonthlyPerformanceQueryDto } from './dto/monthly-performance-query.dto'
 import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 import { ManagerService } from './services/manager.service';
 import { ManagerTasksQueryDto } from './dto/manager-tasks-query.dto';
+import { FindUserByNameQueryDto } from './dto/find-user-by-name-query.dto';
 
 @ApiTags('Manager')
 @ApiBearerAuth()
@@ -58,6 +59,18 @@ export class ManagerController {
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
   findUsers(@Query() query: ManagerUsersQueryDto) {
     return this.managerService.findUsers(query);
+  }
+
+  @Get('users/by-name')
+  @ApiOperation({
+    summary: 'Find one user by first name and last name',
+    description:
+      'Returns the user whose firstName and lastName exactly match the provided query values.',
+  })
+  @ApiOkResponse({ type: UserResponseDto })
+  @ApiNotFoundResponse({ description: 'User not found' })
+  findUserByName(@Query() query: FindUserByNameQueryDto) {
+    return this.managerService.findUserByName(query.firstName, query.lastName);
   }
 
   @Patch('users/:id/role')

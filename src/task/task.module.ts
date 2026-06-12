@@ -10,6 +10,8 @@ import { TaskPolicyService } from './services/task-policy.service';
 import { TaskReportService } from './services/task-report.service';
 import { TaskScoreService } from './services/task-score.service';
 import { TaskRepository } from './repositories/task.repository';
+import { TaskQueryService } from './services/task-query.service';
+import { TaskUpdateService } from './services/task-update.service';
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { TaskRepository } from './repositories/task.repository';
     TaskScoreService,
     TaskReportService,
     TaskRepository,
+    TaskQueryService,
+    TaskUpdateService,
   ],
   exports: [TaskService, TaskReportService],
 })

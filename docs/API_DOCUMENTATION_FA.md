@@ -181,6 +181,15 @@ GET /api/tasks?page=1&limit=20
 
 ### Manager
 
+#### `GET /api/manager/users/by-name`
+
+یک کاربر را براساس تطابق دقیق نام و نام خانوادگی پیدا می‌کند. این endpoint فقط برای مدیر قابل استفاده است.
+
+```http
+GET /api/manager/users/by-name?firstName=سینا&lastName=اعلایی
+Authorization: Bearer MANAGER_TOKEN
+```
+
 #### `GET /api/manager/tasks`
 
 تمام Taskهای معمولی و FixedTaskها را برای مدیر برمی‌گرداند. با query اختیاری `recurrence` می‌توان خروجی را براساس وظایف روزانه، هفتگی یا ماهانه فیلتر کرد.

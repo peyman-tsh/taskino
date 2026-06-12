@@ -41,6 +41,10 @@ export class ManagerService extends BaseManagerService {
     });
   }
 
+  findUserByName(firstName: string, lastName: string) {
+    return this.userService.findByName(firstName, lastName);
+  }
+
   updateUserRole(userId: string, role: string) {
     this.toObjectId(userId, 'user ID');
 

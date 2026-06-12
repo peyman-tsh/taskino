@@ -1,13 +1,12 @@
 import {
   Injectable,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { CreateTaskDto } from '../dto/create-task.dto';
 import { UpdateTaskDto } from '../dto/update-task.dto';
 import { TaskCompletionStatsDto } from '../dto/task-count.dto';
-import { TaskDocument, TaskRecurrence, TaskStatus } from '../task.schema';
+import { TaskDocument, TaskStatus } from '../task.schema';
 import { ExcelService } from '../../excel/services/excel.service';
 import { ExcelFile, ExcelType } from '../../excel/excel.schema';
 import { DateCountDto } from '../dto/dateCount.dto';
@@ -16,6 +15,8 @@ import { TaskPolicyService } from './task-policy.service';
 import { TaskReportService } from './task-report.service';
 import { TaskRepository } from '../repositories/task.repository';
 import { TaskScoreService } from './task-score.service';
+import { TaskListFilters, TaskQueryService } from './task-query.service';
+import { TaskUpdateService } from './task-update.service';
 
 // Constants
 const EXCEL_IMPORT_TYPE = 'import' as ExcelType;
@@ -33,6 +34,8 @@ export class TaskService {
     private readonly taskNotificationService: TaskNotificationService,
     private readonly taskReportService: TaskReportService,
     private readonly taskScoreService: TaskScoreService,
+    private readonly taskQueryService: TaskQueryService,
+    private readonly taskUpdateService: TaskUpdateService,
   ) {}
 
   /**
@@ -138,61 +141,14 @@ export class TaskService {
   async findAll(
     page: number = 1,
     limit: number = 10,
-    filters?: {
-      createdBy?: string;
-      assignedTo?: string;
-      status?: TaskStatus;
-      startDate?: string;
-      endDate?: string;
-      recurrence?: TaskRecurrence;
-    },
+    filters?: TaskListFilters,
   ): Promise<{
     data: TaskDocument[];
     total: number;
     page: number;
     limit: number;
   }> {
-    await this.taskScoreService.adjustOverdueTasks();
-    const query: Record<string, unknown> = {};
-
-    if (filters?.createdBy && Types.ObjectId.isValid(filters.createdBy)) {
-      query.createdBy = new Types.ObjectId(filters.createdBy);
-    }
-    if (filters?.assignedTo && Types.ObjectId.isValid(filters.assignedTo)) {
-      query.assignedTo = new Types.ObjectId(filters.assignedTo);
-    }
-    if (filters?.status) {
-      query.status = filters.status;
-    }
-    if (filters?.recurrence) {
-      if (!Object.values(TaskRecurrence).includes(filters.recurrence)) {
-        throw new BadRequestException('Invalid task recurrence');
-      }
-      query.recurrence = filters.recurrence;
-    }
-    const rangeStart = filters?.startDate
-      ? this.taskPolicy.parseDateTime(filters.startDate, 'startDate')
-      : undefined;
-    const rangeEnd = filters?.endDate
-      ? this.taskPolicy.parseDateTime(filters.endDate, 'endDate')
-      : undefined;
-    if (rangeStart && rangeEnd && rangeEnd.getTime() < rangeStart.getTime()) {
-      throw new BadRequestException('endDate must be on or after startDate');
-    }
-    if (rangeStart) {
-      query.dueDate = { $gte: rangeStart };
-    }
-    if (rangeEnd) {
-      query.startDate = { $lte: rangeEnd };
-    }
-
-    const { data, total } = await this.repository.findPaginated(
-      query,
-      page,
-      limit,
-    );
-
-    return { data, total, page, limit };
+    return this.taskQueryService.findAll(page, limit, filters);
   }
 
   /**
@@ -219,90 +175,7 @@ export class TaskService {
     id: string,
     updateTaskDto: UpdateTaskDto,
   ): Promise<TaskDocument> {
-    this.taskPolicy.validateObjectId(id);
-
-    const task = await this.repository.findRawById(id);
-    if (!task) {
-      throw new NotFoundException('Task not found');
-    }
-
-    // Build update object only with defined values
-    const updateData: Record<string, unknown> = Object.fromEntries(
-      Object.entries(updateTaskDto).filter(([_, value]) => value !== undefined),
-    );
-    const nextStartDate =
-      updateTaskDto.startDate !== undefined
-        ? this.taskPolicy.parseDateTime(updateTaskDto.startDate, 'startDate')
-        : task.startDate;
-    const nextDueDate =
-      updateTaskDto.dueDate !== undefined
-        ? this.taskPolicy.parseDateTime(updateTaskDto.dueDate, 'dueDate')
-        : task.dueDate;
-    this.taskPolicy.assertValidDeadline(nextStartDate, nextDueDate);
-    this.taskPolicy.assertValidTimeRange(
-      updateTaskDto.startTime ?? task.startTime,
-      updateTaskDto.endTime ?? task.endTime,
-    );
-    if (updateTaskDto.startDate !== undefined) {
-      updateData.startDate = nextStartDate;
-    }
-    if (updateTaskDto.dueDate !== undefined) {
-      updateData.dueDate = nextDueDate;
-    }
-
-    // Validate and convert assignedTo if provided
-    if (updateTaskDto.assignedTo !== undefined) {
-      this.taskPolicy.assertSingleAssignee(updateTaskDto.assignedTo);
-      this.taskPolicy.assertValidAssigneeIds(updateTaskDto.assignedTo);
-      await this.taskPolicy.assertParticipants(
-        task.createdBy.toString(),
-        updateTaskDto.assignedTo,
-      );
-      updateData.assignedTo = updateTaskDto.assignedTo.map(
-        (userId) => new Types.ObjectId(userId),
-      );
-    }
-
-    const previousAssigneeIds = task.assignedTo.map((userId) =>
-      userId.toString(),
-    );
-    const newlyAssignedUserIds =
-      updateTaskDto.assignedTo?.filter(
-        (userId) => !previousAssigneeIds.includes(userId),
-      ) ?? [];
-    const changedToDone =
-      updateTaskDto.status === TaskStatus.DONE &&
-      task.status !== TaskStatus.DONE;
-    if (changedToDone) {
-      updateData.doneTime = new Date();
-    } else if (
-      updateTaskDto.status !== undefined &&
-      updateTaskDto.status !== TaskStatus.DONE
-    ) {
-      updateData.doneTime = null;
-    }
-
-    const updatedTask = await this.repository.updateById(id, updateData);
-
-    if (!updatedTask) {
-      throw new NotFoundException('Task not found');
-    }
-
-    this.taskNotificationService.notifyAssignedUsers(
-      newlyAssignedUserIds,
-      updatedTask._id.toString(),
-      updatedTask.title,
-    );
-    if (changedToDone) {
-      await this.taskScoreService.adjustCompletedTaskScore(updatedTask);
-      this.taskNotificationService.notifyCreatorWhenCompleted(
-        task.createdBy.toString(),
-        updatedTask._id.toString(),
-        updatedTask.title,
-      );
-    }
-
-    return updatedTask;
+    return this.taskUpdateService.update(id, updateTaskDto);
   }
 
   /**
