@@ -63,11 +63,11 @@ export class FixedTaskRepository {
       .exec();
   }
 
-  findUnadjustedWithDeadline(now: Date) {
+  findUnadjustedIncomplete() {
     return this.model
       .find({
         status: { $ne: FixedTaskStatus.DONE },
-        nextRunAt: { $lt: now },
+        endDate: { $type: 'date' },
         scoreAdjusted: { $ne: true },
       })
       .exec();

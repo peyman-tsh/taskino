@@ -42,9 +42,10 @@ export class FixedTaskService {
       isActive: dto.isActive ?? true,
       nextRunAt: dto.nextRunAt
         ? new Date(dto.nextRunAt)
-        : this.scoreService.getNextDeadline(dto.recurrence),
+        : this.scoreService.getNextDeadline(dto.recurrence, dto.endTime),
       startTime: dto.startTime,
       endTime: dto.endTime,
+      endDate: dto.endDate ? new Date(dto.endDate) : undefined,
       sourceExcel: `manual:${templateId.toString()}`,
       sourceSheet: 'manual',
       sourceRow: 0,
@@ -132,11 +133,15 @@ export class FixedTaskService {
     if (dto.isActive !== undefined) updateData.isActive = dto.isActive;
     if (dto.nextRunAt !== undefined) {
       updateData.nextRunAt = new Date(dto.nextRunAt);
-    } else if (dto.recurrence !== undefined) {
-      updateData.nextRunAt = this.scoreService.getNextDeadline(dto.recurrence);
+    } else if (dto.recurrence !== undefined || dto.endTime !== undefined) {
+      updateData.nextRunAt = this.scoreService.getNextDeadline(
+        dto.recurrence ?? template.recurrence,
+        dto.endTime ?? template.endTime,
+      );
     }
     if (dto.startTime !== undefined) updateData.startTime = dto.startTime;
     if (dto.endTime !== undefined) updateData.endTime = dto.endTime;
+    if (dto.endDate !== undefined) updateData.endDate = new Date(dto.endDate);
 
     const updatedTemplate = await this.repository.updateById(
       template._id,

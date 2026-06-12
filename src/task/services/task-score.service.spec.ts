@@ -7,7 +7,7 @@ import { TaskScoreService } from './task-score.service';
 describe('TaskScoreService', () => {
   const repository = {
     claimScoreAdjustment: jest.fn(),
-    findUnadjustedOverdue: jest.fn(),
+    findUnadjustedIncomplete: jest.fn(),
   };
   const userService = {
     adjustSpecialistScore: jest.fn(),
@@ -41,7 +41,7 @@ describe('TaskScoreService', () => {
     const task = createTask(TaskStatus.IN_PROGRESS, {
       dueDate: new Date('2020-01-01T00:00:00.000Z'),
     });
-    repository.findUnadjustedOverdue.mockResolvedValue([task]);
+    repository.findUnadjustedIncomplete.mockResolvedValue([task]);
     repository.claimScoreAdjustment.mockResolvedValue(task);
 
     await service.adjustOverdueTasks();
@@ -64,9 +64,25 @@ describe('TaskScoreService', () => {
     expect(userService.adjustSpecialistScore).not.toHaveBeenCalled();
   });
 
+  it('uses endTime as the task deadline time', async () => {
+    const task = createTask(TaskStatus.DONE, {
+      dueDate: new Date(2026, 5, 12, 18, 0),
+      doneTime: new Date(2026, 5, 12, 11, 0),
+      endTime: '10:30',
+    });
+    repository.claimScoreAdjustment.mockResolvedValue(task);
+
+    await service.adjustCompletedTaskScore(task);
+
+    expect(userService.adjustSpecialistScore).toHaveBeenCalledWith(
+      userId.toString(),
+      -10,
+    );
+  });
+
   function createTask(
     status: TaskStatus,
-    dates: { dueDate?: Date; doneTime?: Date },
+    dates: { dueDate?: Date; doneTime?: Date; endTime?: string },
   ): TaskDocument {
     return {
       _id: new Types.ObjectId(),

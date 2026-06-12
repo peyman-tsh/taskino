@@ -67,4 +67,11 @@ export class CreateFixedTaskDto {
   @IsOptional()
   @Matches(TIME_PATTERN, { message: `endTime ${TIME_MESSAGE}` })
   endTime?: string;
+
+  @ApiPropertyOptional({
+    description: 'Fixed task end date in ISO format',
+  })
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
 }

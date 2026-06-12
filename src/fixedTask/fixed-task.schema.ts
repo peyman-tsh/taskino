@@ -66,6 +66,9 @@ export class FixedTaskTemplate {
   @Prop({ type: String, match: TIME_PATTERN })
   endTime?: string;
 
+  @Prop({ type: Date, index: true })
+  endDate?: Date;
+
   @Prop({ type: String })
   sourceExcel?: string;
 

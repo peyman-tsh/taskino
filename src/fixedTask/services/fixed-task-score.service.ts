@@ -32,7 +32,7 @@ export class FixedTaskScoreService {
   }
 
   async adjustOverdueTasks(): Promise<void> {
-    const tasks = await this.repository.findUnadjustedWithDeadline(new Date());
+    const tasks = await this.repository.findUnadjustedIncomplete();
     for (const task of tasks) {
       await this.adjustTaskScore(task);
     }
@@ -41,7 +41,10 @@ export class FixedTaskScoreService {
   private calculateScore(
     task: FixedTaskTemplateDocument,
   ): 10 | -10 | null {
-    const deadline = task.nextRunAt ?? this.getNextDeadline(task.recurrence);
+    const deadline = this.getScoreDeadline(task);
+    if (!deadline) {
+      return null;
+    }
 
     if (task.status === FixedTaskStatus.DONE) {
       return task.doneTime && task.doneTime.getTime() <= deadline.getTime()
@@ -52,24 +55,60 @@ export class FixedTaskScoreService {
     return deadline.getTime() < Date.now() ? -10 : null;
   }
 
+  private getScoreDeadline(task: FixedTaskTemplateDocument): Date | null {
+    if (!task.endDate) {
+      return null;
+    }
+
+    const deadline = new Date(task.endDate);
+    if (task.endTime) {
+      const [hours, minutes] = task.endTime.split(':').map(Number);
+      deadline.setHours(hours, minutes, 0, 0);
+    }
+    return deadline;
+  }
+
   getNextDeadline(
     recurrence: FixedTaskRecurrence,
+    endTime?: string,
     now = new Date(),
   ): Date {
     if (recurrence === FixedTaskRecurrence.DAILY) {
-      const end = new Date(now);
-      end.setHours(24, 0, 0, 0);
-      return end;
+      const deadline = this.applyDeadlineTime(new Date(now), endTime);
+      if (deadline.getTime() <= now.getTime()) {
+        deadline.setDate(deadline.getDate() + 1);
+      }
+      return deadline;
     }
 
     if (recurrence === FixedTaskRecurrence.WEEKLY) {
-      const end = new Date(now);
-      const daysUntilSaturday = (6 - end.getDay() + 7) % 7 || 7;
-      end.setDate(end.getDate() + daysUntilSaturday);
-      end.setHours(0, 0, 0, 0);
-      return end;
+      const deadline = new Date(now);
+      const daysUntilFriday = (5 - deadline.getDay() + 7) % 7;
+      deadline.setDate(deadline.getDate() + daysUntilFriday);
+      this.applyDeadlineTime(deadline, endTime);
+      if (deadline.getTime() <= now.getTime()) {
+        deadline.setDate(deadline.getDate() + 7);
+      }
+      return deadline;
     }
 
-    return new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const deadline = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    this.applyDeadlineTime(deadline, endTime);
+    if (deadline.getTime() <= now.getTime()) {
+      deadline.setMonth(deadline.getMonth() + 2, 0);
+      this.applyDeadlineTime(deadline, endTime);
+    }
+    return deadline;
+  }
+
+  private applyDeadlineTime(date: Date, endTime?: string): Date {
+    if (endTime) {
+      const [hours, minutes] = endTime.split(':').map(Number);
+      date.setHours(hours, minutes, 0, 0);
+      return date;
+    }
+
+    date.setHours(23, 59, 59, 999);
+    return date;
   }
 }

@@ -26,7 +26,7 @@ export class TaskScoreService {
   }
 
   async adjustOverdueTasks(): Promise<void> {
-    const tasks = await this.repository.findUnadjustedOverdue(new Date());
+    const tasks = await this.repository.findUnadjustedIncomplete();
     for (const task of tasks) {
       const assigneeId = this.getAssigneeId(task);
       if (assigneeId) {
@@ -53,17 +53,37 @@ export class TaskScoreService {
   }
 
   private calculateScore(task: TaskDocument): 10 | -10 | null {
-    if (!task.dueDate) {
+    const deadline = this.getDeadline(task);
+    if (!deadline) {
       return null;
     }
 
     if (task.status === TaskStatus.DONE) {
-      return task.doneTime && task.doneTime.getTime() <= task.dueDate.getTime()
+      return task.doneTime && task.doneTime.getTime() <= deadline.getTime()
         ? 10
         : -10;
     }
 
-    return task.dueDate.getTime() < Date.now() ? -10 : null;
+    return deadline.getTime() < Date.now() ? -10 : null;
+  }
+
+  private getDeadline(task: TaskDocument): Date | null {
+    if (!task.dueDate) {
+      return null;
+    }
+
+    return this.applyTime(task.dueDate, task.endTime);
+  }
+
+  private applyTime(date: Date, time?: string): Date {
+    const result = new Date(date);
+    if (!time) {
+      return result;
+    }
+
+    const [hours, minutes] = time.split(':').map(Number);
+    result.setHours(hours, minutes, 0, 0);
+    return result;
   }
 
   private getAssigneeId(task: TaskDocument): string | null {

@@ -67,11 +67,11 @@ export class TaskRepository {
       .exec();
   }
 
-  findUnadjustedOverdue(now: Date) {
+  findUnadjustedIncomplete() {
     return this.model
       .find({
         status: { $ne: TaskStatus.DONE },
-        dueDate: { $lt: now },
+        dueDate: { $type: 'date' },
         scoreAdjusted: { $ne: true },
       })
       .exec();

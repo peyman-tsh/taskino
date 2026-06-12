@@ -40,6 +40,9 @@ export class FixedTaskResponseDto {
 
   @ApiPropertyOptional({ example: '17:00' })
   endTime?: string;
+
+  @ApiPropertyOptional()
+  endDate?: Date;
 }
 
 export class PaginatedFixedTasksResponseDto {
