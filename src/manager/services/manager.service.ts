@@ -5,6 +5,8 @@ import { BaseManagerService } from './base-manager.service';
 import { ManagerUsersQueryDto } from '../dto/manager-users-query.dto';
 import { MonthlyPerformanceQueryDto } from '../dto/monthly-performance-query.dto';
 import { UserProgressService } from './user-progress.service';
+import { ManagerTasksQueryDto } from '../dto/manager-tasks-query.dto';
+import { ManagerTasksService } from './manager-tasks.service';
 
 @Injectable()
 export class ManagerService extends BaseManagerService {
@@ -12,6 +14,7 @@ export class ManagerService extends BaseManagerService {
     private readonly userService: UserService,
     private readonly taskReportService: TaskReportService,
     private readonly userProgressService: UserProgressService,
+    private readonly managerTasksService: ManagerTasksService,
   ) {
     super();
   }
@@ -61,5 +64,9 @@ export class ManagerService extends BaseManagerService {
 
   async evaluateUserProgress() {
     return this.userProgressService.evaluate();
+  }
+
+  findAllTasks(query: ManagerTasksQueryDto) {
+    return this.managerTasksService.findAll(query);
   }
 }

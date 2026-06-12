@@ -23,6 +23,7 @@ import { UserRole } from '../user/schemas/user.schema';
 import { ManagerUsersQueryDto } from './dto/manager-users-query.dto';
 import {
   ManagerStatisticsResponseDto,
+  ManagerAllTasksResponseDto,
   MonthlyUserPerformanceResponseDto,
   PaginatedUsersResponseDto,
   UserProgressResponseDto,
@@ -34,6 +35,7 @@ import { MongoIdParamDto } from './dto/mongo-id-param.dto';
 import { MonthlyPerformanceQueryDto } from './dto/monthly-performance-query.dto';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 import { ManagerService } from './services/manager.service';
+import { ManagerTasksQueryDto } from './dto/manager-tasks-query.dto';
 
 @ApiTags('Manager')
 @ApiBearerAuth()
@@ -83,6 +85,17 @@ export class ManagerController {
   @ApiOkResponse({ type: [TaskCountsByUserResponseDto] })
   getTaskCountsByUsers() {
     return this.managerService.getTaskCountsByUsers();
+  }
+
+  @Get('tasks')
+  @ApiOperation({
+    summary: 'Get all regular and fixed tasks',
+    description:
+      'Returns all Task and FixedTask records with an optional daily, weekly, or monthly recurrence filter.',
+  })
+  @ApiOkResponse({ type: ManagerAllTasksResponseDto })
+  getAllTasks(@Query() query: ManagerTasksQueryDto) {
+    return this.managerService.findAllTasks(query);
   }
 
   @Get('users/monthly-performance')

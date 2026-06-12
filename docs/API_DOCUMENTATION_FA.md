@@ -181,6 +181,19 @@ GET /api/tasks?page=1&limit=20
 
 ### Manager
 
+#### `GET /api/manager/tasks`
+
+تمام Taskهای معمولی و FixedTaskها را برای مدیر برمی‌گرداند. با query اختیاری `recurrence` می‌توان خروجی را براساس وظایف روزانه، هفتگی یا ماهانه فیلتر کرد.
+
+```http
+GET /api/manager/tasks
+GET /api/manager/tasks?recurrence=daily
+GET /api/manager/tasks?recurrence=weekly
+GET /api/manager/tasks?recurrence=monthly
+```
+
+پاسخ شامل تعداد کل وظایف، تعداد Taskهای معمولی، تعداد FixedTaskها و دو لیست مجزای `tasks` و `fixedTasks` است.
+
 تمام مسیرهای این جدول فقط برای مدیر هستند؛ به‌جز `GET /api/manager/users/progress` که سرپرست نیز به آن دسترسی دارد.
 
 | متد | مسیر | ورودی | پاسخ موفق |

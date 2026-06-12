@@ -20,6 +20,26 @@ export class ManagerStatisticsResponseDto {
   activeUsers: number;
 }
 
+export class ManagerAllTasksResponseDto {
+  @ApiProperty({ nullable: true, example: 'weekly' })
+  recurrence: string | null;
+
+  @ApiProperty()
+  total: number;
+
+  @ApiProperty()
+  totalTasks: number;
+
+  @ApiProperty()
+  totalFixedTasks: number;
+
+  @ApiProperty({ type: [Object] })
+  tasks: object[];
+
+  @ApiProperty({ type: [Object] })
+  fixedTasks: object[];
+}
+
 export class MonthlyUserPerformanceItemDto {
   @ApiProperty()
   userId: string;

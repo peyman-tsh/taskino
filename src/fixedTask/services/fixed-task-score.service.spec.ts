@@ -74,6 +74,35 @@ describe('FixedTaskScoreService', () => {
     );
   });
 
+  it('subtracts 10 for a fixed task completed after endDate and endTime', async () => {
+    const task = createTask(FixedTaskStatus.DONE, {
+      endDate: new Date(2026, 5, 12),
+      endTime: '12:00',
+      doneTime: new Date(2026, 5, 12, 13, 0),
+    });
+    repository.claimScoreAdjustment.mockResolvedValue(task);
+
+    await service.adjustTaskScore(task);
+
+    expect(userService.adjustSpecialistScore).toHaveBeenCalledWith(
+      userId.toString(),
+      -10,
+    );
+  });
+
+  it('does not apply fixed task score twice', async () => {
+    const task = createTask(FixedTaskStatus.DONE, {
+      endDate: new Date(2026, 5, 12),
+      endTime: '12:00',
+      doneTime: new Date(2026, 5, 12, 11, 0),
+    });
+    repository.claimScoreAdjustment.mockResolvedValue(null);
+
+    await service.adjustTaskScore(task);
+
+    expect(userService.adjustSpecialistScore).not.toHaveBeenCalled();
+  });
+
   it('creates a daily deadline using the scheduled endTime', () => {
     const now = new Date(2026, 5, 12, 10, 0);
 
