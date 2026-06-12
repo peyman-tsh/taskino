@@ -37,7 +37,7 @@ export class FixedTaskTemplate {
   @Prop({ type: String, default: '' })
   description: string;
 
-  @Prop({ type: Boolean, default: true, index: true })
+  @Prop({ type: Boolean, default: false, index: true })
   isActive: boolean;
 
   @Prop({
