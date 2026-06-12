@@ -117,14 +117,20 @@ export class FixedTaskController {
   }
 
   @Patch(':id')
+  @Public()
   @Roles(UserRole.MANAGER, UserRole.SUPERVISOR, UserRole.SPECIALIST)
   @ApiOperation({ summary: 'Update a fixed task template' })
+  @ApiQuery({
+    name: 'userId',
+    required: true,
+    description: 'ID of the user performing the public update',
+  })
   @ApiOkResponse({
     description: 'Fixed task template updated successfully',
     type: FixedTaskResponseDto,
   })
   update(
-    @CurrentUserId() creatorId: string,
+    @Query('userId') creatorId: string,
     @Param() params: FixedTaskParamDto,
     @Body() dto: UpdateFixedTaskDto,
   ) {

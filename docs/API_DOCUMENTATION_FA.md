@@ -178,7 +178,7 @@ GET /api/tasks?page=1&limit=20
 | GET | `/api/fixed-tasks` | Manager / Supervisor | queryهای فیلتر و pagination | `200`؛ لیست صفحه‌بندی‌شده |
 | GET | `/api/fixed-tasks/:id` | Manager / Supervisor | path: `id` | `200`؛ یک FixedTask |
 | GET | `/api/fixed-tasks/specialist/:userId` | Public؛ فقط داده کاربر با نقش Specialist | path: `userId`، query: `page`, `limit` | `200`؛ FixedTaskهای تخصیص‌یافته به کارشناس |
-| PATCH | `/api/fixed-tasks/:id` | Manager / Supervisor / Specialist مسئول | path: `id`، body: `UpdateFixedTaskDto` | `200`؛ FixedTask ویرایش‌شده |
+| PATCH | `/api/fixed-tasks/:id` | Public | path: `id`، query الزامی: `userId`، body: `UpdateFixedTaskDto` | `200`؛ FixedTask ویرایش‌شده |
 | DELETE | `/api/fixed-tasks/:id` | Manager / Supervisor | path: `id` | `204`؛ بدون body |
 
 ### Manager
