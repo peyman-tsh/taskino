@@ -1,12 +1,15 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
-import { User } from 'src/user/schemas/user.schema';
+import { User } from '../user/schemas/user.schema';
 
 export type NotificationDocument = HydratedDocument<Notification>;
 
 export enum NotificationType {
   TASK_ASSIGNED = 'task_assigned',
   TASK_COMPLETED = 'task_completed',
+  TASK_STATUS_CHANGED = 'task_status_changed',
+  FIXED_TASK_ASSIGNED = 'fixed_task_assigned',
+  FIXED_TASK_COMPLETED = 'fixed_task_completed',
   TASK_COMPLETION_STATS = 'task_completion_stats',
   DATE_COUNT = 'date_count',
   LEAVE_REQUEST = 'leave_request',

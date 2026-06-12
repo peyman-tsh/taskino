@@ -4,6 +4,7 @@ import {
   NotificationEvents,
   TaskAssignedNotificationEvent,
   TaskCompletedNotificationEvent,
+  TaskStatusChangedNotificationEvent,
 } from '../../notification/events/notification.events';
 
 @Injectable()
@@ -38,6 +39,13 @@ export class TaskNotificationService {
         taskTitle,
         'an assigned user',
       ),
+    );
+  }
+
+  notifyStatusChanged(taskId: string, taskTitle: string, status: string): void {
+    this.eventBus.publish(
+      NotificationEvents.TASK_STATUS_CHANGED,
+      new TaskStatusChangedNotificationEvent(taskId, taskTitle, status),
     );
   }
 }

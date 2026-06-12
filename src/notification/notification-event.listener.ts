@@ -2,8 +2,11 @@ import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/commo
 import { InternalEventBus } from '../common/events/internal-event-bus.service';
 import {
   NotificationEvents,
+  FixedTaskAssignedNotificationEvent,
+  FixedTaskCompletedNotificationEvent,
   TaskAssignedNotificationEvent,
   TaskCompletedNotificationEvent,
+  TaskStatusChangedNotificationEvent,
 } from './events/notification.events';
 import { NotificationService } from './services/notification.service';
 
@@ -26,6 +29,18 @@ export class NotificationEventListener implements OnModuleInit, OnModuleDestroy 
       this.eventBus.subscribe<TaskCompletedNotificationEvent>(
         NotificationEvents.TASK_COMPLETED,
         (event) => this.handleTaskCompleted(event),
+      ),
+      this.eventBus.subscribe<TaskStatusChangedNotificationEvent>(
+        NotificationEvents.TASK_STATUS_CHANGED,
+        (event) => this.handleTaskStatusChanged(event),
+      ),
+      this.eventBus.subscribe<FixedTaskAssignedNotificationEvent>(
+        NotificationEvents.FIXED_TASK_ASSIGNED,
+        (event) => this.handleFixedTaskAssigned(event),
+      ),
+      this.eventBus.subscribe<FixedTaskCompletedNotificationEvent>(
+        NotificationEvents.FIXED_TASK_COMPLETED,
+        (event) => this.handleFixedTaskCompleted(event),
       ),
     );
   }
@@ -60,6 +75,36 @@ export class NotificationEventListener implements OnModuleInit, OnModuleDestroy 
       event.taskId,
       event.taskTitle,
       event.completedBy,
+    );
+  }
+
+  private async handleTaskStatusChanged(
+    event: TaskStatusChangedNotificationEvent,
+  ): Promise<void> {
+    await this.notificationService.updateTaskNotificationsStatus(
+      event.taskId,
+      event.taskTitle,
+      event.status,
+    );
+  }
+
+  private async handleFixedTaskAssigned(
+    event: FixedTaskAssignedNotificationEvent,
+  ): Promise<void> {
+    await this.notificationService.createFixedTaskAssignedNotification(
+      event.userId,
+      event.fixedTaskId,
+      event.fixedTaskTitle,
+    );
+  }
+
+  private async handleFixedTaskCompleted(
+    event: FixedTaskCompletedNotificationEvent,
+  ): Promise<void> {
+    await this.notificationService.createFixedTaskCompletedNotification(
+      event.creatorId,
+      event.fixedTaskId,
+      event.fixedTaskTitle,
     );
   }
 }

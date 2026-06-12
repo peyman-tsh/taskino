@@ -140,6 +140,41 @@ export class NotificationService {
     );
   }
 
+  updateTaskNotificationsStatus(
+    taskId: string,
+    taskTitle: string,
+    status: string,
+  ) {
+    return this.repository.updateMany(
+      { link: `/tasks/${taskId}` },
+      this.templateFactory.taskStatusChanged(taskTitle, status),
+    );
+  }
+
+  createFixedTaskAssignedNotification(
+    userId: string,
+    fixedTaskId: string,
+    fixedTaskTitle: string,
+  ) {
+    return this.create(
+      this.templateFactory.fixedTaskAssigned(userId, fixedTaskId, fixedTaskTitle),
+    );
+  }
+
+  createFixedTaskCompletedNotification(
+    userId: string,
+    fixedTaskId: string,
+    fixedTaskTitle: string,
+  ) {
+    return this.create(
+      this.templateFactory.fixedTaskCompleted(
+        userId,
+        fixedTaskId,
+        fixedTaskTitle,
+      ),
+    );
+  }
+
   createLeaveRequestNotification(userId: string, requestTitle: string) {
     return this.create(this.templateFactory.leaveRequest(userId, requestTitle));
   }

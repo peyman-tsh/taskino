@@ -33,6 +33,43 @@ export class NotificationTemplateFactory {
     };
   }
 
+  taskStatusChanged(taskTitle: string, status: string) {
+    return {
+      title: 'Task Status Updated',
+      message: `The task "${taskTitle}" status changed to ${status}`,
+      type: NotificationType.TASK_STATUS_CHANGED,
+      isRead: false,
+    };
+  }
+
+  fixedTaskAssigned(
+    userId: string,
+    fixedTaskId: string,
+    fixedTaskTitle: string,
+  ): CreateNotificationDto {
+    return {
+      user: userId,
+      title: 'Fixed Task Assigned',
+      message: `You have been assigned to the fixed task: ${fixedTaskTitle}`,
+      type: NotificationType.FIXED_TASK_ASSIGNED,
+      link: `/fixed-tasks/${fixedTaskId}`,
+    };
+  }
+
+  fixedTaskCompleted(
+    userId: string,
+    fixedTaskId: string,
+    fixedTaskTitle: string,
+  ): CreateNotificationDto {
+    return {
+      user: userId,
+      title: 'Fixed Task Completed',
+      message: `The fixed task "${fixedTaskTitle}" has been completed`,
+      type: NotificationType.FIXED_TASK_COMPLETED,
+      link: `/fixed-tasks/${fixedTaskId}`,
+    };
+  }
+
   leaveRequest(userId: string, requestTitle: string): CreateNotificationDto {
     return {
       user: userId,

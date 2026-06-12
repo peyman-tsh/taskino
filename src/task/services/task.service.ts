@@ -220,6 +220,14 @@ export class TaskService {
       throw new NotFoundException('Task not found');
     }
 
+    if (status !== existingTask.status) {
+      this.taskNotificationService.notifyStatusChanged(
+        task._id.toString(),
+        task.title,
+        status,
+      );
+    }
+
     if (status === TaskStatus.DONE && existingTask.status !== TaskStatus.DONE) {
       await this.taskScoreService.adjustCompletedTaskScore(task);
       this.taskNotificationService.notifyCreatorWhenCompleted(

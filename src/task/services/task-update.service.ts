@@ -11,6 +11,7 @@ interface UpdateContext {
   updateData: Record<string, unknown>;
   newlyAssignedUserIds: string[];
   changedToDone: boolean;
+  statusChanged: boolean;
 }
 
 @Injectable()
@@ -56,6 +57,8 @@ export class TaskUpdateService {
     return {
       updateData,
       changedToDone,
+      statusChanged:
+        dto.status !== undefined && dto.status !== task.status,
       newlyAssignedUserIds: this.getNewAssigneeIds(task, dto),
     };
   }
@@ -152,6 +155,14 @@ export class TaskUpdateService {
       updatedTask._id.toString(),
       updatedTask.title,
     );
+
+    if (context.statusChanged) {
+      this.notificationService.notifyStatusChanged(
+        updatedTask._id.toString(),
+        updatedTask.title,
+        updatedTask.status,
+      );
+    }
 
     if (!context.changedToDone) {
       return;

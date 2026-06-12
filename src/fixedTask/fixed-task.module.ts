@@ -13,6 +13,7 @@ import { FixedTaskSeedRepository } from './repositories/fixed-task-seed.reposito
 import { FixedTaskSeedService } from './services/fixed-task-seed.service';
 import { FixedTaskScoreService } from './services/fixed-task-score.service';
 import { SpecialistFixedTaskQueryService } from './services/specialist-fixed-task-query.service';
+import { FixedTaskNotificationService } from './services/fixed-task-notification.service';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { SpecialistFixedTaskQueryService } from './services/specialist-fixed-tas
     FixedTaskSeedService,
     FixedTaskScoreService,
     SpecialistFixedTaskQueryService,
+    FixedTaskNotificationService,
   ],
   exports: [FixedTaskService],
 })

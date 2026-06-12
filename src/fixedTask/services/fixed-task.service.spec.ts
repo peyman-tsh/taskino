@@ -12,6 +12,7 @@ import {
 import { FixedTaskPolicyService } from './fixed-task-policy.service';
 import { FixedTaskScoreService } from './fixed-task-score.service';
 import { FixedTaskService } from './fixed-task.service';
+import { FixedTaskNotificationService } from './fixed-task-notification.service';
 
 describe('FixedTaskService', () => {
   const assigneeId = new Types.ObjectId();
@@ -32,10 +33,15 @@ describe('FixedTaskService', () => {
     adjustTaskScore: jest.fn(),
     getNextDeadline: jest.fn(() => new Date()),
   };
+  const notificationService = {
+    notifyAssigned: jest.fn(),
+    notifyCreatorWhenCompleted: jest.fn(),
+  };
   const service = new FixedTaskService(
     repository as unknown as FixedTaskRepository,
     policy as unknown as FixedTaskPolicyService,
     scoreService as unknown as FixedTaskScoreService,
+    notificationService as unknown as FixedTaskNotificationService,
   );
 
   beforeEach(() => {
@@ -71,6 +77,11 @@ describe('FixedTaskService', () => {
     });
 
     expect(scoreService.adjustTaskScore).toHaveBeenCalledWith(updatedTemplate);
+    expect(notificationService.notifyCreatorWhenCompleted).toHaveBeenCalledWith(
+      creatorId.toString(),
+      templateId.toString(),
+      updatedTemplate.title,
+    );
   });
 
   it('prevents the assignee from editing fixed task fields', async () => {

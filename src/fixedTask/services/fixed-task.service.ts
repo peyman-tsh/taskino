@@ -15,6 +15,7 @@ import {
 import { FixedTaskPolicyService } from './fixed-task-policy.service';
 import { FixedTaskRepository } from '../repositories/fixed-task.repository';
 import { FixedTaskScoreService } from './fixed-task-score.service';
+import { FixedTaskNotificationService } from './fixed-task-notification.service';
 
 @Injectable()
 export class FixedTaskService {
@@ -22,6 +23,7 @@ export class FixedTaskService {
     private readonly repository: FixedTaskRepository,
     private readonly policy: FixedTaskPolicyService,
     private readonly scoreService: FixedTaskScoreService,
+    private readonly notificationService: FixedTaskNotificationService,
   ) {}
 
   async create(creatorId: string, dto: CreateFixedTaskDto) {
@@ -55,6 +57,11 @@ export class FixedTaskService {
       sourceSheet: 'manual',
       sourceRow: 0,
     });
+    this.notificationService.notifyAssigned(
+      dto.assignedTo,
+      templateId.toString(),
+      dto.title,
+    );
 
     return this.findById(templateId.toString());
   }
@@ -160,6 +167,11 @@ export class FixedTaskService {
 
     if (dto.status === FixedTaskStatus.DONE && isAssignee) {
       await this.scoreService.adjustTaskScore(updatedTemplate);
+      this.notificationService.notifyCreatorWhenCompleted(
+        template.createdBy.toString(),
+        updatedTemplate._id.toString(),
+        updatedTemplate.title,
+      );
     }
 
     return this.findById(updatedTemplate._id.toString());

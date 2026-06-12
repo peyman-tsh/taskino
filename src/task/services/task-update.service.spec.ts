@@ -26,6 +26,7 @@ describe('TaskUpdateService', () => {
   const notificationService = {
     notifyAssignedUsers: jest.fn(),
     notifyCreatorWhenCompleted: jest.fn(),
+    notifyStatusChanged: jest.fn(),
   };
   const scoreService = {
     adjustCompletedTaskScore: jest.fn(),
@@ -58,6 +59,11 @@ describe('TaskUpdateService', () => {
     );
     expect(scoreService.adjustCompletedTaskScore).toHaveBeenCalledWith(
       updatedTask,
+    );
+    expect(notificationService.notifyStatusChanged).toHaveBeenCalledWith(
+      taskId.toString(),
+      updatedTask.title,
+      TaskStatus.DONE,
     );
     expect(notificationService.notifyCreatorWhenCompleted).toHaveBeenCalled();
   });
