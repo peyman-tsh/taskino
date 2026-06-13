@@ -23,7 +23,7 @@ describe('SpecialistTaskQueryService', () => {
     userService.findById.mockResolvedValue({ roles: UserRole.SPECIALIST });
     repository.findPaginated.mockResolvedValue({ data: [], total: 0 });
 
-    const result = await service.findBySpecialist(userId, 1, 10);
+    const result = await service.findBySpecialist(userId, userId, 1, 10);
 
     expect(repository.findPaginated).toHaveBeenCalledWith(
       { assignedTo: new Types.ObjectId(userId) },
@@ -36,8 +36,14 @@ describe('SpecialistTaskQueryService', () => {
   it('rejects a user without specialist role', async () => {
     userService.findById.mockResolvedValue({ roles: UserRole.SUPERVISOR });
 
-    await expect(service.findBySpecialist(userId)).rejects.toBeInstanceOf(
+    await expect(service.findBySpecialist(userId, userId)).rejects.toBeInstanceOf(
       ForbiddenException,
     );
+  });
+
+  it('rejects access to another specialist tasks', async () => {
+    await expect(
+      service.findBySpecialist(userId, new Types.ObjectId().toString()),
+    ).rejects.toBeInstanceOf(ForbiddenException);
   });
 });

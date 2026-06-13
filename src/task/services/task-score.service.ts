@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { InjectConnection } from '@nestjs/mongoose';
+import { ClientSession, Connection } from 'mongoose';
 import { UserService } from '../../user/services/user.service';
 import { TaskDocument, TaskStatus } from '../task.schema';
 import { TaskRepository } from '../repositories/task.repository';
@@ -8,6 +10,7 @@ export class TaskScoreService {
   constructor(
     private readonly repository: TaskRepository,
     private readonly userService: UserService,
+    @InjectConnection() private readonly connection: Connection,
   ) {}
 
   async adjustUserScore(userId: string, tasks: TaskDocument[]): Promise<void> {
@@ -44,12 +47,66 @@ export class TaskScoreService {
       return;
     }
 
+    const session = await this.connection.startSession();
+    try {
+      await session.withTransaction(async () => {
+        await this.applyScoreAdjustment(userId, task, score, session);
+      });
+    } catch (error) {
+      if (!this.isTransactionUnsupported(error)) {
+        throw error;
+      }
+      await this.applyScoreWithoutTransaction(userId, task, score);
+    } finally {
+      await session.endSession();
+    }
+  }
+
+  private async applyScoreAdjustment(
+    userId: string,
+    task: TaskDocument,
+    score: 10 | -10,
+    session: ClientSession,
+  ): Promise<void> {
+    const claimedTask = await this.repository.claimScoreAdjustment(
+      task._id,
+      session,
+    );
+    if (!claimedTask) {
+      return;
+    }
+
+    await this.userService.adjustSpecialistScore(
+      userId,
+      score,
+      session,
+    );
+  }
+
+  private async applyScoreWithoutTransaction(
+    userId: string,
+    task: TaskDocument,
+    score: 10 | -10,
+  ): Promise<void> {
     const claimedTask = await this.repository.claimScoreAdjustment(task._id);
     if (!claimedTask) {
       return;
     }
 
-    await this.userService.adjustSpecialistScore(userId, score);
+    try {
+      await this.userService.adjustSpecialistScore(userId, score);
+    } catch (error) {
+      await this.repository.releaseScoreAdjustment(task._id);
+      throw error;
+    }
+  }
+
+  private isTransactionUnsupported(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return (
+      message.includes('Transaction numbers are only allowed') ||
+      message.includes('replica set member or mongos')
+    );
   }
 
   private calculateScore(task: TaskDocument): 10 | -10 | null {

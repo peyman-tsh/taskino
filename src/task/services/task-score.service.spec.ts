@@ -7,19 +7,29 @@ import { TaskScoreService } from './task-score.service';
 describe('TaskScoreService', () => {
   const repository = {
     claimScoreAdjustment: jest.fn(),
+    releaseScoreAdjustment: jest.fn(),
     findUnadjustedIncomplete: jest.fn(),
   };
   const userService = {
     adjustSpecialistScore: jest.fn(),
   };
+  const session = {
+    withTransaction: jest.fn(async (callback: () => Promise<void>) => callback()),
+    endSession: jest.fn(),
+  };
+  const connection = {
+    startSession: jest.fn(async () => session),
+  };
   const service = new TaskScoreService(
     repository as unknown as TaskRepository,
     userService as unknown as UserService,
+    connection as never,
   );
   const userId = new Types.ObjectId();
 
   beforeEach(() => {
     jest.clearAllMocks();
+    userService.adjustSpecialistScore.mockResolvedValue(true);
   });
 
   it('adds 10 for a task completed before its deadline', async () => {
@@ -34,6 +44,7 @@ describe('TaskScoreService', () => {
     expect(userService.adjustSpecialistScore).toHaveBeenCalledWith(
       userId.toString(),
       10,
+      session,
     );
   });
 
@@ -49,6 +60,7 @@ describe('TaskScoreService', () => {
     expect(userService.adjustSpecialistScore).toHaveBeenCalledWith(
       userId.toString(),
       -10,
+      session,
     );
   });
 
@@ -77,6 +89,7 @@ describe('TaskScoreService', () => {
     expect(userService.adjustSpecialistScore).toHaveBeenCalledWith(
       userId.toString(),
       -10,
+      session,
     );
   });
 

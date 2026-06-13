@@ -1,7 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, PipelineStage, Types } from 'mongoose';
+import {
+  ClientSession,
+  Model,
+  PipelineStage,
+  Query,
+  QueryFilter,
+  Types,
+  UpdateQuery,
+} from 'mongoose';
 import { Task, TaskDocument, TaskStatus } from '../task.schema';
+
+export type TaskFilter = QueryFilter<Task>;
+export type TaskUpdate = UpdateQuery<TaskDocument>;
+export type TaskCreateData = Partial<Task> & { _id?: Types.ObjectId };
 
 @Injectable()
 export class TaskRepository {
@@ -10,24 +22,24 @@ export class TaskRepository {
     private readonly model: Model<TaskDocument>,
   ) {}
 
-  create(data: Record<string, unknown>) {
+  create(data: TaskCreateData): Promise<TaskDocument> {
     return new this.model(data).save();
   }
 
-  find(filter: Record<string, unknown>) {
+  find(filter: TaskFilter): Promise<TaskDocument[]> {
     return this.model.find(filter).exec();
   }
 
-  findRawById(id: string) {
+  findRawById(id: string): Promise<TaskDocument | null> {
     return this.model.findById(id).exec();
   }
 
-  findById(id: string) {
+  findById(id: string): Promise<TaskDocument | null> {
     return this.populate(this.model.findById(id)).exec();
   }
 
   async findPaginated(
-    filter: Record<string, unknown>,
+    filter: TaskFilter,
     page: number,
     limit: number,
   ) {
@@ -43,7 +55,7 @@ export class TaskRepository {
     return { data, total };
   }
 
-  updateById(id: string | Types.ObjectId, update: Record<string, unknown>) {
+  updateById(id: string | Types.ObjectId, update: TaskUpdate) {
     return this.populate(
       this.model.findByIdAndUpdate(id, update, { new: true }),
     ).exec();
@@ -53,21 +65,27 @@ export class TaskRepository {
     return this.model.findByIdAndDelete(id).exec();
   }
 
-  updateMany(filter: Record<string, unknown>, update: Record<string, unknown>) {
+  updateMany(filter: TaskFilter, update: TaskUpdate) {
     return this.model.updateMany(filter, update).exec();
   }
 
-  claimScoreAdjustment(id: Types.ObjectId) {
+  claimScoreAdjustment(id: Types.ObjectId, session?: ClientSession) {
     return this.model
       .findOneAndUpdate(
         { _id: id, scoreAdjusted: { $ne: true } },
         { $set: { scoreAdjusted: true } },
-        { new: true },
+        { new: true, session },
       )
       .exec();
   }
 
-  findUnadjustedIncomplete() {
+  releaseScoreAdjustment(id: Types.ObjectId) {
+    return this.model
+      .updateOne({ _id: id }, { $set: { scoreAdjusted: false } })
+      .exec();
+  }
+
+  findUnadjustedIncomplete(): Promise<TaskDocument[]> {
     return this.model
       .find({
         status: { $ne: TaskStatus.DONE },
@@ -77,7 +95,7 @@ export class TaskRepository {
       .exec();
   }
 
-  count(filter: Record<string, unknown>) {
+  count(filter: TaskFilter): Promise<number> {
     return this.model.countDocuments(filter).exec();
   }
 
@@ -85,7 +103,9 @@ export class TaskRepository {
     return this.model.aggregate<T>(pipeline).exec();
   }
 
-  private populate(query: any) {
+  private populate<TResult>(
+    query: Query<TResult, TaskDocument>,
+  ): Query<TResult, TaskDocument> {
     return query
       .populate('createdBy', 'firstName lastName email')
       .populate('assignedTo', 'firstName lastName email')

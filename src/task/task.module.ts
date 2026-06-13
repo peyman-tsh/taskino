@@ -13,6 +13,7 @@ import { TaskRepository } from './repositories/task.repository';
 import { TaskQueryService } from './services/task-query.service';
 import { TaskUpdateService } from './services/task-update.service';
 import { SpecialistTaskQueryService } from './services/specialist-task-query.service';
+import { TaskCreationService } from './services/task-creation.service';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { SpecialistTaskQueryService } from './services/specialist-task-query.ser
     TaskQueryService,
     TaskUpdateService,
     SpecialistTaskQueryService,
+    TaskCreationService,
   ],
   exports: [TaskService, TaskReportService],
 })

@@ -3,7 +3,7 @@ import {
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
-import { Types } from 'mongoose';
+import { ClientSession, Types } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
@@ -236,11 +236,20 @@ export class UserService {
     return user;
   }
 
-  async adjustSpecialistScore(userId: string, score: number): Promise<void> {
+  async adjustSpecialistScore(
+    userId: string,
+    score: number,
+    session?: ClientSession,
+  ): Promise<boolean> {
     if (!Types.ObjectId.isValid(userId)) {
-      return;
+      return false;
     }
 
-    await this.userRepository.adjustSpecialistScoreWithFloor(userId, score);
+    const user = await this.userRepository.adjustSpecialistScoreWithFloor(
+      userId,
+      score,
+      session,
+    );
+    return Boolean(user);
   }
 }

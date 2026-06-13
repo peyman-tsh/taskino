@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { ClientSession, Model, Types } from 'mongoose';
 import { User, UserDocument, UserRole } from '../schemas/user.schema';
 
 @Injectable()
@@ -48,7 +48,11 @@ export class UserRepository {
       .exec();
   }
 
-  adjustSpecialistScoreWithFloor(id: string, score: number) {
+  adjustSpecialistScoreWithFloor(
+    id: string,
+    score: number,
+    session?: ClientSession,
+  ) {
     return this.userModel
       .findOneAndUpdate(
         { _id: id, roles: UserRole.SPECIALIST },
@@ -61,7 +65,7 @@ export class UserRepository {
             },
           },
         ],
-        { new: true },
+        { new: true, session },
       )
       .exec();
   }

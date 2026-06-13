@@ -15,7 +15,17 @@ export class SpecialistTaskQueryService {
     private readonly userService: UserService,
   ) {}
 
-  async findBySpecialist(userId: string, page = 1, limit = 10) {
+  async findBySpecialist(
+    userId: string,
+    requesterId: string,
+    page = 1,
+    limit = 10,
+  ) {
+    if (userId !== requesterId) {
+      throw new ForbiddenException(
+        'Specialists can only view their own assigned tasks',
+      );
+    }
     await this.assertSpecialist(userId);
     const { data, total } = await this.repository.findPaginated(
       { assignedTo: new Types.ObjectId(userId) },
