@@ -103,6 +103,20 @@ export class NotificationTemplateFactory {
     };
   }
 
+  userRegistrationApproval(
+    managerId: string,
+    userId: string,
+    fullName: string,
+  ): CreateNotificationDto {
+    return {
+      user: managerId,
+      title: 'New User Registration',
+      message: `${fullName} registered and is waiting for your approval`,
+      type: NotificationType.USER_REGISTRATION_APPROVAL,
+      link: `/users/${userId}`,
+    };
+  }
+
   taskCompletionStats(
     managerId: string,
     expertId: string,

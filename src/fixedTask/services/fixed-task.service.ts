@@ -128,6 +128,23 @@ export class FixedTaskService {
     return template;
   }
 
+  async getStatusCounts() {
+    const [totalFixedTasks, todoFixedTasks, inProgressFixedTasks, doneFixedTasks] =
+      await Promise.all([
+        this.repository.count({}),
+        this.repository.count({ status: FixedTaskStatus.TODO }),
+        this.repository.count({ status: FixedTaskStatus.IN_PROGRESS }),
+        this.repository.count({ status: FixedTaskStatus.DONE }),
+      ]);
+
+    return {
+      totalFixedTasks,
+      todoFixedTasks,
+      inProgressFixedTasks,
+      doneFixedTasks,
+    };
+  }
+
   async update(id: string, requesterId: string, dto: UpdateFixedTaskDto) {
     const normalizedRequesterId = this.policy
       .toObjectId(requesterId, 'requester user ID')

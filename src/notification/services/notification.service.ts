@@ -9,6 +9,7 @@ import { CreateNotificationDto } from '../dto/create-notification.dto';
 import { NotificationDocument } from '../notification.schema';
 import { NotificationTemplateFactory } from '../notification-template.factory';
 import { NotificationRepository } from '../repositories/notification.repository';
+import { WorkField } from '../../common/enums/work-field.enum';
 
 @Injectable()
 export class NotificationService {
@@ -190,6 +191,30 @@ export class NotificationService {
   ) {
     return this.create(
       this.templateFactory.leaveRejected(userId, leaveType, reason),
+    );
+  }
+
+  async createUserRegistrationApprovalNotifications(
+    userId: string,
+    firstName: string,
+    lastName: string,
+    workField: WorkField,
+  ): Promise<NotificationDocument[]> {
+    const managerIds =
+      await this.userService.findActiveManagerIdsByWorkField(workField);
+    if (managerIds.length === 0) {
+      return [];
+    }
+
+    const fullName = `${firstName} ${lastName}`.trim();
+    return this.createBulk(
+      managerIds.map((managerId) =>
+        this.templateFactory.userRegistrationApproval(
+          managerId,
+          userId,
+          fullName,
+        ),
+      ),
     );
   }
 

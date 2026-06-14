@@ -11,6 +11,7 @@ import { IncreaseScoreDto } from '../dto/increase-score.dto';
 import { UserDocument, UserRole } from '../schemas/user.schema';
 import * as bcrypt from 'bcryptjs';
 import { UserRepository } from '../repositories/user.repository';
+import { WorkField } from '../../common/enums/work-field.enum';
 
 @Injectable()
 export class UserService {
@@ -67,6 +68,10 @@ export class UserService {
 
   async countActiveUsers(): Promise<number> {
     return this.userRepository.countActiveUsers();
+  }
+
+  findActiveManagerIdsByWorkField(workField: WorkField): Promise<string[]> {
+    return this.userRepository.findActiveManagerIdsByWorkField(workField);
   }
 
   async findProfilesByIds(userIds: string[]) {

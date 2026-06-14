@@ -7,6 +7,7 @@ import {
   TaskAssignedNotificationEvent,
   TaskCompletedNotificationEvent,
   TaskStatusChangedNotificationEvent,
+  UserRegisteredNotificationEvent,
 } from './events/notification.events';
 import { NotificationService } from './services/notification.service';
 
@@ -41,6 +42,10 @@ export class NotificationEventListener implements OnModuleInit, OnModuleDestroy 
       this.eventBus.subscribe<FixedTaskCompletedNotificationEvent>(
         NotificationEvents.FIXED_TASK_COMPLETED,
         (event) => this.handleFixedTaskCompleted(event),
+      ),
+      this.eventBus.subscribe<UserRegisteredNotificationEvent>(
+        NotificationEvents.USER_REGISTERED,
+        (event) => this.handleUserRegistered(event),
       ),
     );
   }
@@ -105,6 +110,17 @@ export class NotificationEventListener implements OnModuleInit, OnModuleDestroy 
       event.creatorId,
       event.fixedTaskId,
       event.fixedTaskTitle,
+    );
+  }
+
+  private async handleUserRegistered(
+    event: UserRegisteredNotificationEvent,
+  ): Promise<void> {
+    await this.notificationService.createUserRegistrationApprovalNotifications(
+      event.userId,
+      event.firstName,
+      event.lastName,
+      event.workField,
     );
   }
 }

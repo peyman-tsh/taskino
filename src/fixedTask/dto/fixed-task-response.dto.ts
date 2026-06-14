@@ -61,3 +61,17 @@ export class PaginatedFixedTasksResponseDto {
   @ApiProperty()
   limit: number;
 }
+
+export class FixedTaskStatusCountsResponseDto {
+  @ApiProperty()
+  totalFixedTasks: number;
+
+  @ApiProperty()
+  todoFixedTasks: number;
+
+  @ApiProperty()
+  inProgressFixedTasks: number;
+
+  @ApiProperty()
+  doneFixedTasks: number;
+}

@@ -38,6 +38,7 @@ import {
   TaskCompletionStatsResponseDto,
   TaskDateCountResponseDto,
   TaskResponseDto,
+  TaskStatusOverviewResponseDto,
 } from './dto/task-response.dto';
 import { RolesGuard } from '../user/roles.guard';
 import { Roles } from '../user/roles.decorator';
@@ -211,6 +212,21 @@ export class TaskController {
       page,
       limit,
     );
+  }
+
+  @Get('status-counts')
+  @ApiOperation({
+    summary: 'Get task counts grouped by status',
+    description:
+      'Returns total, waiting, in-progress, and completed regular task counts.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Task status counts retrieved successfully',
+    type: TaskStatusOverviewResponseDto,
+  })
+  getStatusCounts() {
+    return this.taskService.getStatusCounts();
   }
 
   @Get(':id')

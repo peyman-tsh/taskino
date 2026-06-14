@@ -24,6 +24,7 @@ describe('FixedTaskService', () => {
     updateById: jest.fn(),
     findById: jest.fn(),
     findPaginated: jest.fn(),
+    count: jest.fn(),
   };
   const policy = {
     toObjectId: jest.fn((id: string) => new Types.ObjectId(id)),
@@ -117,6 +118,32 @@ describe('FixedTaskService', () => {
       1,
       10,
     );
+  });
+
+  it('returns fixed task counts grouped by status', async () => {
+    repository.count
+      .mockResolvedValueOnce(10)
+      .mockResolvedValueOnce(3)
+      .mockResolvedValueOnce(2)
+      .mockResolvedValueOnce(5);
+
+    await expect(service.getStatusCounts()).resolves.toEqual({
+      totalFixedTasks: 10,
+      todoFixedTasks: 3,
+      inProgressFixedTasks: 2,
+      doneFixedTasks: 5,
+    });
+
+    expect(repository.count).toHaveBeenNthCalledWith(1, {});
+    expect(repository.count).toHaveBeenNthCalledWith(2, {
+      status: FixedTaskStatus.TODO,
+    });
+    expect(repository.count).toHaveBeenNthCalledWith(3, {
+      status: FixedTaskStatus.IN_PROGRESS,
+    });
+    expect(repository.count).toHaveBeenNthCalledWith(4, {
+      status: FixedTaskStatus.DONE,
+    });
   });
 
   it('scores when the assignee updates status to done', async () => {

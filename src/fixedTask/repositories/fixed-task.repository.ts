@@ -81,6 +81,10 @@ export class FixedTaskRepository {
     return this.populate(this.model.find({ isActive: true })).exec();
   }
 
+  count(filter: Record<string, unknown>) {
+    return this.model.countDocuments(filter).exec();
+  }
+
   private populate(query: any) {
     return query
       .populate(

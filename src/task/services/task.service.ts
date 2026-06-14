@@ -120,6 +120,10 @@ export class TaskService {
     return this.taskUpdateService.update(id, { status });
   }
 
+  getStatusCounts() {
+    return this.taskReportService.getTaskStatusOverview();
+  }
+
   /**
    * Get task completion statistics for tasks created by a manager and assigned to an expert
    */

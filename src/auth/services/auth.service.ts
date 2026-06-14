@@ -6,6 +6,11 @@ import { UserService } from '../../user/services/user.service';
 import { UserDocument, UserRole } from '../../user/schemas/user.schema';
 import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
+import { InternalEventBus } from '../../common/events/internal-event-bus.service';
+import {
+  NotificationEvents,
+  UserRegisteredNotificationEvent,
+} from '../../notification/events/notification.events';
 
 /**
  * Response structure for registration
@@ -32,6 +37,7 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly eventBus: InternalEventBus,
   ) {
     this.jwtSecret =
       this.configService.get<string>('app.jwtSecret') ??
@@ -47,6 +53,15 @@ export class AuthService {
     const { password } = registerDto;
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await this.userService.create(registerDto, hashedPassword);
+    this.eventBus.publish(
+      NotificationEvents.USER_REGISTERED,
+      new UserRegisteredNotificationEvent(
+        user._id.toString(),
+        user.firstName,
+        user.lastName,
+        user.workField,
+      ),
+    );
     const accessToken = this.generateToken(user);
 
     return {

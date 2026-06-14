@@ -34,6 +34,7 @@ import { UpdateFixedTaskDto } from './dto/update-fixed-task.dto';
 import { FixedTaskService } from './services/fixed-task.service';
 import {
   FixedTaskResponseDto,
+  FixedTaskStatusCountsResponseDto,
   PaginatedFixedTasksResponseDto,
 } from './dto/fixed-task-response.dto';
 import { FixedTaskSeedService } from './services/fixed-task-seed.service';
@@ -95,14 +96,28 @@ export class FixedTaskController {
   @ApiOkResponse({ type: PaginatedFixedTasksResponseDto })
   getSpecialistFixedTasks(
     @Param('userId') userId: string,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
+    @Query('page') page: number ,
+    @Query('limit') limit: number ,
   ) {
     return this.specialistFixedTaskQueryService.findBySpecialist(
       userId,
       page,
       limit,
     );
+  }
+
+  @Get('status-counts')
+  @ApiOperation({
+    summary: 'Get fixed task counts grouped by status',
+    description:
+      'Returns total, waiting, in-progress, and completed fixed task counts.',
+  })
+  @ApiOkResponse({
+    description: 'Fixed task status counts retrieved successfully',
+    type: FixedTaskStatusCountsResponseDto,
+  })
+  getStatusCounts() {
+    return this.fixedTaskService.getStatusCounts();
   }
 
   @Get(':id')
@@ -144,4 +159,5 @@ export class FixedTaskController {
   delete(@Param() params: FixedTaskParamDto) {
     return this.fixedTaskService.delete(params.id);
   }
+
 }

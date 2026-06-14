@@ -6,6 +6,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { ClientSession, Model, Types } from 'mongoose';
 import { User, UserDocument, UserRole } from '../schemas/user.schema';
+import { WorkField } from '../../common/enums/work-field.enum';
 
 @Injectable()
 export class UserRepository {
@@ -95,6 +96,22 @@ export class UserRepository {
 
   countActiveUsers(): Promise<number> {
     return this.userModel.countDocuments({ isActive: true }).exec();
+  }
+
+  async findActiveManagerIdsByWorkField(
+    workField: WorkField,
+  ): Promise<string[]> {
+    const managers = await this.userModel
+      .find({
+        roles: UserRole.MANAGER,
+        workField,
+        isActive: true,
+      })
+      .select('_id')
+      .lean()
+      .exec();
+
+    return managers.map((manager) => manager._id.toString());
   }
 
   async findProfilesByIds(userIds: string[]) {

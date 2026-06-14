@@ -15,6 +15,7 @@ export enum NotificationType {
   LEAVE_REQUEST = 'leave_request',
   LEAVE_APPROVED = 'leave_approved',
   LEAVE_REJECTED = 'leave_rejected',
+  USER_REGISTRATION_APPROVAL = 'user_registration_approval',
 }
 
 @Schema({ timestamps: true })
