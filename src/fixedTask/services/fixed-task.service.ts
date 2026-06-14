@@ -95,6 +95,7 @@ export class FixedTaskService {
       }
       query.recurrence = queryDto.recurrence;
     }
+    if (queryDto.status) query.status = queryDto.status;
     if (queryDto.isActive !== undefined) query.isActive = queryDto.isActive;
     const rangeStart = queryDto.startDate
       ? this.policy.parseDate(queryDto.startDate, 'startDate')

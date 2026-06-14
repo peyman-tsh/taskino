@@ -99,6 +99,7 @@ describe('FixedTaskService', () => {
     await service.findAll({
       page: 1,
       limit: 10,
+      status: FixedTaskStatus.IN_PROGRESS,
       startDate,
       endDate,
     });
@@ -109,6 +110,7 @@ describe('FixedTaskService', () => {
     );
     expect(repository.findPaginated).toHaveBeenCalledWith(
       {
+        status: FixedTaskStatus.IN_PROGRESS,
         endDate: { $gte: new Date(startDate) },
         startDate: { $lte: new Date(endDate) },
       },

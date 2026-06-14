@@ -17,6 +17,7 @@ describe('LeaveRequestService', () => {
     findPaginated: jest.fn(),
     findRawById: jest.fn(),
     updateById: jest.fn(),
+    getStatusCounts: jest.fn(),
   };
   const workflowService = {};
   const service = new LeaveRequestService(
@@ -99,5 +100,20 @@ describe('LeaveRequestService', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
 
     expect(repository.updateById).not.toHaveBeenCalled();
+  });
+
+  it('returns leave request counts grouped by status', async () => {
+    repository.getStatusCounts.mockResolvedValue([
+      { _id: LeaveStatus.PENDING, count: 4 },
+      { _id: LeaveStatus.APPROVED, count: 3 },
+      { _id: LeaveStatus.REJECTED, count: 2 },
+    ]);
+
+    await expect(service.getStatistics()).resolves.toEqual({
+      totalRequests: 9,
+      pendingRequests: 4,
+      approvedRequests: 3,
+      rejectedRequests: 2,
+    });
   });
 });

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Leave, LeaveDocument } from '../LeaveRequest.schema';
+import { Leave, LeaveDocument, LeaveStatus } from '../LeaveRequest.schema';
 
 @Injectable()
 export class LeaveRequestRepository {
@@ -52,6 +52,16 @@ export class LeaveRequestRepository {
 
   deleteById(id: string) {
     return this.model.findByIdAndDelete(id).exec();
+  }
+
+  async getStatusCounts(): Promise<
+    Array<{ _id: LeaveStatus; count: number }>
+  > {
+    return this.model
+      .aggregate<{ _id: LeaveStatus; count: number }>([
+        { $group: { _id: '$status', count: { $sum: 1 } } },
+      ])
+      .exec();
   }
 
   private populate(query: any) {

@@ -11,7 +11,10 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { FixedTaskRecurrence } from '../fixed-task.schema';
+import {
+  FixedTaskRecurrence,
+  FixedTaskStatus,
+} from '../fixed-task.schema';
 
 export class QueryFixedTaskDto {
   @ApiPropertyOptional({ default: 1 })
@@ -47,6 +50,15 @@ export class QueryFixedTaskDto {
   @IsOptional()
   @IsEnum(FixedTaskRecurrence)
   recurrence?: FixedTaskRecurrence;
+
+  @ApiPropertyOptional({
+    enum: FixedTaskStatus,
+    description: 'Filter by fixed task status',
+    example: FixedTaskStatus.IN_PROGRESS,
+  })
+  @IsOptional()
+  @IsEnum(FixedTaskStatus)
+  status?: FixedTaskStatus;
 
   @ApiPropertyOptional()
   @IsOptional()

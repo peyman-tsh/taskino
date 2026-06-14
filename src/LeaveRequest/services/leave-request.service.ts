@@ -135,6 +135,36 @@ export class LeaveRequestService {
     });
   }
 
+  async getStatistics(): Promise<{
+    totalRequests: number;
+    pendingRequests: number;
+    approvedRequests: number;
+    rejectedRequests: number;
+  }> {
+    const statusCounts = await this.repository.getStatusCounts();
+    const counts = statusCounts.reduce<Record<LeaveStatus, number>>(
+      (result, item) => {
+        result[item._id] = item.count;
+        return result;
+      },
+      {
+        [LeaveStatus.PENDING]: 0,
+        [LeaveStatus.APPROVED]: 0,
+        [LeaveStatus.REJECTED]: 0,
+      },
+    );
+
+    return {
+      totalRequests:
+        counts[LeaveStatus.PENDING] +
+        counts[LeaveStatus.APPROVED] +
+        counts[LeaveStatus.REJECTED],
+      pendingRequests: counts[LeaveStatus.PENDING],
+      approvedRequests: counts[LeaveStatus.APPROVED],
+      rejectedRequests: counts[LeaveStatus.REJECTED],
+    };
+  }
+
   /**
    * Find a leave request by ID
    */

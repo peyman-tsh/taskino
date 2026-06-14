@@ -9,6 +9,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { LeaveRequestService } from './services/leave-request.service';
 import { CreateLeaveRequestDto } from './dto/create-leave-request.dto';
@@ -23,6 +24,11 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { QueryLeaveRequestDto } from './dto/query-leave-request.dto';
+import { JwtAuthGuard } from '../auth/guard/jwt.guard';
+import { RolesGuard } from '../user/roles.guard';
+import { Roles } from '../user/roles.decorator';
+import { UserRole } from '../user/schemas/user.schema';
+import { LeaveRequestStatisticsResponseDto } from './dto/leave-request-statistics-response.dto';
 
 @ApiTags('Leave Requests')
 @ApiBearerAuth()
@@ -100,6 +106,25 @@ export class LeaveRequestController {
   })
   filter(@Query() query: QueryLeaveRequestDto) {
     return this.leaveRequestService.filter(query);
+  }
+
+  @Get('statistics')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MANAGER)
+  @ApiOperation({
+    summary: 'Get leave request statistics for manager',
+    description:
+      'Returns total, pending, approved, and rejected leave request counts.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Leave request statistics retrieved successfully',
+    type: LeaveRequestStatisticsResponseDto,
+  })
+  @ApiResponse({ status: 401, description: 'Authentication required' })
+  @ApiResponse({ status: 403, description: 'Manager role required' })
+  getStatistics() {
+    return this.leaveRequestService.getStatistics();
   }
 
   @Get(':id')
