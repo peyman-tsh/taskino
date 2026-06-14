@@ -215,6 +215,7 @@ export class TaskController {
   }
 
   @Get('status-counts')
+  @Roles(UserRole.SPECIALIST)
   @ApiOperation({
     summary: 'Get task counts grouped by status',
     description:
