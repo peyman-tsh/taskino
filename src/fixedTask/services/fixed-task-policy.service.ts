@@ -29,6 +29,20 @@ export class FixedTaskPolicyService {
     }
   }
 
+  parseDate(value: string, label: string): Date {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      throw new BadRequestException(`Invalid ${label}`);
+    }
+    return date;
+  }
+
+  assertValidDateRange(startDate?: Date, endDate?: Date): void {
+    if (startDate && endDate && endDate.getTime() < startDate.getTime()) {
+      throw new BadRequestException('endDate must be on or after startDate');
+    }
+  }
+
   async validateParticipants(creatorId: string, assignedTo: string) {
     const participants = await this.userService.findTaskParticipantsByIds([
       creatorId,

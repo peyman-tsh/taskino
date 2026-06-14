@@ -117,24 +117,22 @@ export class FixedTaskController {
   }
 
   @Patch(':id')
-  @Public()
   @Roles(UserRole.MANAGER, UserRole.SUPERVISOR, UserRole.SPECIALIST)
-  @ApiOperation({ summary: 'Update a fixed task template' })
-  @ApiQuery({
-    name: 'userId',
-    required: true,
-    description: 'ID of the user performing the public update',
+  @ApiOperation({
+    summary: 'Update a fixed task template',
+    description:
+      'Uses the authenticated user ID from JWT. Assignees can only update status.',
   })
   @ApiOkResponse({
     description: 'Fixed task template updated successfully',
     type: FixedTaskResponseDto,
   })
   update(
-    @Query('userId') creatorId: string,
+    @CurrentUserId() requesterId: string,
     @Param() params: FixedTaskParamDto,
     @Body() dto: UpdateFixedTaskDto,
   ) {
-    return this.fixedTaskService.update(params.id, creatorId, dto);
+    return this.fixedTaskService.update(params.id, requesterId, dto);
   }
 
   @Delete(':id')

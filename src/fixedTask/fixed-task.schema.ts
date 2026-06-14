@@ -67,6 +67,9 @@ export class FixedTaskTemplate {
   endTime?: string;
 
   @Prop({ type: Date, index: true })
+  startDate?: Date;
+
+  @Prop({ type: Date, index: true })
   endDate?: Date;
 
   @Prop({ type: String })
@@ -83,6 +86,10 @@ export type FixedTaskTemplateDocument = HydratedDocument<FixedTaskTemplate>;
 
 export const FixedTaskTemplateSchema =
   SchemaFactory.createForClass(FixedTaskTemplate);
+
+FixedTaskTemplateSchema.index(
+  { recurrence: 1, startDate: 1, endDate: 1 },
+);
 
 FixedTaskTemplateSchema.index(
   { sourceExcel: 1, sourceSheet: 1, sourceRow: 1 },

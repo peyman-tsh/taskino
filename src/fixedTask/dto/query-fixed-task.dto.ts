@@ -2,6 +2,7 @@ import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
+  IsDateString,
   IsEnum,
   IsInt,
   IsMongoId,
@@ -52,4 +53,22 @@ export class QueryFixedTaskDto {
   @Type(() => Boolean)
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'Range start in ISO format. Returns fixed tasks ending on or after this date.',
+    example: '2026-06-01T00:00:00+03:30',
+  })
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Range end in ISO format. Returns fixed tasks starting on or before this date.',
+    example: '2026-06-30T23:59:59+03:30',
+  })
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
 }

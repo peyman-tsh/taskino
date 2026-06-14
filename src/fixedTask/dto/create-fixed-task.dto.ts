@@ -69,7 +69,16 @@ export class CreateFixedTaskDto {
   endTime?: string;
 
   @ApiPropertyOptional({
+    description: 'Fixed task start date in ISO format',
+    example: '2026-06-14T09:00:00+03:30',
+  })
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @ApiPropertyOptional({
     description: 'Fixed task end date in ISO format',
+    example: '2026-06-14T17:00:00+03:30',
   })
   @IsOptional()
   @IsDateString()

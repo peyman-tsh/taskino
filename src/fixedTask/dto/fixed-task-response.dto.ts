@@ -42,6 +42,9 @@ export class FixedTaskResponseDto {
   endTime?: string;
 
   @ApiPropertyOptional()
+  startDate?: Date;
+
+  @ApiPropertyOptional()
   endDate?: Date;
 }
 

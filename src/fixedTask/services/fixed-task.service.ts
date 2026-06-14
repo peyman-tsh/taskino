@@ -31,6 +31,13 @@ export class FixedTaskService {
     this.policy.toObjectId(dto.assignedTo, 'assigned user ID');
     await this.policy.validateParticipants(creatorId, dto.assignedTo);
     this.policy.assertValidTimeRange(dto.startTime, dto.endTime);
+    const startDate = dto.startDate
+      ? this.policy.parseDate(dto.startDate, 'startDate')
+      : undefined;
+    const endDate = dto.endDate
+      ? this.policy.parseDate(dto.endDate, 'endDate')
+      : undefined;
+    this.policy.assertValidDateRange(startDate, endDate);
     if (dto.status !== undefined && dto.status !== FixedTaskStatus.TODO) {
       throw new BadRequestException(
         'A fixed task must be created with todo status',
@@ -52,7 +59,8 @@ export class FixedTaskService {
         : this.scoreService.getNextDeadline(dto.recurrence, dto.endTime),
       startTime: dto.startTime,
       endTime: dto.endTime,
-      endDate: dto.endDate ? new Date(dto.endDate) : undefined,
+      startDate,
+      endDate,
       sourceExcel: `manual:${templateId.toString()}`,
       sourceSheet: 'manual',
       sourceRow: 0,
@@ -88,6 +96,15 @@ export class FixedTaskService {
       query.recurrence = queryDto.recurrence;
     }
     if (queryDto.isActive !== undefined) query.isActive = queryDto.isActive;
+    const rangeStart = queryDto.startDate
+      ? this.policy.parseDate(queryDto.startDate, 'startDate')
+      : undefined;
+    const rangeEnd = queryDto.endDate
+      ? this.policy.parseDate(queryDto.endDate, 'endDate')
+      : undefined;
+    this.policy.assertValidDateRange(rangeStart, rangeEnd);
+    if (rangeStart) query.endDate = { $gte: rangeStart };
+    if (rangeEnd) query.startDate = { $lte: rangeEnd };
 
     const { data, total } = await this.repository.findPaginated(
       query,
@@ -110,7 +127,10 @@ export class FixedTaskService {
     return template;
   }
 
-  async update(id: string, creatorId: string, dto: UpdateFixedTaskDto) {
+  async update(id: string, requesterId: string, dto: UpdateFixedTaskDto) {
+    const normalizedRequesterId = this.policy
+      .toObjectId(requesterId, 'requester user ID')
+      .toString();
     const template = await this.repository.findRawById(
       this.policy.toObjectId(id, 'fixed task ID'),
     );
@@ -118,7 +138,8 @@ export class FixedTaskService {
       throw new NotFoundException('Fixed task template not found');
     }
 
-    const isAssignee = template.assignedTo.toString() === creatorId;
+    const isAssignee =
+      template.assignedTo.toString() === normalizedRequesterId;
     if (isAssignee) {
       this.assertAssigneeStatusOnlyUpdate(dto);
     } else {
@@ -128,11 +149,20 @@ export class FixedTaskService {
         );
       }
       const assignedTo = dto.assignedTo ?? template.assignedTo.toString();
-      await this.policy.validateParticipants(creatorId, assignedTo);
+      await this.policy.validateParticipants(normalizedRequesterId, assignedTo);
       this.policy.assertValidTimeRange(
         dto.startTime ?? template.startTime,
         dto.endTime ?? template.endTime,
       );
+      const startDate =
+        dto.startDate !== undefined
+          ? this.policy.parseDate(dto.startDate, 'startDate')
+          : template.startDate;
+      const endDate =
+        dto.endDate !== undefined
+          ? this.policy.parseDate(dto.endDate, 'endDate')
+          : template.endDate;
+      this.policy.assertValidDateRange(startDate, endDate);
     }
 
     const updateData: Record<string, unknown> = {};
@@ -154,7 +184,12 @@ export class FixedTaskService {
     }
     if (dto.startTime !== undefined) updateData.startTime = dto.startTime;
     if (dto.endTime !== undefined) updateData.endTime = dto.endTime;
-    if (dto.endDate !== undefined) updateData.endDate = new Date(dto.endDate);
+    if (dto.startDate !== undefined) {
+      updateData.startDate = this.policy.parseDate(dto.startDate, 'startDate');
+    }
+    if (dto.endDate !== undefined) {
+      updateData.endDate = this.policy.parseDate(dto.endDate, 'endDate');
+    }
 
     const updatedTemplate = await this.repository.updateById(
       template._id,

@@ -23,14 +23,18 @@ describe('FixedTaskService', () => {
     findRawById: jest.fn(),
     updateById: jest.fn(),
     findById: jest.fn(),
+    findPaginated: jest.fn(),
   };
   const policy = {
     toObjectId: jest.fn((id: string) => new Types.ObjectId(id)),
     validateParticipants: jest.fn(),
     assertValidTimeRange: jest.fn(),
+    parseDate: jest.fn((value: string) => new Date(value)),
+    assertValidDateRange: jest.fn(),
   };
   const scoreService = {
     adjustTaskScore: jest.fn(),
+    adjustOverdueTasks: jest.fn(),
     getNextDeadline: jest.fn(() => new Date()),
   };
   const notificationService = {
@@ -59,6 +63,58 @@ describe('FixedTaskService', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
 
     expect(repository.create).not.toHaveBeenCalled();
+  });
+
+  it('stores and validates startDate and endDate when creating', async () => {
+    const startDate = '2026-06-14T09:00:00.000Z';
+    const endDate = '2026-06-14T17:00:00.000Z';
+    repository.create.mockResolvedValue(createTemplate());
+    repository.findById.mockResolvedValue(createTemplate());
+
+    await service.create(creatorId.toString(), {
+      title: 'Daily report',
+      assignedTo: assigneeId.toString(),
+      recurrence: FixedTaskRecurrence.DAILY,
+      startDate,
+      endDate,
+    });
+
+    expect(policy.assertValidDateRange).toHaveBeenCalledWith(
+      new Date(startDate),
+      new Date(endDate),
+    );
+    expect(repository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+      }),
+    );
+  });
+
+  it('filters fixed tasks that overlap the requested date range', async () => {
+    const startDate = '2026-06-01T00:00:00.000Z';
+    const endDate = '2026-06-30T23:59:59.000Z';
+    repository.findPaginated.mockResolvedValue({ data: [], total: 0 });
+
+    await service.findAll({
+      page: 1,
+      limit: 10,
+      startDate,
+      endDate,
+    });
+
+    expect(policy.assertValidDateRange).toHaveBeenCalledWith(
+      new Date(startDate),
+      new Date(endDate),
+    );
+    expect(repository.findPaginated).toHaveBeenCalledWith(
+      {
+        endDate: { $gte: new Date(startDate) },
+        startDate: { $lte: new Date(endDate) },
+      },
+      1,
+      10,
+    );
   });
 
   it('scores when the assignee updates status to done', async () => {

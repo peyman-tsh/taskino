@@ -44,6 +44,7 @@ import { Roles } from '../user/roles.decorator';
 import { UserRole } from '../user/schemas/user.schema';
 import { SpecialistTaskQueryService } from './services/specialist-task-query.service';
 import { CurrentUserId } from '../auth/decorators/current-user-id.decorator';
+import { Public } from 'src/auth/decorators/public.decorator';
 
 @ApiTags('Tasks')
 @ApiBearerAuth()
@@ -192,7 +193,7 @@ export class TaskController {
   }
 
   @Get('specialist/:userId')
-  @Roles(UserRole.SPECIALIST)
+  @Public()
   @ApiOperation({ summary: 'Get tasks assigned to a specialist' })
   @ApiParam({ name: 'userId', description: 'Specialist user ID' })
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -261,7 +262,7 @@ export class TaskController {
   }
 
   @Patch(':id/status')
-  @Roles(UserRole.MANAGER)
+  @Roles(UserRole.MANAGER,UserRole.SPECIALIST,UserRole.SUPERVISOR)
   @ApiOperation({
     summary: 'Update task status',
     description: 'Updates the status of a task by its ID',
