@@ -1,6 +1,7 @@
-import { IsString, IsNotEmpty, IsDate, IsOptional, IsEnum, IsMongoId, IsDateString } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEnum, IsMongoId, IsDateString, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { LeaveStatus } from '../LeaveRequest.schema';
+import { LeaveRecurrence, LeaveStatus } from '../LeaveRequest.schema';
+import { TIME_MESSAGE, TIME_PATTERN } from '../../common/constants/time.constants';
 
 export class CreateLeaveRequestDto {
   @ApiProperty({ description: 'ID of the user requesting leave', example: '64a7b1c2d3e4f5a6b7c8d9e0' })
@@ -18,6 +19,24 @@ export class CreateLeaveRequestDto {
   @IsDateString()
   @IsNotEmpty()
   endDate: string;
+
+  @ApiProperty({
+    description: 'Daily or weekly leave recurrence',
+    enum: LeaveRecurrence,
+    example: LeaveRecurrence.DAILY,
+  })
+  @IsEnum(LeaveRecurrence)
+  recurrence: LeaveRecurrence;
+
+  @ApiPropertyOptional({ example: '09:00' })
+  @IsOptional()
+  @Matches(TIME_PATTERN, { message: `startTime ${TIME_MESSAGE}` })
+  startTime?: string;
+
+  @ApiPropertyOptional({ example: '17:00' })
+  @IsOptional()
+  @Matches(TIME_PATTERN, { message: `endTime ${TIME_MESSAGE}` })
+  endTime?: string;
 
   @ApiPropertyOptional({ description: 'Reason for the leave', example: 'Personal vacation' })
   @IsOptional()

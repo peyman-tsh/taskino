@@ -2,9 +2,26 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { Types } from 'mongoose';
 import { CreateLeaveRequestDto } from '../dto/create-leave-request.dto';
 import { UpdateLeaveRequestDto } from '../dto/update-leave-request.dto';
-import { LeaveDocument, LeaveStatus } from '../LeaveRequest.schema';
+import {
+  LeaveDocument,
+  LeaveRecurrence,
+  LeaveStatus,
+} from '../LeaveRequest.schema';
 import { LeaveRequestWorkflowService } from './leave-request-workflow.service';
 import { LeaveRequestRepository } from '../repositories/leave-request.repository';
+import { QueryLeaveRequestDto } from '../dto/query-leave-request.dto';
+import { isValidTimeRange } from '../../common/constants/time.constants';
+
+export interface LeaveRequestFilters {
+  user?: string;
+  status?: LeaveStatus;
+  approvedBy?: string;
+  recurrence?: LeaveRecurrence;
+  startDate?: string;
+  endDate?: string;
+  startTime?: string;
+  endTime?: string;
+}
 
 @Injectable()
 export class LeaveRequestService {
@@ -35,6 +52,7 @@ export class LeaveRequestService {
     if (endDate < startDate) {
       throw new BadRequestException('End date must be after start date');
     }
+    this.assertValidTimeRange(rest.startTime, rest.endTime);
 
     return this.repository.create({
       ...rest,
@@ -51,11 +69,7 @@ export class LeaveRequestService {
   async findAll(
     page: number = 1,
     limit: number = 10,
-    filters?: {
-      user?: string;
-      status?: LeaveStatus;
-      approvedBy?: string;
-    },
+    filters?: LeaveRequestFilters,
   ): Promise<{
     data: LeaveDocument[];
     total: number;
@@ -76,6 +90,24 @@ export class LeaveRequestService {
       query.approvedBy = new Types.ObjectId(filters.approvedBy);
     }
 
+    if (filters?.recurrence) {
+      query.recurrence = filters.recurrence;
+    }
+
+    const rangeStart = filters?.startDate
+      ? this.parseDate(filters.startDate, 'start date')
+      : undefined;
+    const rangeEnd = filters?.endDate
+      ? this.parseDate(filters.endDate, 'end date')
+      : undefined;
+    this.assertValidDateRange(rangeStart, rangeEnd);
+    if (rangeStart) query.endDate = { $gte: rangeStart };
+    if (rangeEnd) query.startDate = { $lte: rangeEnd };
+
+    this.assertValidTimeRange(filters?.startTime, filters?.endTime);
+    if (filters?.startTime) query.endTime = { $gte: filters.startTime };
+    if (filters?.endTime) query.startTime = { $lte: filters.endTime };
+
     const { data, total } = await this.repository.findPaginated(
       query,
       page,
@@ -88,6 +120,19 @@ export class LeaveRequestService {
       page,
       limit,
     };
+  }
+
+  filter(query: QueryLeaveRequestDto) {
+    return this.findAll(query.page, query.limit, {
+      user: query.user,
+      status: query.status,
+      approvedBy: query.approvedBy,
+      recurrence: query.recurrence,
+      startDate: query.startDate,
+      endDate: query.endDate,
+      startTime: query.startTime,
+      endTime: query.endTime,
+    });
   }
 
   /**
@@ -146,19 +191,20 @@ export class LeaveRequestService {
     updateLeaveDto: UpdateLeaveRequestDto,
   ): Promise<LeaveDocument> {
     this.validateObjectId(id, 'leave request ID');
-    await this.ensureLeaveExists(id);
+    const leaveRequest = await this.ensureLeaveExists(id);
 
-    const updateData = this.buildUpdateData(updateLeaveDto);
+    const updateData = this.buildUpdateData(updateLeaveDto, leaveRequest);
     return this.updateAndPopulate(id, updateData);
   }
 
   private buildUpdateData(
     dto: UpdateLeaveRequestDto,
+    leaveRequest: LeaveDocument,
   ): Record<string, unknown> {
     const updateData: Record<string, unknown> = {};
 
     this.applyUserUpdate(updateData, dto);
-    this.applyDateUpdates(updateData, dto);
+    this.applyScheduleUpdates(updateData, dto, leaveRequest);
     this.applyReasonUpdate(updateData, dto);
     this.applyStatusUpdate(updateData, dto);
     this.applyApprovalUpdates(updateData, dto);
@@ -176,22 +222,30 @@ export class LeaveRequestService {
     updateData.user = new Types.ObjectId(dto.user);
   }
 
-  private applyDateUpdates(
+  private applyScheduleUpdates(
     updateData: Record<string, unknown>,
     dto: UpdateLeaveRequestDto,
+    leaveRequest: LeaveDocument,
   ): void {
-    if (dto.startDate !== undefined) {
-      updateData.startDate = this.parseDate(dto.startDate, 'start date');
-    }
-    if (dto.endDate !== undefined) {
-      updateData.endDate = this.parseDate(dto.endDate, 'end date');
-    }
+    const startDate =
+      dto.startDate !== undefined
+        ? this.parseDate(dto.startDate, 'start date')
+        : leaveRequest.startDate;
+    const endDate =
+      dto.endDate !== undefined
+        ? this.parseDate(dto.endDate, 'end date')
+        : leaveRequest.endDate;
+    this.assertValidDateRange(startDate, endDate);
+    this.assertValidTimeRange(
+      dto.startTime ?? leaveRequest.startTime,
+      dto.endTime ?? leaveRequest.endTime,
+    );
 
-    const startDate = updateData.startDate as Date | undefined;
-    const endDate = updateData.endDate as Date | undefined;
-    if (startDate && endDate && endDate < startDate) {
-      throw new BadRequestException('End date must be after start date');
-    }
+    if (dto.startDate !== undefined) updateData.startDate = startDate;
+    if (dto.endDate !== undefined) updateData.endDate = endDate;
+    if (dto.recurrence !== undefined) updateData.recurrence = dto.recurrence;
+    if (dto.startTime !== undefined) updateData.startTime = dto.startTime;
+    if (dto.endTime !== undefined) updateData.endTime = dto.endTime;
   }
 
   private applyReasonUpdate(
@@ -244,11 +298,12 @@ export class LeaveRequestService {
     }
   }
 
-  private async ensureLeaveExists(id: string): Promise<void> {
-    const leaveRequest = await this.repository.exists(id);
+  private async ensureLeaveExists(id: string): Promise<LeaveDocument> {
+    const leaveRequest = await this.repository.findRawById(id);
     if (!leaveRequest) {
       throw new NotFoundException('Leave request not found');
     }
+    return leaveRequest;
   }
 
   private validateObjectId(id: string, label: string): void {
@@ -257,13 +312,25 @@ export class LeaveRequestService {
     }
   }
 
-  private parseDate(value: Date, label: string): Date {
+  private parseDate(value: Date | string, label: string): Date {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) {
       throw new BadRequestException(`Invalid ${label} format`);
     }
 
     return date;
+  }
+
+  private assertValidDateRange(startDate?: Date, endDate?: Date): void {
+    if (startDate && endDate && endDate < startDate) {
+      throw new BadRequestException('End date must be after start date');
+    }
+  }
+
+  private assertValidTimeRange(startTime?: string, endTime?: string): void {
+    if (!isValidTimeRange(startTime, endTime)) {
+      throw new BadRequestException('End time must be after start time');
+    }
   }
 
   private async updateAndPopulate(

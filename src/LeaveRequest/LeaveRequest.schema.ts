@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 import { User } from '../user/schemas/user.schema';
+import { TIME_PATTERN } from '../common/constants/time.constants';
 
 export type LeaveDocument = HydratedDocument<Leave>;
 
@@ -8,6 +9,11 @@ export enum LeaveStatus {
   PENDING = 'pending',
   APPROVED = 'approved',
   REJECTED = 'rejected',
+}
+
+export enum LeaveRecurrence {
+  DAILY = 'daily',
+  WEEKLY = 'weekly',
 }
 
 @Schema({
@@ -22,14 +28,32 @@ export class Leave {
   user: Types.ObjectId;
 
   @Prop({
+    type: Date,
     required: true,
+    index: true,
   })
-  startDate: string;
+  startDate: Date;
 
   @Prop({
+    type: Date,
     required: true,
+    index: true,
   })
-  endDate: string;
+  endDate: Date;
+
+  @Prop({
+    type: String,
+    enum: LeaveRecurrence,
+    required: true,
+    index: true,
+  })
+  recurrence: LeaveRecurrence;
+
+  @Prop({ type: String, match: TIME_PATTERN })
+  startTime?: string;
+
+  @Prop({ type: String, match: TIME_PATTERN })
+  endTime?: string;
 
   @Prop({
     trim: true,
@@ -60,3 +84,5 @@ export class Leave {
 }
 
 export const LeaveSchema = SchemaFactory.createForClass(Leave);
+
+LeaveSchema.index({ recurrence: 1, startDate: 1, endDate: 1 });

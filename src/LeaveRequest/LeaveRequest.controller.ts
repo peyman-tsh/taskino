@@ -22,6 +22,7 @@ import {
   ApiQuery,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+import { QueryLeaveRequestDto } from './dto/query-leave-request.dto';
 
 @ApiTags('Leave Requests')
 @ApiBearerAuth()
@@ -85,6 +86,20 @@ export class LeaveRequestController {
     @Query('approvedBy') approvedBy?: string,
   ) {
     return this.leaveRequestService.findAll(page, limit, { user, status, approvedBy });
+  }
+
+  @Get('filter')
+  @ApiOperation({
+    summary: 'Filter leave requests by recurrence, date, and time range',
+    description:
+      'Returns leave requests overlapping the requested date and time range. Recurrence can be daily or weekly.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Filtered leave requests retrieved successfully',
+  })
+  filter(@Query() query: QueryLeaveRequestDto) {
+    return this.leaveRequestService.filter(query);
   }
 
   @Get(':id')
