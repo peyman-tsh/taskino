@@ -1,227 +1,45 @@
-import {
-  BadRequestException,
-  ForbiddenException,
-} from '@nestjs/common';
-import { Types } from 'mongoose';
-import { FixedTaskRepository } from '../repositories/fixed-task.repository';
-import {
-  FixedTaskRecurrence,
-  FixedTaskStatus,
-  FixedTaskTemplateDocument,
-} from '../fixed-task.schema';
-import { FixedTaskPolicyService } from './fixed-task-policy.service';
-import { FixedTaskScoreService } from './fixed-task-score.service';
+import { FixedTaskCreationService } from './fixed-task-creation.service';
+import { FixedTaskDeleteService } from './fixed-task-delete.service';
+import { FixedTaskQueryService } from './fixed-task-query.service';
 import { FixedTaskService } from './fixed-task.service';
-import { FixedTaskNotificationService } from './fixed-task-notification.service';
+import { FixedTaskUpdateService } from './fixed-task-update.service';
+import { FixedTaskScoreService } from './fixed-task-score.service';
 
 describe('FixedTaskService', () => {
-  const assigneeId = new Types.ObjectId();
-  const creatorId = new Types.ObjectId();
-  const templateId = new Types.ObjectId();
-  const repository = {
-    create: jest.fn(),
-    findRawById: jest.fn(),
-    updateById: jest.fn(),
+  const creationService = { create: jest.fn() };
+  const queryService = {
+    findAll: jest.fn(),
     findById: jest.fn(),
-    findPaginated: jest.fn(),
-    count: jest.fn(),
+    getStatusCounts: jest.fn(),
+    findActiveTemplates: jest.fn(),
   };
-  const policy = {
-    toObjectId: jest.fn((id: string) => new Types.ObjectId(id)),
-    validateParticipants: jest.fn(),
-    parseDate: jest.fn((value: string) => new Date(value)),
-    assertValidDateRange: jest.fn(),
-  };
-  const scoreService = {
-    adjustTaskScore: jest.fn(),
-    adjustOverdueTasks: jest.fn(),
-    getNextDeadline: jest.fn(() => new Date()),
-  };
-  const notificationService = {
-    notifyAssigned: jest.fn(),
-    notifyCreatorWhenCompleted: jest.fn(),
-  };
+  const updateService = { update: jest.fn() };
+  const deleteService = { delete: jest.fn() };
+  const scoreService = { adjustOverdueTasks: jest.fn() };
   const service = new FixedTaskService(
-    repository as unknown as FixedTaskRepository,
-    policy as unknown as FixedTaskPolicyService,
+    creationService as unknown as FixedTaskCreationService,
+    queryService as unknown as FixedTaskQueryService,
+    updateService as unknown as FixedTaskUpdateService,
+    deleteService as unknown as FixedTaskDeleteService,
     scoreService as unknown as FixedTaskScoreService,
-    notificationService as unknown as FixedTaskNotificationService,
   );
 
-  beforeEach(() => {
-    jest.clearAllMocks();
+  it('delegates commands and queries to focused services', async () => {
+    service.create('creator-id', {} as never);
+    await service.findAll({} as never);
+    service.findById('fixed-id');
+    service.getStatusCounts();
+    service.update('fixed-id', 'requester-id', {} as never);
+    service.delete('fixed-id');
+    service.findActiveTemplates();
+
+    expect(creationService.create).toHaveBeenCalled();
+    expect(queryService.findAll).toHaveBeenCalled();
+    expect(scoreService.adjustOverdueTasks).toHaveBeenCalled();
+    expect(queryService.findById).toHaveBeenCalled();
+    expect(queryService.getStatusCounts).toHaveBeenCalled();
+    expect(updateService.update).toHaveBeenCalled();
+    expect(deleteService.delete).toHaveBeenCalled();
+    expect(queryService.findActiveTemplates).toHaveBeenCalled();
   });
-
-  it('rejects creating a fixed task with done status', async () => {
-    await expect(
-      service.create(creatorId.toString(), {
-        title: 'Daily report',
-        assignedTo: assigneeId.toString(),
-        recurrence: FixedTaskRecurrence.DAILY,
-        status: FixedTaskStatus.DONE,
-      }),
-    ).rejects.toBeInstanceOf(BadRequestException);
-
-    expect(repository.create).not.toHaveBeenCalled();
-  });
-
-  it('stores and validates startDate and endDate when creating', async () => {
-    const startDate = '2026-06-14T09:00:00.000Z';
-    const endDate = '2026-06-14T17:00:00.000Z';
-    repository.create.mockResolvedValue(createTemplate());
-    repository.findById.mockResolvedValue(createTemplate());
-
-    await service.create(creatorId.toString(), {
-      title: 'Daily report',
-      assignedTo: assigneeId.toString(),
-      recurrence: FixedTaskRecurrence.DAILY,
-      startDate,
-      endDate,
-    });
-
-    expect(policy.assertValidDateRange).toHaveBeenCalledWith(
-      new Date(startDate),
-      new Date(endDate),
-    );
-    expect(repository.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
-      }),
-    );
-  });
-
-  it('allows equal startTime and endTime across different dates', async () => {
-    const startDate = '2026-06-15T12:47:28.468Z';
-    const endDate = '2026-06-16T12:47:30.501Z';
-    repository.create.mockResolvedValue(createTemplate());
-    repository.findById.mockResolvedValue(createTemplate());
-
-    await service.create(creatorId.toString(), {
-      title: 'Weekly task',
-      assignedTo: assigneeId.toString(),
-      recurrence: FixedTaskRecurrence.WEEKLY,
-      startDate,
-      endDate,
-      startTime: '16:17',
-      endTime: '16:17',
-    });
-
-    expect(repository.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        startTime: '16:17',
-        endTime: '16:17',
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
-      }),
-    );
-  });
-
-  it('filters fixed tasks that overlap the requested date range', async () => {
-    const startDate = '2026-06-01T00:00:00.000Z';
-    const endDate = '2026-06-30T23:59:59.000Z';
-    repository.findPaginated.mockResolvedValue({ data: [], total: 0 });
-
-    await service.findAll({
-      page: 1,
-      limit: 10,
-      status: FixedTaskStatus.IN_PROGRESS,
-      startDate,
-      endDate,
-    });
-
-    expect(policy.assertValidDateRange).toHaveBeenCalledWith(
-      new Date(startDate),
-      new Date(endDate),
-    );
-    expect(repository.findPaginated).toHaveBeenCalledWith(
-      {
-        status: FixedTaskStatus.IN_PROGRESS,
-        endDate: { $gte: new Date(startDate) },
-        startDate: { $lte: new Date(endDate) },
-      },
-      1,
-      10,
-    );
-  });
-
-  it('returns fixed task counts grouped by status', async () => {
-    repository.count
-      .mockResolvedValueOnce(10)
-      .mockResolvedValueOnce(3)
-      .mockResolvedValueOnce(2)
-      .mockResolvedValueOnce(5);
-
-    await expect(service.getStatusCounts()).resolves.toEqual({
-      totalFixedTasks: 10,
-      todoFixedTasks: 3,
-      inProgressFixedTasks: 2,
-      doneFixedTasks: 5,
-    });
-
-    expect(repository.count).toHaveBeenNthCalledWith(1, {});
-    expect(repository.count).toHaveBeenNthCalledWith(2, {
-      status: FixedTaskStatus.TODO,
-    });
-    expect(repository.count).toHaveBeenNthCalledWith(3, {
-      status: FixedTaskStatus.IN_PROGRESS,
-    });
-    expect(repository.count).toHaveBeenNthCalledWith(4, {
-      status: FixedTaskStatus.DONE,
-    });
-  });
-
-  it('scores when the assignee updates status to done', async () => {
-    const template = createTemplate();
-    const updatedTemplate = {
-      ...template,
-      status: FixedTaskStatus.DONE,
-      doneTime: new Date(),
-    } as FixedTaskTemplateDocument;
-    repository.findRawById.mockResolvedValue(template);
-    repository.updateById.mockResolvedValue(updatedTemplate);
-    repository.findById.mockResolvedValue(updatedTemplate);
-
-    await service.update(templateId.toString(), assigneeId.toString(), {
-      status: FixedTaskStatus.DONE,
-    });
-
-    expect(scoreService.adjustTaskScore).toHaveBeenCalledWith(updatedTemplate);
-    expect(notificationService.notifyCreatorWhenCompleted).toHaveBeenCalledWith(
-      creatorId.toString(),
-      templateId.toString(),
-      updatedTemplate.title,
-    );
-  });
-
-  it('prevents the assignee from editing fixed task fields', async () => {
-    repository.findRawById.mockResolvedValue(createTemplate());
-
-    await expect(
-      service.update(templateId.toString(), assigneeId.toString(), {
-        title: 'Changed title',
-      }),
-    ).rejects.toBeInstanceOf(ForbiddenException);
-  });
-
-  it('prevents non-assignees from updating status', async () => {
-    repository.findRawById.mockResolvedValue(createTemplate());
-
-    await expect(
-      service.update(templateId.toString(), creatorId.toString(), {
-        status: FixedTaskStatus.DONE,
-      }),
-    ).rejects.toBeInstanceOf(ForbiddenException);
-  });
-
-  function createTemplate(): FixedTaskTemplateDocument {
-    return {
-      _id: templateId,
-      title: 'Daily report',
-      assignedTo: assigneeId,
-      createdBy: creatorId,
-      recurrence: FixedTaskRecurrence.DAILY,
-      status: FixedTaskStatus.TODO,
-    } as FixedTaskTemplateDocument;
-  }
 });

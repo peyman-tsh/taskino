@@ -14,6 +14,11 @@ import { FixedTaskSeedService } from './services/fixed-task-seed.service';
 import { FixedTaskScoreService } from './services/fixed-task-score.service';
 import { SpecialistFixedTaskQueryService } from './services/specialist-fixed-task-query.service';
 import { FixedTaskNotificationService } from './services/fixed-task-notification.service';
+import { FixedTaskCreationService } from './services/fixed-task-creation.service';
+import { FixedTaskQueryService } from './services/fixed-task-query.service';
+import { FixedTaskUpdateService } from './services/fixed-task-update.service';
+import { FixedTaskDeleteService } from './services/fixed-task-delete.service';
+import { FixedTaskDeadlineService } from './services/fixed-task-deadline.service';
 
 @Module({
   imports: [
@@ -32,6 +37,11 @@ import { FixedTaskNotificationService } from './services/fixed-task-notification
     FixedTaskScoreService,
     SpecialistFixedTaskQueryService,
     FixedTaskNotificationService,
+    FixedTaskCreationService,
+    FixedTaskQueryService,
+    FixedTaskUpdateService,
+    FixedTaskDeleteService,
+    FixedTaskDeadlineService,
   ],
   exports: [FixedTaskService],
 })

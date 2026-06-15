@@ -2,16 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import {
-  FixedTaskStatus,
+  FixedTaskRecurrence,
   FixedTaskTemplate,
   FixedTaskTemplateDocument,
 } from '../../fixedTask/fixed-task.schema';
-import {
-  Task,
-  TaskDocument,
-  TaskRecurrence,
-  TaskStatus,
-} from '../../task/task.schema';
+import { Task, TaskDocument } from '../../task/task.schema';
 import {
   SupervisorFixedTasksQueryDto,
   SupervisorTasksQueryDto,
@@ -26,122 +21,20 @@ export class SupervisorWorkRepository {
     private readonly fixedTaskModel: Model<FixedTaskTemplateDocument>,
   ) {}
 
-  countSupervisedTasks(supervisorId: Types.ObjectId, recurrence?: TaskRecurrence) {
-    return this.taskModel
-      .countDocuments(this.taskFilter({ createdBy: supervisorId }, recurrence))
-      .exec();
-  }
-
-  countSupervisedFixedTasks(
-    supervisorId: Types.ObjectId,
-    recurrence?: TaskRecurrence,
-  ) {
-    return this.fixedTaskModel
-      .countDocuments(this.fixedTaskFilter({ createdBy: supervisorId }, recurrence))
-      .exec();
-  }
-
-  countSupervisedInProgressTasks(
-    supervisorId: Types.ObjectId,
-    recurrence?: TaskRecurrence,
-  ) {
-    return this.taskModel
-      .countDocuments(
-        this.taskFilter(
-          { createdBy: supervisorId, status: TaskStatus.IN_PROGRESS },
-          recurrence,
-        ),
-      )
-      .exec();
-  }
-
-  countSupervisedInProgressFixedTasks(
-    supervisorId: Types.ObjectId,
-    recurrence?: TaskRecurrence,
-  ) {
-    return this.fixedTaskModel
-      .countDocuments(
-        this.fixedTaskFilter(
-          { createdBy: supervisorId, status: FixedTaskStatus.IN_PROGRESS },
-          recurrence,
-        ),
-      )
-      .exec();
-  }
-
-  countMyInProgressTasks(supervisorId: Types.ObjectId, recurrence?: TaskRecurrence) {
-    return this.taskModel
-      .countDocuments(
-        this.taskFilter(
-          { assignedTo: supervisorId, status: TaskStatus.IN_PROGRESS },
-          recurrence,
-        ),
-      )
-      .exec();
-  }
-
-  countMyInProgressFixedTasks(
-    supervisorId: Types.ObjectId,
-    recurrence?: TaskRecurrence,
-  ) {
-    return this.fixedTaskModel
-      .countDocuments(
-        this.fixedTaskFilter(
-          { assignedTo: supervisorId, status: FixedTaskStatus.IN_PROGRESS },
-          recurrence,
-        ),
-      )
-      .exec();
-  }
-
-  countMySuccessfulTasks(supervisorId: Types.ObjectId, recurrence?: TaskRecurrence) {
-    return this.taskModel
-      .countDocuments(
-        this.taskFilter(
-          { assignedTo: supervisorId, status: TaskStatus.DONE },
-          recurrence,
-        ),
-      )
-      .exec();
-  }
-
-  countMyOnTimeSuccessfulTasks(
-    supervisorId: Types.ObjectId,
-    recurrence?: TaskRecurrence,
-  ) {
-    return this.taskModel
-      .countDocuments(
-        this.taskFilter(
-          {
-            assignedTo: supervisorId,
-            status: TaskStatus.DONE,
-            doneTime: { $type: 'date' },
-            dueDate: { $type: 'date' },
-            $expr: { $lt: ['$doneTime', '$dueDate'] },
-          },
-          recurrence,
-        ),
-      )
-      .exec();
-  }
-
   async findSupervisedTasks(
     supervisorId: Types.ObjectId,
     query: SupervisorTasksQueryDto,
   ) {
-    const filter = this.taskFilter(
-      {
-        createdBy: supervisorId,
-        ...(query.status ? { status: query.status } : {}),
-      },
-      query.recurrence,
-    );
-    const skip = (query.page - 1) * query.limit;
+    const filter: Record<string, unknown> = {
+      createdBy: supervisorId,
+      ...(query.status ? { status: query.status } : {}),
+      ...(query.recurrence ? { recurrence: query.recurrence } : {}),
+    };
     const [data, total] = await Promise.all([
       this.taskModel
         .find(filter)
         .sort({ createdAt: -1 })
-        .skip(skip)
+        .skip(this.getSkip(query.page, query.limit))
         .limit(query.limit)
         .populate('assignedTo', 'firstName lastName email roles workField')
         .populate('excelFile', 'fileName originalName status type')
@@ -156,20 +49,21 @@ export class SupervisorWorkRepository {
     supervisorId: Types.ObjectId,
     query: SupervisorFixedTasksQueryDto,
   ) {
-    const filter = this.fixedTaskFilter(
-      {
-        createdBy: supervisorId,
-        ...(query.status ? { status: query.status } : {}),
-        ...(query.isActive !== undefined ? { isActive: query.isActive } : {}),
-      },
-      query.recurrence,
-    );
-    const skip = (query.page - 1) * query.limit;
+    const filter: Record<string, unknown> = {
+      createdBy: supervisorId,
+      ...(query.status ? { status: query.status } : {}),
+      ...(query.isActive !== undefined ? { isActive: query.isActive } : {}),
+      ...(query.recurrence
+        ? {
+            recurrence: query.recurrence as unknown as FixedTaskRecurrence,
+          }
+        : {}),
+    };
     const [data, total] = await Promise.all([
       this.fixedTaskModel
         .find(filter)
         .sort({ createdAt: -1 })
-        .skip(skip)
+        .skip(this.getSkip(query.page, query.limit))
         .limit(query.limit)
         .populate('assignedTo', 'firstName lastName email roles workField')
         .exec(),
@@ -179,17 +73,7 @@ export class SupervisorWorkRepository {
     return { data, total, page: query.page, limit: query.limit };
   }
 
-  private taskFilter(
-    base: Record<string, unknown>,
-    recurrence?: TaskRecurrence,
-  ): Record<string, unknown> {
-    return recurrence ? { ...base, recurrence } : base;
-  }
-
-  private fixedTaskFilter(
-    base: Record<string, unknown>,
-    recurrence?: TaskRecurrence,
-  ): Record<string, unknown> {
-    return recurrence ? { ...base, recurrence } : base;
+  private getSkip(page: number, limit: number): number {
+    return (page - 1) * limit;
   }
 }

@@ -13,6 +13,9 @@ import { SupervisorController } from './supervisor.controller';
 import { User, UserSchema } from '../user/schemas/user.schema';
 import { SupervisorMemberRepository } from './repositories/supervisor-member.repository';
 import { SupervisorMemberService } from './services/supervisor-member.service';
+import { SupervisorStatisticsRepository } from './repositories/supervisor-statistics.repository';
+import { SupervisorWorkService } from './services/supervisor-work.service';
+import { SupervisorMemberWorkRepository } from './repositories/supervisor-member-work.repository';
 
 @Module({
   imports: [
@@ -30,6 +33,9 @@ import { SupervisorMemberService } from './services/supervisor-member.service';
     SupervisorWorkRepository,
     SupervisorMemberRepository,
     SupervisorMemberService,
+    SupervisorStatisticsRepository,
+    SupervisorWorkService,
+    SupervisorMemberWorkRepository,
   ],
 })
 export class SupervisorModule {}

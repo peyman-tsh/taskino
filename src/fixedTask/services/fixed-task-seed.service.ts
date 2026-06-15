@@ -10,7 +10,7 @@ import {
   SeedUserData,
 } from '../repositories/fixed-task-seed.repository';
 import { UserRole } from '../../user/schemas/user.schema';
-import { FixedTaskScoreService } from './fixed-task-score.service';
+import { FixedTaskDeadlineService } from './fixed-task-deadline.service';
 
 type ExcelRow = Array<string | number | null>;
 
@@ -69,7 +69,7 @@ export class FixedTaskSeedService {
   constructor(
     private readonly repository: FixedTaskSeedRepository,
     private readonly configService: ConfigService,
-    private readonly scoreService: FixedTaskScoreService,
+    private readonly deadlineService: FixedTaskDeadlineService,
   ) {}
 
   async seed(sourcePath = FIXED_TASK_SEED_EXCEL_PATH) {
@@ -128,7 +128,7 @@ export class FixedTaskSeedService {
             title: String(values[2]).trim(),
             recurrence,
             description: this.createDescription(values),
-            nextRunAt: this.scoreService.getNextDeadline(recurrence),
+            nextRunAt: this.deadlineService.getNextDeadline(recurrence),
             sourceExcel: basename(sourcePath),
             sourceSheet: sheetName,
             sourceRow,

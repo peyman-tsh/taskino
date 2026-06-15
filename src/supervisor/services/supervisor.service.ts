@@ -6,17 +6,15 @@ import {
   SupervisorTasksQueryDto,
 } from '../dto/supervisor-query.dto';
 import { SupervisorStatisticsService } from './supervisor-statistics.service';
-import { SupervisorPolicyService } from './supervisor-policy.service';
-import { SupervisorWorkRepository } from '../repositories/supervisor-work.repository';
 import { SupervisorMemberService } from './supervisor-member.service';
+import { SupervisorWorkService } from './supervisor-work.service';
 
 @Injectable()
 export class SupervisorService {
   constructor(
     private readonly statisticsService: SupervisorStatisticsService,
-    private readonly policy: SupervisorPolicyService,
-    private readonly repository: SupervisorWorkRepository,
     private readonly memberService: SupervisorMemberService,
+    private readonly workService: SupervisorWorkService,
   ) {}
 
   getStatistics(supervisorId: string, query: SupervisorRecurrenceQueryDto) {
@@ -24,20 +22,14 @@ export class SupervisorService {
   }
 
   findSupervisedTasks(supervisorId: string, query: SupervisorTasksQueryDto) {
-    return this.repository.findSupervisedTasks(
-      this.policy.toObjectId(supervisorId),
-      query,
-    );
+    return this.workService.findSupervisedTasks(supervisorId, query);
   }
 
   findSupervisedFixedTasks(
     supervisorId: string,
     query: SupervisorFixedTasksQueryDto,
   ) {
-    return this.repository.findSupervisedFixedTasks(
-      this.policy.toObjectId(supervisorId),
-      query,
-    );
+    return this.workService.findSupervisedFixedTasks(supervisorId, query);
   }
 
   findMembers(supervisorId: string, query: SupervisorPaginationQueryDto) {

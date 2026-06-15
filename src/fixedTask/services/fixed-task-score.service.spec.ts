@@ -7,6 +7,7 @@ import {
   FixedTaskTemplateDocument,
 } from '../fixed-task.schema';
 import { FixedTaskScoreService } from './fixed-task-score.service';
+import { FixedTaskDeadlineService } from './fixed-task-deadline.service';
 
 describe('FixedTaskScoreService', () => {
   const repository = {
@@ -16,9 +17,21 @@ describe('FixedTaskScoreService', () => {
   const userService = {
     adjustSpecialistScore: jest.fn(),
   };
+  const deadlineService = {
+    getScoreDeadline: jest.fn((task: FixedTaskTemplateDocument) => {
+      if (!task.endDate) return null;
+      const deadline = new Date(task.endDate);
+      if (task.endTime) {
+        const [hours, minutes] = task.endTime.split(':').map(Number);
+        deadline.setHours(hours, minutes, 0, 0);
+      }
+      return deadline;
+    }),
+  };
   const service = new FixedTaskScoreService(
     repository as unknown as FixedTaskRepository,
     userService as unknown as UserService,
+    deadlineService as unknown as FixedTaskDeadlineService,
   );
   const userId = new Types.ObjectId();
 
@@ -101,18 +114,6 @@ describe('FixedTaskScoreService', () => {
     await service.adjustTaskScore(task);
 
     expect(userService.adjustSpecialistScore).not.toHaveBeenCalled();
-  });
-
-  it('creates a daily deadline using the scheduled endTime', () => {
-    const now = new Date(2026, 5, 12, 10, 0);
-
-    const deadline = service.getNextDeadline(
-      FixedTaskRecurrence.DAILY,
-      '14:30',
-      now,
-    );
-
-    expect(deadline).toEqual(new Date(2026, 5, 12, 14, 30));
   });
 
   function createTask(

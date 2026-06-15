@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { TaskRecurrence } from '../../task/task.schema';
 import { SupervisorPolicyService } from './supervisor-policy.service';
-import { SupervisorWorkRepository } from '../repositories/supervisor-work.repository';
+import { SupervisorStatisticsRepository } from '../repositories/supervisor-statistics.repository';
 
 @Injectable()
 export class SupervisorStatisticsService {
   constructor(
-    private readonly repository: SupervisorWorkRepository,
+    private readonly repository: SupervisorStatisticsRepository,
     private readonly policy: SupervisorPolicyService,
   ) {}
 

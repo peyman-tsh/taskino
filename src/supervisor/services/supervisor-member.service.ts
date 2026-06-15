@@ -3,11 +3,13 @@ import { SupervisorPaginationQueryDto } from '../dto/supervisor-query.dto';
 import { SupervisorPolicyService } from './supervisor-policy.service';
 import { SupervisorMemberRepository } from '../repositories/supervisor-member.repository';
 import { SupervisorMemberWorkCounts } from './supervisor-member.types';
+import { SupervisorMemberWorkRepository } from '../repositories/supervisor-member-work.repository';
 
 @Injectable()
 export class SupervisorMemberService {
   constructor(
     private readonly repository: SupervisorMemberRepository,
+    private readonly workRepository: SupervisorMemberWorkRepository,
     private readonly policy: SupervisorPolicyService,
   ) {}
 
@@ -16,18 +18,25 @@ export class SupervisorMemberService {
     query: SupervisorPaginationQueryDto,
   ) {
     const objectId = this.policy.toObjectId(supervisorId);
-    const { members, total } = await this.repository.findMembers(
+    const memberIds = await this.workRepository.findMemberIds(
       objectId,
       query.recurrence,
+    );
+    const { members, total } = await this.repository.findMembersByIds(
+      memberIds,
       query.page,
       query.limit,
     );
-    const memberIds = members.map((member) => member._id);
+    const paginatedMemberIds = members.map((member) => member._id);
     const [taskCounts, fixedTaskCounts] = await Promise.all([
-      this.repository.countMemberTasks(objectId, memberIds, query.recurrence),
-      this.repository.countMemberFixedTasks(
+      this.workRepository.countMemberTasks(
         objectId,
-        memberIds,
+        paginatedMemberIds,
+        query.recurrence,
+      ),
+      this.workRepository.countMemberFixedTasks(
+        objectId,
+        paginatedMemberIds,
         query.recurrence,
       ),
     ]);
