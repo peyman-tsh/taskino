@@ -3,17 +3,18 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Types } from 'mongoose';
 import {
   LeaveDocument,
   LeaveStatus,
 } from '../LeaveRequest.schema';
 import { LeaveRequestRepository } from '../repositories/leave-request.repository';
+import { LeaveRequestPolicyService } from './leave-request-policy.service';
 
 @Injectable()
 export class LeaveRequestWorkflowService {
   constructor(
     private readonly repository: LeaveRequestRepository,
+    private readonly policy: LeaveRequestPolicyService,
   ) {}
 
   approve(id: string, approvedBy: string): Promise<LeaveDocument> {
@@ -50,8 +51,8 @@ export class LeaveRequestWorkflowService {
     rejectionReason?: string,
     additionalUpdates: Record<string, unknown> = {},
   ): Promise<LeaveDocument> {
-    this.validateId(id, 'leave request ID');
-    this.validateId(approvedBy, 'approver user ID');
+    this.policy.toObjectId(id, 'leave request ID');
+    const approverId = this.policy.toObjectId(approvedBy, 'approver user ID');
 
     const leaveRequest = await this.repository.findRawById(id);
     if (!leaveRequest) {
@@ -63,7 +64,7 @@ export class LeaveRequestWorkflowService {
 
     const updatedLeave = await this.repository.updateById(id, {
       status,
-      approvedBy: new Types.ObjectId(approvedBy),
+      approvedBy: approverId,
       approvedAt: new Date(),
       ...(rejectionReason ? { rejectionReason } : {}),
       ...additionalUpdates,
@@ -74,11 +75,5 @@ export class LeaveRequestWorkflowService {
     }
 
     return updatedLeave;
-  }
-
-  private validateId(id: string, label: string): void {
-    if (!Types.ObjectId.isValid(id)) {
-      throw new BadRequestException(`Invalid ${label}`);
-    }
   }
 }
