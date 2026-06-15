@@ -61,6 +61,9 @@ export class Task {
   @Prop({ type: Boolean, default: false })
   isPublic: boolean;
 
+  @Prop({ type: Boolean, default: false, index: true })
+  isExtraTask: boolean;
+
   @Prop({ type: Date })
   startDate?: Date;
 

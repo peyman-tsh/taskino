@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { ExcelFile, ExcelType } from '../../excel/excel.schema';
 import { ExcelService } from '../../excel/services/excel.service';
+import { CreateExtraTaskDto } from '../dto/create-extra-task.dto';
 import { CreateTaskDto } from '../dto/create-task.dto';
 import {
   TaskCreateData,
@@ -45,6 +46,30 @@ export class TaskCreationService {
     await this.runPostCreationActions(task, assignedTo);
 
     return excelUpload ? { task, excelUpload } : task;
+  }
+
+  async createExtraTask(
+    dto: CreateExtraTaskDto,
+    specialistId: string,
+  ): Promise<TaskDocument> {
+    this.policy.validateObjectId(specialistId);
+    await this.policy.assertSpecialist(specialistId);
+
+    const assignedTo = [specialistId];
+    const taskData = this.buildTaskData(
+      {
+        ...dto,
+        createdBy: specialistId,
+        assignedTo,
+        status: TaskStatus.TODO,
+      },
+      assignedTo,
+    );
+    taskData.isExtraTask = true;
+
+    const task = await this.repository.create(taskData);
+    await this.runPostCreationActions(task, assignedTo);
+    return task;
   }
 
   private async validateParticipants(dto: CreateTaskDto): Promise<string[]> {

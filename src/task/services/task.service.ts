@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { CreateExtraTaskDto } from '../dto/create-extra-task.dto';
 import { CreateTaskDto } from '../dto/create-task.dto';
 import { UpdateTaskDto } from '../dto/update-task.dto';
 import { TaskCompletionStatsDto } from '../dto/task-count.dto';
@@ -39,6 +40,13 @@ export class TaskService {
     file?: Express.Multer.File,
   ): Promise<TaskCreationResult> {
     return this.taskCreationService.create(createTaskDto, file);
+  }
+
+  createExtraTask(
+    createTaskDto: CreateExtraTaskDto,
+    specialistId: string,
+  ): Promise<TaskDocument> {
+    return this.taskCreationService.createExtraTask(createTaskDto, specialistId);
   }
 
   /**

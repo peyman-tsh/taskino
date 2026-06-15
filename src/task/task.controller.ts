@@ -16,6 +16,7 @@ import {
   Request,
 } from '@nestjs/common';
 import { TaskService } from './services/task.service';
+import { CreateExtraTaskDto } from './dto/create-extra-task.dto';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TaskCompletionStatsDto } from './dto/task-count.dto';
@@ -92,6 +93,34 @@ export class TaskController {
       },
       file,
     );
+  }
+
+  @Post('extra')
+  @Roles(UserRole.SPECIALIST)
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Create an extra task for the current specialist',
+    description:
+      'Creates an extra task owned and assigned to the current specialist. It does not accept an Excel file or another assignee.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Extra task created successfully',
+    type: TaskResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Validation failed' })
+  createExtraTask(
+    @Body(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      }),
+    )
+    createTaskDto: CreateExtraTaskDto,
+    @CurrentUserId() specialistId: string,
+  ) {
+    return this.taskService.createExtraTask(createTaskDto, specialistId);
   }
 
   @Get()
@@ -247,7 +276,7 @@ export class TaskController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.MANAGER)
+  @Roles(UserRole.MANAGER, UserRole.SUPERVISOR, UserRole.SPECIALIST)
   @ApiOperation({
     summary: 'Update task',
     description: 'Updates an existing task by its ID',

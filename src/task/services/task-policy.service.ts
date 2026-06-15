@@ -92,6 +92,18 @@ export class TaskPolicyService {
     }
   }
 
+  async assertSpecialist(userId: string): Promise<void> {
+    const [participant] = await this.userService.findTaskParticipantsByIds([
+      userId,
+    ]);
+
+    if (!participant || participant.role !== UserRole.SPECIALIST) {
+      throw new BadRequestException(
+        'Only a specialist can create an extra task',
+      );
+    }
+  }
+
   findUserByName(firstName: string, lastName: string) {
     return this.userService.findByName(firstName, lastName);
   }

@@ -32,6 +32,9 @@ export class TaskResponseDto {
   @ApiProperty()
   isPublic: boolean;
 
+  @ApiProperty()
+  isExtraTask: boolean;
+
   @ApiPropertyOptional({
     type: String,
     format: 'date-time',
