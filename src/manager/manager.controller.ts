@@ -39,6 +39,8 @@ import { ManagerTasksQueryDto } from './dto/manager-tasks-query.dto';
 import { FindUserByNameQueryDto } from './dto/find-user-by-name-query.dto';
 import { PaginationQueryDto } from './dto/pagination-query.dto';
 import { CurrentUserId } from '../auth/decorators/current-user-id.decorator';
+import { AdjustSpecialistScoreDto } from './dto/adjust-specialist-score.dto';
+import { ManagerUserScoreService } from './services/manager-user-score.service';
 
 @ApiTags('Manager')
 @ApiBearerAuth()
@@ -46,7 +48,10 @@ import { CurrentUserId } from '../auth/decorators/current-user-id.decorator';
 @Roles(UserRole.MANAGER)
 @Controller('manager')
 export class ManagerController {
-  constructor(private readonly managerService: ManagerService) {}
+  constructor(
+    private readonly managerService: ManagerService,
+    private readonly managerUserScoreService: ManagerUserScoreService,
+  ) {}
 
   @Get('statistics')
   @ApiOperation({ summary: 'Get manager dashboard statistics' })
@@ -86,6 +91,26 @@ export class ManagerController {
     @Body() dto: UpdateUserRoleDto,
   ) {
     return this.managerService.updateUserRole(params.id, dto.role);
+  }
+
+  @Patch('users/:id/score')
+  @ApiOperation({
+    summary: 'Manually adjust a specialist score',
+    description:
+      'Adds or subtracts a score selected by the manager. This operation is separate from automatic task scoring, and the final score cannot be less than zero.',
+  })
+  @ApiParam({ name: 'id', description: 'Specialist user ID' })
+  @ApiOkResponse({ type: UserResponseDto })
+  @ApiBadRequestResponse({ description: 'Score must be a non-zero integer' })
+  @ApiNotFoundResponse({ description: 'Specialist user not found' })
+  adjustSpecialistScore(
+    @Param() params: MongoIdParamDto,
+    @Body() dto: AdjustSpecialistScoreDto,
+  ) {
+    return this.managerUserScoreService.adjustSpecialistScore(
+      params.id,
+      dto.score,
+    );
   }
 
   @Get('tasks/status')

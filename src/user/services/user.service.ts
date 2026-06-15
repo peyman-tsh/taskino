@@ -274,4 +274,24 @@ export class UserService {
     );
     return Boolean(user);
   }
+
+  async adjustSpecialistScoreManually(
+    userId: string,
+    score: number,
+  ): Promise<UserDocument> {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new NotFoundException('Invalid user ID');
+    }
+
+    const user = await this.userRepository.adjustSpecialistScoreWithFloor(
+      userId,
+      score,
+    );
+
+    if (!user) {
+      throw new NotFoundException('Specialist user not found');
+    }
+
+    return user;
+  }
 }

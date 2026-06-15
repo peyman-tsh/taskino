@@ -16,6 +16,7 @@ import { ManagerTasksRepository } from './repositories/manager-tasks.repository'
 import { ManagerTasksService } from './services/manager-tasks.service';
 import { LeaveRequestModule } from '../LeaveRequest/LeaveRequest.module';
 import { ManagerLeaveRequestService } from './services/manager-leave-request.service';
+import { ManagerUserScoreService } from './services/manager-user-score.service';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { ManagerLeaveRequestService } from './services/manager-leave-request.ser
     ManagerTasksRepository,
     ManagerTasksService,
     ManagerLeaveRequestService,
+    ManagerUserScoreService,
   ],
 })
 export class ManagerModule {}
