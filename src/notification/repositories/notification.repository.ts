@@ -11,8 +11,12 @@ export class NotificationRepository {
     private readonly model: Model<NotificationDocument>,
   ) {}
 
-  create(dto: CreateNotificationDto, user: Types.ObjectId) {
-    return new this.model({ ...dto, user }).save();
+  create(
+    dto: CreateNotificationDto,
+    user: Types.ObjectId,
+    entityId?: Types.ObjectId,
+  ) {
+    return new this.model({ ...dto, user, entityId }).save();
   }
 
   createBulk(documents: Array<Record<string, unknown>>) {

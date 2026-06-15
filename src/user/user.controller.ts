@@ -30,8 +30,10 @@ import { JwtAuthGuard } from 'src/auth/guard/jwt.guard';
 import {
   ApproveUserResponseDto,
   PaginatedUsersResponseDto,
+  SpecialistProgressResponseDto,
   UserResponseDto,
 } from './dto/user-response.dto';
+import { CurrentUserId } from '../auth/decorators/current-user-id.decorator';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -82,6 +84,23 @@ export class UserController {
   })
   findAll(@Query('page') page: number = 1, @Query('limit') limit: number = 10) {
     return this.userService.findAll(Number(page), Number(limit));
+  }
+
+  @Get('me/progress')
+  @Roles(UserRole.SPECIALIST)
+  @ApiOperation({
+    summary: 'Get current specialist progress percentage',
+    description:
+      'Returns progressPercentage for the authenticated specialist only.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Specialist progress retrieved successfully',
+    type: SpecialistProgressResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Specialist user not found' })
+  getMyProgress(@CurrentUserId() userId: string) {
+    return this.userService.getSpecialistProgress(userId);
   }
 
   @Get(':id')

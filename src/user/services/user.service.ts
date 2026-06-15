@@ -110,6 +110,23 @@ export class UserService {
     return this.userRepository.findById(id);
   }
 
+  async getSpecialistProgress(
+    userId: string,
+  ): Promise<{ userId: string; progressPercentage: number }> {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new NotFoundException('Invalid user ID');
+    }
+
+    const progress = await this.userRepository.findSpecialistProgressById(
+      userId,
+    );
+    if (!progress) {
+      throw new NotFoundException('Specialist user not found');
+    }
+
+    return progress;
+  }
+
   /**
    * Find a user by mobile number (with password for authentication)
    */

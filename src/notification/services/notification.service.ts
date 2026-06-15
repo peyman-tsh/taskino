@@ -6,7 +6,10 @@ import {
 import { Types } from 'mongoose';
 import { UserService } from '../../user/services/user.service';
 import { CreateNotificationDto } from '../dto/create-notification.dto';
-import { NotificationDocument } from '../notification.schema';
+import {
+  NotificationDocument,
+  NotificationEntityType,
+} from '../notification.schema';
 import { NotificationTemplateFactory } from '../notification-template.factory';
 import { NotificationRepository } from '../repositories/notification.repository';
 import { WorkField } from '../../common/enums/work-field.enum';
@@ -23,9 +26,12 @@ export class NotificationService {
     notificationDto: CreateNotificationDto,
   ): Promise<NotificationDocument> {
     const userId = this.toObjectId(notificationDto.user, 'user ID');
+    const entityId = notificationDto.entityId
+      ? this.toObjectId(notificationDto.entityId, 'entity ID')
+      : undefined;
     await this.userService.findById(notificationDto.user);
 
-    return this.repository.create(notificationDto, userId);
+    return this.repository.create(notificationDto, userId, entityId);
   }
 
   async createBulk(
@@ -42,6 +48,9 @@ export class NotificationService {
       notifications.map((notification) => ({
         ...notification,
         user: this.toObjectId(notification.user, 'user ID'),
+        entityId: notification.entityId
+          ? this.toObjectId(notification.entityId, 'entity ID')
+          : undefined,
         isRead: notification.isRead ?? false,
       })),
     );
@@ -146,8 +155,15 @@ export class NotificationService {
     taskTitle: string,
     status: string,
   ) {
+    const entityId = this.toObjectId(taskId, 'task ID');
+
     return this.repository.updateMany(
-      { link: `/tasks/${taskId}` },
+      {
+        $or: [
+          { entityType: NotificationEntityType.TASK, entityId },
+          { link: `/tasks/${taskId}` },
+        ],
+      },
       this.templateFactory.taskStatusChanged(taskTitle, status),
     );
   }

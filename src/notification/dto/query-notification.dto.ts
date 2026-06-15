@@ -1,7 +1,20 @@
-import { IsOptional, IsEnum, IsInt, IsString, IsIn, Max, MaxLength, Min } from 'class-validator';
+import {
+  IsEnum,
+  IsIn,
+  IsInt,
+  IsMongoId,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { NotificationType } from '../notification.schema';
+import {
+  NotificationEntityType,
+  NotificationType,
+} from '../notification.schema';
 
 export class QueryNotificationDto {
   @ApiPropertyOptional({ description: 'Page number' })
@@ -34,4 +47,19 @@ export class QueryNotificationDto {
   @IsString()
   @MaxLength(100)
   search?: string;
+
+  @ApiPropertyOptional({
+    enum: NotificationEntityType,
+    description: 'Filter by related entity type',
+  })
+  @IsOptional()
+  @IsEnum(NotificationEntityType)
+  entityType?: NotificationEntityType;
+
+  @ApiPropertyOptional({
+    description: 'Filter by related entity ID',
+  })
+  @IsOptional()
+  @IsMongoId()
+  entityId?: string;
 }

@@ -1,6 +1,9 @@
 import { IsOptional, IsString, IsEnum, IsBoolean, IsMongoId, MaxLength, MinLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { NotificationType } from '../notification.schema';
+import {
+  NotificationEntityType,
+  NotificationType,
+} from '../notification.schema';
 
 export class CreateNotificationDto {
   @ApiProperty({ example: '60d21b4667590e1234567890', description: 'User ID' })
@@ -33,4 +36,20 @@ export class CreateNotificationDto {
   @IsString()
   @MaxLength(500)
   link?: string;
+
+  @ApiPropertyOptional({
+    enum: NotificationEntityType,
+    description: 'Type of the entity related to this notification',
+  })
+  @IsOptional()
+  @IsEnum(NotificationEntityType)
+  entityType?: NotificationEntityType;
+
+  @ApiPropertyOptional({
+    example: '60d21b4667590e1234567890',
+    description: 'ID of the entity related to this notification',
+  })
+  @IsOptional()
+  @IsMongoId()
+  entityId?: string;
 }

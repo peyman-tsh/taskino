@@ -49,6 +49,10 @@ export class NotificationQueryService {
 
     if (queryDto.type) query.type = queryDto.type;
     if (queryDto.isRead !== undefined) query.isRead = queryDto.isRead === 'true';
+    if (queryDto.entityType) query.entityType = queryDto.entityType;
+    if (queryDto.entityId) {
+      query.entityId = this.toObjectId(queryDto.entityId, 'entity ID');
+    }
     if (queryDto.search) {
       const escapedSearch = queryDto.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       query.$or = [

@@ -18,6 +18,11 @@ export enum NotificationType {
   USER_REGISTRATION_APPROVAL = 'user_registration_approval',
 }
 
+export enum NotificationEntityType {
+  TASK = 'task',
+  FIXED_TASK = 'fixed_task',
+}
+
 @Schema({ timestamps: true })
 export class Notification {
   @Prop({
@@ -50,9 +55,23 @@ export class Notification {
 
   @Prop()
   link?: string;
+
+  @Prop({
+    type: String,
+    enum: NotificationEntityType,
+    index: true,
+  })
+  entityType?: NotificationEntityType;
+
+  @Prop({
+    type: Types.ObjectId,
+    index: true,
+  })
+  entityId?: Types.ObjectId;
 }
 
 export const NotificationSchema = SchemaFactory.createForClass(Notification);
 
 NotificationSchema.index({ user: 1, createdAt: -1 });
 NotificationSchema.index({ user: 1, isRead: 1, createdAt: -1 });
+NotificationSchema.index({ entityType: 1, entityId: 1 });

@@ -225,6 +225,25 @@ export class UserRepository {
     return user;
   }
 
+  async findSpecialistProgressById(
+    id: string,
+  ): Promise<{ userId: string; progressPercentage: number } | null> {
+    const user = await this.userModel
+      .findOne({ _id: id, roles: UserRole.SPECIALIST })
+      .select('progressPercentage')
+      .lean()
+      .exec();
+
+    if (!user) {
+      return null;
+    }
+
+    return {
+      userId: user._id.toString(),
+      progressPercentage: user.progressPercentage ?? 0,
+    };
+  }
+
   async findByMobile(mobile: string): Promise<UserDocument> {
     const user = await this.userModel
       .findOne({ mobile })

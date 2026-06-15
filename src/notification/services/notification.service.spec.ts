@@ -1,12 +1,15 @@
 import { WorkField } from '../../common/enums/work-field.enum';
 import { UserService } from '../../user/services/user.service';
+import { NotificationEntityType } from '../notification.schema';
 import { NotificationTemplateFactory } from '../notification-template.factory';
 import { NotificationRepository } from '../repositories/notification.repository';
 import { NotificationService } from './notification.service';
 
 describe('NotificationService', () => {
   const repository = {
+    create: jest.fn(),
     createBulk: jest.fn(),
+    updateMany: jest.fn(),
   };
   const userService = {
     findActiveManagerIdsByWorkField: jest.fn(),
@@ -21,7 +24,49 @@ describe('NotificationService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     userService.findById.mockResolvedValue({});
+    repository.create.mockResolvedValue({});
     repository.createBulk.mockResolvedValue([]);
+    repository.updateMany.mockResolvedValue({ modifiedCount: 0 });
+  });
+
+  it('stores task entity information for task notifications', async () => {
+    const userId = '507f1f77bcf86cd799439011';
+    const taskId = '507f1f77bcf86cd799439012';
+
+    await service.createTaskAssignedNotification(userId, taskId, 'Task title');
+
+    expect(repository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entityType: NotificationEntityType.TASK,
+        entityId: taskId,
+        link: `/tasks/${taskId}`,
+      }),
+      expect.anything(),
+      expect.objectContaining({}),
+    );
+  });
+
+  it('updates task notifications using entity information and legacy link', async () => {
+    const taskId = '507f1f77bcf86cd799439012';
+
+    await service.updateTaskNotificationsStatus(
+      taskId,
+      'Task title',
+      'in_progress',
+    );
+
+    expect(repository.updateMany).toHaveBeenCalledWith(
+      {
+        $or: [
+          {
+            entityType: NotificationEntityType.TASK,
+            entityId: expect.anything(),
+          },
+          { link: `/tasks/${taskId}` },
+        ],
+      },
+      expect.objectContaining({ isRead: false }),
+    );
   });
 
   it('notifies only active managers in the registered user work field', async () => {

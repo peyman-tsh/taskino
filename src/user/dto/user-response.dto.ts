@@ -67,3 +67,11 @@ export class ApproveUserResponseDto {
   @ApiProperty({ type: UserResponseDto })
   user: UserResponseDto;
 }
+
+export class SpecialistProgressResponseDto {
+  @ApiProperty()
+  userId: string;
+
+  @ApiProperty({ minimum: 0, maximum: 100, example: 75 })
+  progressPercentage: number;
+}

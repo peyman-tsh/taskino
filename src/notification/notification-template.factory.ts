@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { CreateNotificationDto } from './dto/create-notification.dto';
-import { NotificationType } from './notification.schema';
+import {
+  NotificationEntityType,
+  NotificationType,
+} from './notification.schema';
 
 @Injectable()
 export class NotificationTemplateFactory {
@@ -15,6 +18,8 @@ export class NotificationTemplateFactory {
       message: `You have been assigned to the task: ${taskTitle}`,
       type: NotificationType.TASK_ASSIGNED,
       link: `/tasks/${taskId}`,
+      entityType: NotificationEntityType.TASK,
+      entityId: taskId,
     };
   }
 
@@ -30,6 +35,8 @@ export class NotificationTemplateFactory {
       message: `The task "${taskTitle}" has been completed by ${completedBy}`,
       type: NotificationType.TASK_COMPLETED,
       link: `/tasks/${taskId}`,
+      entityType: NotificationEntityType.TASK,
+      entityId: taskId,
     };
   }
 
@@ -53,6 +60,8 @@ export class NotificationTemplateFactory {
       message: `You have been assigned to the fixed task: ${fixedTaskTitle}`,
       type: NotificationType.FIXED_TASK_ASSIGNED,
       link: `/fixed-tasks/${fixedTaskId}`,
+      entityType: NotificationEntityType.FIXED_TASK,
+      entityId: fixedTaskId,
     };
   }
 
@@ -67,6 +76,8 @@ export class NotificationTemplateFactory {
       message: `The fixed task "${fixedTaskTitle}" has been completed`,
       type: NotificationType.FIXED_TASK_COMPLETED,
       link: `/fixed-tasks/${fixedTaskId}`,
+      entityType: NotificationEntityType.FIXED_TASK,
+      entityId: fixedTaskId,
     };
   }
 
