@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Types } from 'mongoose';
-import { isValidTimeRange } from '../../common/constants/time.constants';
 import { UserRole } from '../../user/schemas/user.schema';
 import { UserService } from '../../user/services/user.service';
 
@@ -21,12 +20,6 @@ export class FixedTaskPolicyService {
     }
 
     return new Types.ObjectId(id);
-  }
-
-  assertValidTimeRange(startTime?: string, endTime?: string): void {
-    if (!isValidTimeRange(startTime, endTime)) {
-      throw new BadRequestException('endTime must be after startTime');
-    }
   }
 
   parseDate(value: string, label: string): Date {

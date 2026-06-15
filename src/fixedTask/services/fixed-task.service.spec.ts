@@ -29,7 +29,6 @@ describe('FixedTaskService', () => {
   const policy = {
     toObjectId: jest.fn((id: string) => new Types.ObjectId(id)),
     validateParticipants: jest.fn(),
-    assertValidTimeRange: jest.fn(),
     parseDate: jest.fn((value: string) => new Date(value)),
     assertValidDateRange: jest.fn(),
   };
@@ -86,6 +85,32 @@ describe('FixedTaskService', () => {
     );
     expect(repository.create).toHaveBeenCalledWith(
       expect.objectContaining({
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+      }),
+    );
+  });
+
+  it('allows equal startTime and endTime across different dates', async () => {
+    const startDate = '2026-06-15T12:47:28.468Z';
+    const endDate = '2026-06-16T12:47:30.501Z';
+    repository.create.mockResolvedValue(createTemplate());
+    repository.findById.mockResolvedValue(createTemplate());
+
+    await service.create(creatorId.toString(), {
+      title: 'Weekly task',
+      assignedTo: assigneeId.toString(),
+      recurrence: FixedTaskRecurrence.WEEKLY,
+      startDate,
+      endDate,
+      startTime: '16:17',
+      endTime: '16:17',
+    });
+
+    expect(repository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        startTime: '16:17',
+        endTime: '16:17',
         startDate: new Date(startDate),
         endDate: new Date(endDate),
       }),

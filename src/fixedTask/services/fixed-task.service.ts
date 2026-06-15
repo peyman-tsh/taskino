@@ -30,7 +30,6 @@ export class FixedTaskService {
     this.policy.toObjectId(creatorId, 'creator user ID');
     this.policy.toObjectId(dto.assignedTo, 'assigned user ID');
     await this.policy.validateParticipants(creatorId, dto.assignedTo);
-    this.policy.assertValidTimeRange(dto.startTime, dto.endTime);
     const startDate = dto.startDate
       ? this.policy.parseDate(dto.startDate, 'startDate')
       : undefined;
@@ -168,10 +167,6 @@ export class FixedTaskService {
       }
       const assignedTo = dto.assignedTo ?? template.assignedTo.toString();
       await this.policy.validateParticipants(normalizedRequesterId, assignedTo);
-      this.policy.assertValidTimeRange(
-        dto.startTime ?? template.startTime,
-        dto.endTime ?? template.endTime,
-      );
       const startDate =
         dto.startDate !== undefined
           ? this.policy.parseDate(dto.startDate, 'startDate')
