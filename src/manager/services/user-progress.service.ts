@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { UserProgressCalculatorService } from './user-progress-calculator.service';
 import { UserProgressRepository } from '../repositories/user-progress.repository';
-import { ProgressUser } from './user-progress.types';
+import { ProgressUser } from '../types/user-progress.types';
 
 @Injectable()
 export class UserProgressService {

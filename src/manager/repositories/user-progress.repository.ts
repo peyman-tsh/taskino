@@ -6,7 +6,7 @@ import {
   ProgressFixedTask,
   ProgressTask,
   ProgressUser,
-} from '../services/user-progress.types';
+} from '../types/user-progress.types';
 
 @Injectable()
 export class UserProgressRepository {

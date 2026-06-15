@@ -6,7 +6,7 @@ import {
   ProgressFixedTask,
   ProgressMetrics,
   ProgressTask,
-} from './user-progress.types';
+} from '../types/user-progress.types';
 
 @Injectable()
 export class UserProgressCalculatorService {

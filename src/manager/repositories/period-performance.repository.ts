@@ -11,7 +11,7 @@ import {
   PeriodPerformanceFixedTask,
   PeriodPerformanceTask,
   PeriodPerformanceUser,
-} from '../services/period-performance.types';
+} from '../types/period-performance.types';
 
 @Injectable()
 export class PeriodPerformanceRepository {

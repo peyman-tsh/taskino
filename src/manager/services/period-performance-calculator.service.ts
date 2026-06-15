@@ -7,7 +7,7 @@ import {
   PeriodPerformanceFixedTask,
   PeriodPerformanceMetrics,
   PeriodPerformanceTask,
-} from './period-performance.types';
+} from '../types/period-performance.types';
 
 @Injectable()
 export class PeriodPerformanceCalculatorService {
