@@ -1,236 +1,106 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import { Types } from 'mongoose';
-import { UserService } from '../../user/services/user.service';
-import { CreateNotificationDto } from '../dto/create-notification.dto';
-import {
-  NotificationDocument,
-  NotificationEntityType,
-} from '../notification.schema';
-import { NotificationTemplateFactory } from '../notification-template.factory';
-import { NotificationRepository } from '../repositories/notification.repository';
+import { Injectable } from '@nestjs/common';
 import { WorkField } from '../../common/enums/work-field.enum';
+import { CreateNotificationDto } from '../dto/create-notification.dto';
+import { FixedTaskNotificationCommandService } from './fixed-task-notification-command.service';
+import { GeneralNotificationCommandService } from './general-notification-command.service';
+import { NotificationManagementService } from './notification-management.service';
+import { NotificationWriteService } from './notification-write.service';
+import { TaskNotificationCommandService } from './task-notification-command.service';
 
 @Injectable()
 export class NotificationService {
   constructor(
-    private readonly repository: NotificationRepository,
-    private readonly userService: UserService,
-    private readonly templateFactory: NotificationTemplateFactory,
+    private readonly writer: NotificationWriteService,
+    private readonly management: NotificationManagementService,
+    private readonly taskCommands: TaskNotificationCommandService,
+    private readonly fixedTaskCommands: FixedTaskNotificationCommandService,
+    private readonly generalCommands: GeneralNotificationCommandService,
   ) {}
 
-  async create(
-    notificationDto: CreateNotificationDto,
-  ): Promise<NotificationDocument> {
-    const userId = this.toObjectId(notificationDto.user, 'user ID');
-    const entityId = notificationDto.entityId
-      ? this.toObjectId(notificationDto.entityId, 'entity ID')
-      : undefined;
-    await this.userService.findById(notificationDto.user);
-
-    return this.repository.create(notificationDto, userId, entityId);
+  create(dto: CreateNotificationDto) {
+    return this.writer.create(dto);
   }
 
-  async createBulk(
-    notifications: CreateNotificationDto[],
-  ): Promise<NotificationDocument[]> {
-    const uniqueUserIds = [
-      ...new Set(notifications.map((notification) => notification.user)),
-    ];
-    await Promise.all(
-      uniqueUserIds.map((userId) => this.userService.findById(userId)),
-    );
-
-    return this.repository.createBulk(
-      notifications.map((notification) => ({
-        ...notification,
-        user: this.toObjectId(notification.user, 'user ID'),
-        entityId: notification.entityId
-          ? this.toObjectId(notification.entityId, 'entity ID')
-          : undefined,
-        isRead: notification.isRead ?? false,
-      })),
-    );
+  createBulk(dtos: CreateNotificationDto[]) {
+    return this.writer.createBulk(dtos);
   }
 
-
-  async findOneUnread(userId: string) {
-    const notification = await this.repository.findOne({
-        user: this.toObjectId(userId, 'user ID'),
-        isRead: false,
-      });
-
-    if (!notification) {
-      throw new NotFoundException('Notification not found');
-    }
-
-    return notification;
+  findOneUnread(userId: string) {
+    return this.management.findOneUnread(userId);
   }
 
-  async updateMyReadStatus(
-    userId: string,
-    notificationId: string,
-    isRead: boolean,
-  ): Promise<NotificationDocument> {
-    const notification = await this.repository.findOneAndUpdate(
-        {
-          _id: this.toObjectId(notificationId, 'notification ID'),
-          user: this.toObjectId(userId, 'user ID'),
-        },
-        { isRead },
-      );
-
-    if (!notification) {
-      throw new NotFoundException('Notification not found');
-    }
-
-    return notification;
+  updateMyReadStatus(userId: string, notificationId: string, isRead: boolean) {
+    return this.management.updateMyReadStatus(userId, notificationId, isRead);
   }
 
-  async markAllMineAsRead(userId: string): Promise<{ modifiedCount: number }> {
-    const result = await this.repository.updateMany(
-      {
-        user: this.toObjectId(userId, 'user ID'),
-        isRead: false,
-      },
-      { isRead: true },
-    );
-
-    return { modifiedCount: result.modifiedCount };
+  markAllMineAsRead(userId: string) {
+    return this.management.markAllMineAsRead(userId);
   }
 
-  async deleteMine(userId: string, notificationId: string): Promise<void> {
-    const notification = await this.repository.findOneAndDelete({
-        _id: this.toObjectId(notificationId, 'notification ID'),
-        user: this.toObjectId(userId, 'user ID'),
-      });
-
-    if (!notification) {
-      throw new NotFoundException('Notification not found');
-    }
+  deleteMine(userId: string, notificationId: string) {
+    return this.management.deleteMine(userId, notificationId);
   }
 
-  async deleteMyReadNotifications(
-    userId: string,
-  ): Promise<{ deletedCount: number }> {
-    const result = await this.repository.deleteMany({
-      user: this.toObjectId(userId, 'user ID'),
-      isRead: true,
-    });
-
-    return { deletedCount: result.deletedCount };
+  deleteMyReadNotifications(userId: string) {
+    return this.management.deleteMyReadNotifications(userId);
   }
 
-  createTaskAssignedNotification(
-    userId: string,
-    taskId: string,
-    taskTitle: string,
-  ) {
-    return this.create(
-      this.templateFactory.taskAssigned(userId, taskId, taskTitle),
-    );
+  createTaskAssignedNotification(userId: string, taskId: string, title: string) {
+    return this.taskCommands.createAssigned(userId, taskId, title);
   }
 
   createTaskCompletedNotification(
     userId: string,
     taskId: string,
-    taskTitle: string,
+    title: string,
     completedBy: string,
   ) {
-    return this.create(
-      this.templateFactory.taskCompleted(
-        userId,
-        taskId,
-        taskTitle,
-        completedBy,
-      ),
-    );
+    return this.taskCommands.createCompleted(userId, taskId, title, completedBy);
   }
 
-  updateTaskNotificationsStatus(
-    taskId: string,
-    taskTitle: string,
-    status: string,
-  ) {
-    const entityId = this.toObjectId(taskId, 'task ID');
-
-    return this.repository.updateMany(
-      {
-        $or: [
-          { entityType: NotificationEntityType.TASK, entityId },
-          { link: `/tasks/${taskId}` },
-        ],
-      },
-      this.templateFactory.taskStatusChanged(taskTitle, status),
-    );
+  updateTaskNotificationsStatus(taskId: string, title: string, status: string) {
+    return this.taskCommands.updateStatus(taskId, title, status);
   }
 
   createFixedTaskAssignedNotification(
     userId: string,
     fixedTaskId: string,
-    fixedTaskTitle: string,
+    title: string,
   ) {
-    return this.create(
-      this.templateFactory.fixedTaskAssigned(userId, fixedTaskId, fixedTaskTitle),
-    );
+    return this.fixedTaskCommands.createAssigned(userId, fixedTaskId, title);
   }
 
   createFixedTaskCompletedNotification(
     userId: string,
     fixedTaskId: string,
-    fixedTaskTitle: string,
+    title: string,
   ) {
-    return this.create(
-      this.templateFactory.fixedTaskCompleted(
-        userId,
-        fixedTaskId,
-        fixedTaskTitle,
-      ),
-    );
+    return this.fixedTaskCommands.createCompleted(userId, fixedTaskId, title);
   }
 
-  createLeaveRequestNotification(userId: string, requestTitle: string) {
-    return this.create(this.templateFactory.leaveRequest(userId, requestTitle));
+  createLeaveRequestNotification(userId: string, title: string) {
+    return this.generalCommands.createLeaveRequest(userId, title);
   }
 
   createLeaveApprovedNotification(userId: string, leaveType: string) {
-    return this.create(this.templateFactory.leaveApproved(userId, leaveType));
+    return this.generalCommands.createLeaveApproved(userId, leaveType);
   }
 
-  createLeaveRejectedNotification(
-    userId: string,
-    leaveType: string,
-    reason?: string,
-  ) {
-    return this.create(
-      this.templateFactory.leaveRejected(userId, leaveType, reason),
-    );
+  createLeaveRejectedNotification(userId: string, leaveType: string, reason?: string) {
+    return this.generalCommands.createLeaveRejected(userId, leaveType, reason);
   }
 
-  async createUserRegistrationApprovalNotifications(
+  createUserRegistrationApprovalNotifications(
     userId: string,
     firstName: string,
     lastName: string,
     workField: WorkField,
-  ): Promise<NotificationDocument[]> {
-    const managerIds =
-      await this.userService.findActiveManagerIdsByWorkField(workField);
-    if (managerIds.length === 0) {
-      return [];
-    }
-
-    const fullName = `${firstName} ${lastName}`.trim();
-    return this.createBulk(
-      managerIds.map((managerId) =>
-        this.templateFactory.userRegistrationApproval(
-          managerId,
-          userId,
-          fullName,
-        ),
-      ),
+  ) {
+    return this.generalCommands.createUserRegistrationApproval(
+      userId,
+      firstName,
+      lastName,
+      workField,
     );
   }
 
@@ -242,15 +112,13 @@ export class NotificationService {
     completedTasks: number,
     pendingTasks: number,
   ) {
-    return this.create(
-      this.templateFactory.taskCompletionStats(
-        managerId,
-        expertId,
-        expertName,
-        totalTasks,
-        completedTasks,
-        pendingTasks,
-      ),
+    return this.generalCommands.createTaskCompletionStats(
+      managerId,
+      expertId,
+      expertName,
+      totalTasks,
+      completedTasks,
+      pendingTasks,
     );
   }
 
@@ -262,23 +130,13 @@ export class NotificationService {
     completedTasks: number,
     pendingTasks: number,
   ) {
-    return this.create(
-      this.templateFactory.dateCount(
-        userId,
-        startDate,
-        endDate,
-        totalTasks,
-        completedTasks,
-        pendingTasks,
-      ),
+    return this.generalCommands.createDateCount(
+      userId,
+      startDate,
+      endDate,
+      totalTasks,
+      completedTasks,
+      pendingTasks,
     );
-  }
-
-  private toObjectId(id: string, label: string): Types.ObjectId {
-    if (!Types.ObjectId.isValid(id)) {
-      throw new BadRequestException(`Invalid ${label}`);
-    }
-
-    return new Types.ObjectId(id);
   }
 }

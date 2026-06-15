@@ -1,18 +1,21 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { Types } from 'mongoose';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { QueryNotificationDto } from '../dto/query-notification.dto';
 import { NotificationDocument } from '../notification.schema';
 import { NotificationRepository } from '../repositories/notification.repository';
+import { NotificationPolicyService } from './notification-policy.service';
+import { NotificationQueryFilterBuilder } from './notification-query-filter.builder';
 
 @Injectable()
 export class NotificationQueryService {
   constructor(
     private readonly repository: NotificationRepository,
+    private readonly policy: NotificationPolicyService,
+    private readonly filterBuilder: NotificationQueryFilterBuilder,
   ) {}
 
   async findMine(userId: string, queryDto: QueryNotificationDto) {
-    const userObjectId = this.toObjectId(userId, 'user ID');
-    const query = this.buildQuery(userObjectId, queryDto);
+    const userObjectId = this.policy.toObjectId(userId, 'user ID');
+    const query = this.filterBuilder.build(userObjectId, queryDto);
     const { data, total } = await this.repository.findPaginated(
       query,
       queryDto.page,
@@ -24,8 +27,8 @@ export class NotificationQueryService {
 
   async findMineById(userId: string, notificationId: string): Promise<NotificationDocument> {
     const notification = await this.repository.findOne({
-        _id: this.toObjectId(notificationId, 'notification ID'),
-        user: this.toObjectId(userId, 'user ID'),
+        _id: this.policy.toObjectId(notificationId, 'notification ID'),
+        user: this.policy.toObjectId(userId, 'user ID'),
       });
 
     if (!notification) {
@@ -37,38 +40,11 @@ export class NotificationQueryService {
 
   async getMyUnreadCount(userId: string): Promise<{ unreadCount: number }> {
     const unreadCount = await this.repository.count({
-        user: this.toObjectId(userId, 'user ID'),
+        user: this.policy.toObjectId(userId, 'user ID'),
         isRead: false,
       });
 
     return { unreadCount };
   }
 
-  private buildQuery(userId: Types.ObjectId, queryDto: QueryNotificationDto) {
-    const query: Record<string, unknown> = { user: userId };
-
-    if (queryDto.type) query.type = queryDto.type;
-    if (queryDto.isRead !== undefined) query.isRead = queryDto.isRead === 'true';
-    if (queryDto.entityType) query.entityType = queryDto.entityType;
-    if (queryDto.entityId) {
-      query.entityId = this.toObjectId(queryDto.entityId, 'entity ID');
-    }
-    if (queryDto.search) {
-      const escapedSearch = queryDto.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      query.$or = [
-        { title: { $regex: escapedSearch, $options: 'i' } },
-        { message: { $regex: escapedSearch, $options: 'i' } },
-      ];
-    }
-
-    return query;
-  }
-
-  private toObjectId(id: string, label: string): Types.ObjectId {
-    if (!Types.ObjectId.isValid(id)) {
-      throw new BadRequestException(`Invalid ${label}`);
-    }
-
-    return new Types.ObjectId(id);
-  }
 }

@@ -3,9 +3,16 @@ import {
   NotificationType,
 } from './notification.schema';
 import { NotificationTemplateFactory } from './notification-template.factory';
+import { FixedTaskNotificationTemplateFactory } from './factories/fixed-task-notification-template.factory';
+import { GeneralNotificationTemplateFactory } from './factories/general-notification-template.factory';
+import { TaskNotificationTemplateFactory } from './factories/task-notification-template.factory';
 
 describe('NotificationTemplateFactory', () => {
-  const factory = new NotificationTemplateFactory();
+  const factory = new NotificationTemplateFactory(
+    new TaskNotificationTemplateFactory(),
+    new FixedTaskNotificationTemplateFactory(),
+    new GeneralNotificationTemplateFactory(),
+  );
   const userId = '507f1f77bcf86cd799439011';
   const entityId = '507f1f77bcf86cd799439012';
 

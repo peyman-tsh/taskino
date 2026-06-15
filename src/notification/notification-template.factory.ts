@@ -1,131 +1,50 @@
 import { Injectable } from '@nestjs/common';
-import { CreateNotificationDto } from './dto/create-notification.dto';
-import {
-  NotificationEntityType,
-  NotificationType,
-} from './notification.schema';
+import { FixedTaskNotificationTemplateFactory } from './factories/fixed-task-notification-template.factory';
+import { GeneralNotificationTemplateFactory } from './factories/general-notification-template.factory';
+import { TaskNotificationTemplateFactory } from './factories/task-notification-template.factory';
 
 @Injectable()
 export class NotificationTemplateFactory {
-  taskAssigned(
-    userId: string,
-    taskId: string,
-    taskTitle: string,
-  ): CreateNotificationDto {
-    return {
-      user: userId,
-      title: 'Task Assigned',
-      message: `You have been assigned to the task: ${taskTitle}`,
-      type: NotificationType.TASK_ASSIGNED,
-      link: `/tasks/${taskId}`,
-      entityType: NotificationEntityType.TASK,
-      entityId: taskId,
-    };
+  constructor(
+    private readonly taskTemplates: TaskNotificationTemplateFactory,
+    private readonly fixedTaskTemplates: FixedTaskNotificationTemplateFactory,
+    private readonly generalTemplates: GeneralNotificationTemplateFactory,
+  ) {}
+
+  taskAssigned(userId: string, taskId: string, title: string) {
+    return this.taskTemplates.assigned(userId, taskId, title);
   }
 
-  taskCompleted(
-    userId: string,
-    taskId: string,
-    taskTitle: string,
-    completedBy: string,
-  ): CreateNotificationDto {
-    return {
-      user: userId,
-      title: 'Task Completed',
-      message: `The task "${taskTitle}" has been completed by ${completedBy}`,
-      type: NotificationType.TASK_COMPLETED,
-      link: `/tasks/${taskId}`,
-      entityType: NotificationEntityType.TASK,
-      entityId: taskId,
-    };
+  taskCompleted(userId: string, taskId: string, title: string, completedBy: string) {
+    return this.taskTemplates.completed(userId, taskId, title, completedBy);
   }
 
-  taskStatusChanged(taskTitle: string, status: string) {
-    return {
-      title: 'Task Status Updated',
-      message: `The task "${taskTitle}" status changed to ${status}`,
-      type: NotificationType.TASK_STATUS_CHANGED,
-      isRead: false,
-    };
+  taskStatusChanged(title: string, status: string) {
+    return this.taskTemplates.statusChanged(title, status);
   }
 
-  fixedTaskAssigned(
-    userId: string,
-    fixedTaskId: string,
-    fixedTaskTitle: string,
-  ): CreateNotificationDto {
-    return {
-      user: userId,
-      title: 'Fixed Task Assigned',
-      message: `You have been assigned to the fixed task: ${fixedTaskTitle}`,
-      type: NotificationType.FIXED_TASK_ASSIGNED,
-      link: `/fixed-tasks/${fixedTaskId}`,
-      entityType: NotificationEntityType.FIXED_TASK,
-      entityId: fixedTaskId,
-    };
+  fixedTaskAssigned(userId: string, fixedTaskId: string, title: string) {
+    return this.fixedTaskTemplates.assigned(userId, fixedTaskId, title);
   }
 
-  fixedTaskCompleted(
-    userId: string,
-    fixedTaskId: string,
-    fixedTaskTitle: string,
-  ): CreateNotificationDto {
-    return {
-      user: userId,
-      title: 'Fixed Task Completed',
-      message: `The fixed task "${fixedTaskTitle}" has been completed`,
-      type: NotificationType.FIXED_TASK_COMPLETED,
-      link: `/fixed-tasks/${fixedTaskId}`,
-      entityType: NotificationEntityType.FIXED_TASK,
-      entityId: fixedTaskId,
-    };
+  fixedTaskCompleted(userId: string, fixedTaskId: string, title: string) {
+    return this.fixedTaskTemplates.completed(userId, fixedTaskId, title);
   }
 
-  leaveRequest(userId: string, requestTitle: string): CreateNotificationDto {
-    return {
-      user: userId,
-      title: 'Leave Request',
-      message: `A new leave request has been submitted: ${requestTitle}`,
-      type: NotificationType.LEAVE_REQUEST,
-    };
+  leaveRequest(userId: string, title: string) {
+    return this.generalTemplates.leaveRequest(userId, title);
   }
 
-  leaveApproved(userId: string, leaveType: string): CreateNotificationDto {
-    return {
-      user: userId,
-      title: 'Leave Approved',
-      message: `Your ${leaveType} leave request has been approved`,
-      type: NotificationType.LEAVE_APPROVED,
-    };
+  leaveApproved(userId: string, leaveType: string) {
+    return this.generalTemplates.leaveApproved(userId, leaveType);
   }
 
-  leaveRejected(
-    userId: string,
-    leaveType: string,
-    reason?: string,
-  ): CreateNotificationDto {
-    return {
-      user: userId,
-      title: 'Leave Rejected',
-      message: reason
-        ? `Your ${leaveType} leave request has been rejected. Reason: ${reason}`
-        : `Your ${leaveType} leave request has been rejected`,
-      type: NotificationType.LEAVE_REJECTED,
-    };
+  leaveRejected(userId: string, leaveType: string, reason?: string) {
+    return this.generalTemplates.leaveRejected(userId, leaveType, reason);
   }
 
-  userRegistrationApproval(
-    managerId: string,
-    userId: string,
-    fullName: string,
-  ): CreateNotificationDto {
-    return {
-      user: managerId,
-      title: 'New User Registration',
-      message: `${fullName} registered and is waiting for your approval`,
-      type: NotificationType.USER_REGISTRATION_APPROVAL,
-      link: `/users/${userId}`,
-    };
+  userRegistrationApproval(managerId: string, userId: string, fullName: string) {
+    return this.generalTemplates.userRegistrationApproval(managerId, userId, fullName);
   }
 
   taskCompletionStats(
@@ -135,14 +54,15 @@ export class NotificationTemplateFactory {
     totalTasks: number,
     completedTasks: number,
     pendingTasks: number,
-  ): CreateNotificationDto {
-    return {
-      user: managerId,
-      title: 'Task Completion Statistics',
-      message: `Expert ${expertName}: ${completedTasks}/${totalTasks} tasks completed, ${pendingTasks} pending`,
-      type: NotificationType.TASK_COMPLETION_STATS,
-      link: `/tasks/stats?managerId=${managerId}&expertId=${expertId}`,
-    };
+  ) {
+    return this.generalTemplates.taskCompletionStats(
+      managerId,
+      expertId,
+      expertName,
+      totalTasks,
+      completedTasks,
+      pendingTasks,
+    );
   }
 
   dateCount(
@@ -152,13 +72,14 @@ export class NotificationTemplateFactory {
     totalTasks: number,
     completedTasks: number,
     pendingTasks: number,
-  ): CreateNotificationDto {
-    return {
-      user: userId,
-      title: 'Date Count Summary',
-      message: `From ${startDate} to ${endDate}: ${completedTasks}/${totalTasks} tasks completed, ${pendingTasks} pending`,
-      type: NotificationType.DATE_COUNT,
-      link: `/tasks?startDate=${startDate}&endDate=${endDate}`,
-    };
+  ) {
+    return this.generalTemplates.dateCount(
+      userId,
+      startDate,
+      endDate,
+      totalTasks,
+      completedTasks,
+      pendingTasks,
+    );
   }
 }

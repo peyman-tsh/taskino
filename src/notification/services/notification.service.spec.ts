@@ -1,114 +1,53 @@
-import { WorkField } from '../../common/enums/work-field.enum';
-import { UserService } from '../../user/services/user.service';
-import { NotificationEntityType } from '../notification.schema';
-import { NotificationTemplateFactory } from '../notification-template.factory';
-import { NotificationRepository } from '../repositories/notification.repository';
+import { FixedTaskNotificationCommandService } from './fixed-task-notification-command.service';
+import { GeneralNotificationCommandService } from './general-notification-command.service';
+import { NotificationManagementService } from './notification-management.service';
 import { NotificationService } from './notification.service';
+import { NotificationWriteService } from './notification-write.service';
+import { TaskNotificationCommandService } from './task-notification-command.service';
 
 describe('NotificationService', () => {
-  const repository = {
-    create: jest.fn(),
-    createBulk: jest.fn(),
-    updateMany: jest.fn(),
+  const writer = { create: jest.fn(), createBulk: jest.fn() };
+  const management = {
+    findOneUnread: jest.fn(),
+    updateMyReadStatus: jest.fn(),
+    markAllMineAsRead: jest.fn(),
+    deleteMine: jest.fn(),
+    deleteMyReadNotifications: jest.fn(),
   };
-  const userService = {
-    findActiveManagerIdsByWorkField: jest.fn(),
-    findById: jest.fn(),
+  const taskCommands = {
+    createAssigned: jest.fn(),
+    createCompleted: jest.fn(),
+    updateStatus: jest.fn(),
+  };
+  const fixedTaskCommands = {
+    createAssigned: jest.fn(),
+    createCompleted: jest.fn(),
+  };
+  const generalCommands = {
+    createLeaveRequest: jest.fn(),
+    createLeaveApproved: jest.fn(),
+    createLeaveRejected: jest.fn(),
+    createUserRegistrationApproval: jest.fn(),
+    createTaskCompletionStats: jest.fn(),
+    createDateCount: jest.fn(),
   };
   const service = new NotificationService(
-    repository as unknown as NotificationRepository,
-    userService as unknown as UserService,
-    new NotificationTemplateFactory(),
+    writer as unknown as NotificationWriteService,
+    management as unknown as NotificationManagementService,
+    taskCommands as unknown as TaskNotificationCommandService,
+    fixedTaskCommands as unknown as FixedTaskNotificationCommandService,
+    generalCommands as unknown as GeneralNotificationCommandService,
   );
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    userService.findById.mockResolvedValue({});
-    repository.create.mockResolvedValue({});
-    repository.createBulk.mockResolvedValue([]);
-    repository.updateMany.mockResolvedValue({ modifiedCount: 0 });
-  });
+  it('delegates notification operations to focused services', () => {
+    service.createTaskAssignedNotification('user-id', 'task-id', 'Task');
+    service.updateTaskNotificationsStatus('task-id', 'Task', 'done');
+    service.createFixedTaskCompletedNotification('user-id', 'fixed-id', 'Fixed');
+    service.markAllMineAsRead('user-id');
 
-  it('stores task entity information for task notifications', async () => {
-    const userId = '507f1f77bcf86cd799439011';
-    const taskId = '507f1f77bcf86cd799439012';
-
-    await service.createTaskAssignedNotification(userId, taskId, 'Task title');
-
-    expect(repository.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        entityType: NotificationEntityType.TASK,
-        entityId: taskId,
-        link: `/tasks/${taskId}`,
-      }),
-      expect.anything(),
-      expect.objectContaining({}),
-    );
-  });
-
-  it('updates task notifications using entity information and legacy link', async () => {
-    const taskId = '507f1f77bcf86cd799439012';
-
-    await service.updateTaskNotificationsStatus(
-      taskId,
-      'Task title',
-      'in_progress',
-    );
-
-    expect(repository.updateMany).toHaveBeenCalledWith(
-      {
-        $or: [
-          {
-            entityType: NotificationEntityType.TASK,
-            entityId: expect.anything(),
-          },
-          { link: `/tasks/${taskId}` },
-        ],
-      },
-      expect.objectContaining({ isRead: false }),
-    );
-  });
-
-  it('notifies only active managers in the registered user work field', async () => {
-    userService.findActiveManagerIdsByWorkField.mockResolvedValue([
-      '507f1f77bcf86cd799439011',
-      '507f1f77bcf86cd799439012',
-    ]);
-
-    await service.createUserRegistrationApprovalNotifications(
-      '507f1f77bcf86cd799439013',
-      'Ali',
-      'Ahmadi',
-      WorkField.IT,
-    );
-
-    expect(userService.findActiveManagerIdsByWorkField).toHaveBeenCalledWith(
-      WorkField.IT,
-    );
-    expect(repository.createBulk).toHaveBeenCalledWith([
-      expect.objectContaining({
-        user: expect.anything(),
-        message: expect.stringContaining('Ali Ahmadi'),
-        link: '/users/507f1f77bcf86cd799439013',
-      }),
-      expect.objectContaining({
-        user: expect.anything(),
-        message: expect.stringContaining('Ali Ahmadi'),
-        link: '/users/507f1f77bcf86cd799439013',
-      }),
-    ]);
-  });
-
-  it('does not create notifications when the work field has no active manager', async () => {
-    userService.findActiveManagerIdsByWorkField.mockResolvedValue([]);
-
-    await service.createUserRegistrationApprovalNotifications(
-      '507f1f77bcf86cd799439013',
-      'Ali',
-      'Ahmadi',
-      WorkField.IT,
-    );
-
-    expect(repository.createBulk).not.toHaveBeenCalled();
+    expect(taskCommands.createAssigned).toHaveBeenCalled();
+    expect(taskCommands.updateStatus).toHaveBeenCalled();
+    expect(fixedTaskCommands.createCompleted).toHaveBeenCalled();
+    expect(management.markAllMineAsRead).toHaveBeenCalled();
   });
 });
