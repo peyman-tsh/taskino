@@ -35,6 +35,7 @@ export class FixedTaskUpdateService {
 
     const isAssignee =
       template.assignedTo.toString() === requesterObjectId.toString();
+    
     await this.validateUpdate(template, requesterObjectId.toString(), dto, isAssignee);
 
     const updatedTemplate = await this.repository.updateById(
@@ -56,6 +57,7 @@ export class FixedTaskUpdateService {
     isAssignee: boolean,
   ): Promise<void> {
     if (isAssignee) {
+      console.log('in ')
       this.assertAssigneeStatusOnlyUpdate(dto);
       return;
     }
@@ -129,7 +131,7 @@ export class FixedTaskUpdateService {
 
   private assertAssigneeStatusOnlyUpdate(dto: UpdateFixedTaskDto): void {
     const fields = Object.keys(dto);
-    if (dto.status === undefined || fields.some((field) => field !== 'status')) {
+    if (dto.status === undefined || fields.some((field) => !fields.includes(field))) {
       throw new ForbiddenException(
         'Fixed task assignee can only update the status',
       );
