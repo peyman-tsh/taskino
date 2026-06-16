@@ -23,7 +23,7 @@ describe('UserRepository score adjustment', () => {
           },
         },
       ],
-      { new: true },
+      { new: true, updatePipeline: true },
     );
   });
 
@@ -47,7 +47,7 @@ describe('UserRepository score adjustment', () => {
           },
         },
       ],
-      { new: true, session: undefined },
+      { new: true, session: undefined, updatePipeline: true },
     );
   });
 

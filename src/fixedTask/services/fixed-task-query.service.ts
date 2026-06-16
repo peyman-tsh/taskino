@@ -35,12 +35,22 @@ export class FixedTaskQueryService {
   }
 
   async getStatusCounts() {
-    const [totalFixedTasks, todoFixedTasks, inProgressFixedTasks, doneFixedTasks] =
-      await Promise.all([
+    const [
+      totalFixedTasks,
+      todoFixedTasks,
+      inProgressFixedTasks,
+      doneFixedTasks,
+      activeDatedTodoFixedTasks,
+    ] = await Promise.all([
         this.repository.count({}),
         this.repository.count({ status: FixedTaskStatus.TODO }),
         this.repository.count({ status: FixedTaskStatus.IN_PROGRESS }),
         this.repository.count({ status: FixedTaskStatus.DONE }),
+        this.repository.count({
+          status: FixedTaskStatus.TODO,
+          startDate: { $type: 'date' },
+          endDate: { $type: 'date', $gte: new Date() },
+        }),
       ]);
 
     return {
@@ -48,6 +58,7 @@ export class FixedTaskQueryService {
       todoFixedTasks,
       inProgressFixedTasks,
       doneFixedTasks,
+      activeDatedTodoFixedTasks,
     };
   }
 

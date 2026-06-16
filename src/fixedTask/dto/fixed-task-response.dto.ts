@@ -74,4 +74,10 @@ export class FixedTaskStatusCountsResponseDto {
 
   @ApiProperty()
   doneFixedTasks: number;
+
+  @ApiProperty({
+    description:
+      'Todo fixed tasks that have startDate/endDate and are not expired yet',
+  })
+  activeDatedTodoFixedTasks: number;
 }

@@ -45,7 +45,7 @@ export class UserRepository {
             },
           },
         ],
-        { new: true },
+        { new: true, updatePipeline: true },
       )
       .exec();
   }
@@ -67,7 +67,7 @@ export class UserRepository {
             },
           },
         ],
-        { new: true, session },
+        { new: true, session, updatePipeline: true },
       )
       .exec();
   }

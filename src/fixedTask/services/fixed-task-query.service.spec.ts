@@ -50,13 +50,20 @@ describe('FixedTaskQueryService', () => {
       .mockResolvedValueOnce(10)
       .mockResolvedValueOnce(3)
       .mockResolvedValueOnce(2)
-      .mockResolvedValueOnce(5);
+      .mockResolvedValueOnce(5)
+      .mockResolvedValueOnce(1);
 
     await expect(service.getStatusCounts()).resolves.toEqual({
       totalFixedTasks: 10,
       todoFixedTasks: 3,
       inProgressFixedTasks: 2,
       doneFixedTasks: 5,
+      activeDatedTodoFixedTasks: 1,
+    });
+    expect(repository.count).toHaveBeenLastCalledWith({
+      status: FixedTaskStatus.TODO,
+      startDate: { $type: 'date' },
+      endDate: { $type: 'date', $gte: expect.any(Date) },
     });
   });
 });
