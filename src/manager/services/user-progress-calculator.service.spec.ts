@@ -69,22 +69,24 @@ describe('UserProgressCalculatorService', () => {
     expect(result.performanceStatus).toBe(UserPerformanceStatus.GOOD);
   });
 
-  it('returns 50 when a specialist only completed half of fixed tasks', () => {
+  it('does not divide fixed task progress by total fixed task count', () => {
     const result = calculator.calculate(
       [],
       [
         { status: FixedTaskStatus.DONE, doneTime: onTime },
-        { status: FixedTaskStatus.TODO },
+        ...Array.from({ length: 38 }, () => ({
+          status: FixedTaskStatus.TODO,
+        })),
       ],
     );
 
-    expect(result.totalFixedTasks).toBe(2);
+    expect(result.totalFixedTasks).toBe(39);
     expect(result.completedFixedTasks).toBe(1);
-    expect(result.progressPercentage).toBe(50);
-    expect(result.performanceStatus).toBe(UserPerformanceStatus.NORMAL);
+    expect(result.progressPercentage).toBe(100);
+    expect(result.performanceStatus).toBe(UserPerformanceStatus.GOOD);
   });
 
-  it('splits progress 50/50 when tasks and fixed tasks are mixed', () => {
+  it('gives full mixed progress when task work is on time and fixed task work has a completion', () => {
     const result = calculator.calculate(
       [{ status: TaskStatus.DONE, dueDate, doneTime: onTime }],
       [
@@ -93,7 +95,7 @@ describe('UserProgressCalculatorService', () => {
       ],
     );
 
-    expect(result.progressPercentage).toBe(75);
+    expect(result.progressPercentage).toBe(100);
     expect(result.performanceStatus).toBe(UserPerformanceStatus.GOOD);
   });
 
