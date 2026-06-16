@@ -21,6 +21,8 @@ export class SupervisorStatisticsService {
       myInProgressFixedTasks,
       mySuccessfulTasks,
       myOnTimeSuccessfulTasks,
+      activeCompletedSupervisedTasks,
+      activeCompletedSupervisedFixedTasks,
     ] = await Promise.all([
       this.repository.countSupervisedTasks(objectId, recurrence),
       this.repository.countSupervisedFixedTasks(objectId, recurrence),
@@ -30,6 +32,11 @@ export class SupervisorStatisticsService {
       this.repository.countMyInProgressFixedTasks(objectId, recurrence),
       this.repository.countMySuccessfulTasks(objectId, recurrence),
       this.repository.countMyOnTimeSuccessfulTasks(objectId, recurrence),
+      this.repository.countActiveCompletedSupervisedTasks(objectId, recurrence),
+      this.repository.countActiveCompletedSupervisedFixedTasks(
+        objectId,
+        recurrence,
+      ),
     ]);
 
     return {
@@ -42,6 +49,8 @@ export class SupervisorStatisticsService {
       myInProgressFixedTasks,
       mySuccessfulTasks,
       myOnTimeSuccessfulTasks,
+      activeCompletedSupervisedTasks,
+      activeCompletedSupervisedFixedTasks,
     };
   }
 

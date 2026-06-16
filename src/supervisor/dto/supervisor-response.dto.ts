@@ -32,6 +32,18 @@ export class SupervisorStatisticsResponseDto {
 
   @ApiProperty()
   myOnTimeSuccessfulTasks: number;
+
+  @ApiProperty({
+    description:
+      'Completed regular tasks assigned by the supervisor to members and not expired yet',
+  })
+  activeCompletedSupervisedTasks: number;
+
+  @ApiProperty({
+    description:
+      'Completed fixed tasks assigned by the supervisor to members and not expired yet',
+  })
+  activeCompletedSupervisedFixedTasks: number;
 }
 
 export class SupervisorMemberResponseDto {

@@ -13,6 +13,8 @@ describe('SupervisorStatisticsService', () => {
     countMyInProgressFixedTasks: jest.fn(),
     countMySuccessfulTasks: jest.fn(),
     countMyOnTimeSuccessfulTasks: jest.fn(),
+    countActiveCompletedSupervisedTasks: jest.fn(),
+    countActiveCompletedSupervisedFixedTasks: jest.fn(),
   };
   const policy = { toObjectId: jest.fn(() => new Types.ObjectId()) };
   const service = new SupervisorStatisticsService(
@@ -34,6 +36,8 @@ describe('SupervisorStatisticsService', () => {
         myInProgressFixedTasks: 1,
         mySuccessfulTasks: 1,
         myOnTimeSuccessfulTasks: 1,
+        activeCompletedSupervisedTasks: 1,
+        activeCompletedSupervisedFixedTasks: 1,
       });
   });
 });

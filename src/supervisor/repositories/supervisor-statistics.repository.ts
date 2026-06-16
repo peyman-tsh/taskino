@@ -121,6 +121,44 @@ export class SupervisorStatisticsRepository {
       .exec();
   }
 
+  countActiveCompletedSupervisedTasks(
+    supervisorId: Types.ObjectId,
+    recurrence?: TaskRecurrence,
+  ) {
+    return this.taskModel
+      .countDocuments(
+        this.withRecurrence(
+          {
+            createdBy: supervisorId,
+            assignedTo: { $ne: supervisorId },
+            status: TaskStatus.DONE,
+            dueDate: { $type: 'date', $gte: new Date() },
+          },
+          recurrence,
+        ),
+      )
+      .exec();
+  }
+
+  countActiveCompletedSupervisedFixedTasks(
+    supervisorId: Types.ObjectId,
+    recurrence?: TaskRecurrence,
+  ) {
+    return this.fixedTaskModel
+      .countDocuments(
+        this.withRecurrence(
+          {
+            createdBy: supervisorId,
+            assignedTo: { $ne: supervisorId },
+            status: FixedTaskStatus.DONE,
+            endDate: { $type: 'date', $gte: new Date() },
+          },
+          recurrence,
+        ),
+      )
+      .exec();
+  }
+
   private withRecurrence(
     filter: Record<string, unknown>,
     recurrence?: TaskRecurrence,
