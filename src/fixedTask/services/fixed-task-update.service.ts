@@ -59,11 +59,11 @@ export class FixedTaskUpdateService {
       this.assertAssigneeStatusOnlyUpdate(dto);
       return;
     }
-    if (dto.status !== undefined) {
-      throw new ForbiddenException(
-        'Only the fixed task assignee can update the status',
-      );
-    }
+    // if (dto.status !== undefined) {
+    //   throw new ForbiddenException(
+    //     'Only the fixed task assignee can update the status',
+    //   );
+    // }
 
     const assignedTo = dto.assignedTo ?? template.assignedTo.toString();
     await this.policy.validateParticipants(requesterId, assignedTo);
