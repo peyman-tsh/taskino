@@ -72,7 +72,6 @@ export class QueryFixedTaskDto {
     example: '2026-06-01T00:00:00+03:30',
   })
   @IsOptional()
-  @IsDateString()
   startDate?: string;
 
   @ApiPropertyOptional({
@@ -81,6 +80,5 @@ export class QueryFixedTaskDto {
     example: '2026-06-30T23:59:59+03:30',
   })
   @IsOptional()
-  @IsDateString()
   endDate?: string;
 }
