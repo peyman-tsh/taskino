@@ -22,14 +22,19 @@ export class UserProgressCalculatorService {
     const inProgressTasks = this.countInProgressTasks(tasks);
     const completedFixedTasks = this.countCompletedFixedTasks(fixedTasks);
     const inProgressFixedTasks = this.countInProgressFixedTasks(fixedTasks);
+    const weights = this.calculateWeights(tasks.length, fixedTasks.length);
     const progressPercentage = Math.round(
       this.calculateCategoryProgress(
         tasks.length,
         onTimeTasks,
         inProgressTasks,
-      ) + this.calculateFixedTaskProgress(
+        weights.task,
+      ) +
+        this.calculateCategoryProgress(
+          fixedTasks.length,
           completedFixedTasks,
           inProgressFixedTasks,
+          weights.fixedTask,
         ),
     );
 
@@ -81,20 +86,25 @@ export class UserProgressCalculatorService {
     total: number,
     successful: number,
     inProgress: number,
+    weight: number,
   ): number {
     if (total === 0) return 0;
 
     const earnedItems = successful + inProgress * this.inProgressCredit;
-    return (earnedItems / total) * this.categoryWeight;
+    return (earnedItems / total) * weight;
   }
 
-  private calculateFixedTaskProgress(
-    completed: number,
-    inProgress: number,
-  ): number {
-    if (completed > 0) return this.categoryWeight;
-    if (inProgress > 0) return this.categoryWeight * this.inProgressCredit;
-    return 0;
+  private calculateWeights(
+    totalTasks: number,
+    totalFixedTasks: number,
+  ): { task: number; fixedTask: number } {
+    if (totalTasks > 0 && totalFixedTasks > 0) {
+      return { task: this.categoryWeight, fixedTask: this.categoryWeight };
+    }
+
+    if (totalTasks > 0) return { task: 100, fixedTask: 0 };
+    if (totalFixedTasks > 0) return { task: 0, fixedTask: 100 };
+    return { task: 0, fixedTask: 0 };
   }
 
   private calculatePerformanceStatus(
