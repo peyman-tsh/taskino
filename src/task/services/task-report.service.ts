@@ -117,6 +117,27 @@ export class TaskReportService {
     };
   }
 
+  async getTaskStatusOverviewByAssignee(userId: string) {
+    this.taskPolicy.validateObjectId(userId);
+
+    const assignedTo = new Types.ObjectId(userId);
+    const [totalTasks, todoTasks, inProgressTasks, doneTasks] =
+      await Promise.all([
+        this.repository.count({ assignedTo }),
+        this.repository.count({ assignedTo, status: TaskStatus.TODO }),
+        this.repository.count({ assignedTo, status: TaskStatus.IN_PROGRESS }),
+        this.repository.count({ assignedTo, status: TaskStatus.DONE }),
+      ]);
+
+    return {
+      userId,
+      totalTasks,
+      todoTasks,
+      inProgressTasks,
+      doneTasks,
+    };
+  }
+
   getTaskCountsByAssignee() {
     return this.repository.aggregate([
         { $unwind: '$assignedTo' },

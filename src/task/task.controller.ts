@@ -36,6 +36,7 @@ import { JwtAuthGuard } from '../auth/guard/jwt.guard';
 import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
 import {
   PaginatedTasksResponseDto,
+  MyTaskStatusCountsResponseDto,
   TaskCompletionStatsResponseDto,
   TaskDateCountResponseDto,
   TaskResponseDto,
@@ -257,6 +258,22 @@ export class TaskController {
   })
   getStatusCounts() {
     return this.taskService.getStatusCounts();
+  }
+
+  @Get('me/status-counts')
+  @Roles(UserRole.SPECIALIST)
+  @ApiOperation({
+    summary: 'Get current specialist task counts grouped by status',
+    description:
+      'Returns total, waiting, in-progress, and completed regular task counts for the authenticated specialist.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Current specialist task status counts retrieved successfully',
+    type: MyTaskStatusCountsResponseDto,
+  })
+  getMyStatusCounts(@CurrentUserId() userId: string) {
+    return this.taskService.getMyStatusCounts(userId);
   }
 
   @Get(':id')

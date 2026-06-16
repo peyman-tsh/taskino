@@ -136,6 +136,11 @@ export class TaskStatusOverviewResponseDto {
   doneTasks: number;
 }
 
+export class MyTaskStatusCountsResponseDto extends TaskStatusOverviewResponseDto {
+  @ApiProperty()
+  userId: string;
+}
+
 export class TaskCountsByUserResponseDto extends TaskStatusOverviewResponseDto {
   @ApiProperty()
   userId: string;

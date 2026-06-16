@@ -132,6 +132,10 @@ export class TaskService {
     return this.taskReportService.getTaskStatusOverview();
   }
 
+  getMyStatusCounts(userId: string) {
+    return this.taskReportService.getTaskStatusOverviewByAssignee(userId);
+  }
+
   /**
    * Get task completion statistics for tasks created by a manager and assigned to an expert
    */
