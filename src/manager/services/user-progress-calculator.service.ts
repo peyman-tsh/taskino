@@ -27,9 +27,7 @@ export class UserProgressCalculatorService {
         tasks.length,
         onTimeTasks,
         inProgressTasks,
-      ) +
-        this.calculateCategoryProgress(
-          fixedTasks.length,
+      ) + this.calculateFixedTaskProgress(
           completedFixedTasks,
           inProgressFixedTasks,
         ),
@@ -88,6 +86,15 @@ export class UserProgressCalculatorService {
 
     const earnedItems = successful + inProgress * this.inProgressCredit;
     return (earnedItems / total) * this.categoryWeight;
+  }
+
+  private calculateFixedTaskProgress(
+    completed: number,
+    inProgress: number,
+  ): number {
+    if (completed > 0) return this.categoryWeight;
+    if (inProgress > 0) return this.categoryWeight * this.inProgressCredit;
+    return 0;
   }
 
   private calculatePerformanceStatus(

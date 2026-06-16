@@ -57,6 +57,23 @@ describe('UserProgressCalculatorService', () => {
     expect(result.performanceStatus).toBe(UserPerformanceStatus.NORMAL);
   });
 
+  it('does not divide fixed task progress by total fixed task count', () => {
+    const result = calculator.calculate(
+      [],
+      [
+        { status: FixedTaskStatus.DONE, doneTime: onTime },
+        ...Array.from({ length: 38 }, () => ({
+          status: FixedTaskStatus.TODO,
+        })),
+      ],
+    );
+
+    expect(result.totalFixedTasks).toBe(39);
+    expect(result.completedFixedTasks).toBe(1);
+    expect(result.progressPercentage).toBe(50);
+    expect(result.performanceStatus).toBe(UserPerformanceStatus.NORMAL);
+  });
+
   it('returns weak when progress is 40 or less', () => {
     const result = calculator.calculate(
       [
