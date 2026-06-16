@@ -108,7 +108,7 @@ export class FixedTaskController {
 
   
   @Get('status-counts')
-  @Roles(UserRole.SPECIALIST)
+  @Roles(UserRole.SPECIALIST, UserRole.SUPERVISOR)
   @ApiOperation({
     summary: 'Get fixed task counts grouped by status',
     description:
