@@ -3,8 +3,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { ClientSession, Model, Types } from 'mongoose';
+import { InjectConnection, InjectModel } from '@nestjs/mongoose';
+import { ClientSession, Connection, Model, Types } from 'mongoose';
 import { User, UserDocument, UserRole } from '../schemas/user.schema';
 import { WorkField } from '../../common/enums/work-field.enum';
 
@@ -13,6 +13,7 @@ export class UserRepository {
   constructor(
     @InjectModel(User.name)
     private readonly userModel: Model<UserDocument>,
+    @InjectConnection() private readonly connection: Connection,
   ) {}
 
   create(data: Record<string, unknown>): Promise<UserDocument> {
@@ -241,6 +242,47 @@ export class UserRepository {
     return {
       userId: user._id.toString(),
       progressPercentage: user.progressPercentage ?? 0,
+    };
+  }
+
+  async findUserWorkSummary(id: string): Promise<{
+    userId: string;
+    totalTasks: number;
+    completedTasks: number;
+    totalFixedTasks: number;
+    completedFixedTasks: number;
+    score: number;
+  } | null> {
+    const userObjectId = new Types.ObjectId(id);
+    const [user, totalTasks, completedTasks, totalFixedTasks, completedFixedTasks] =
+      await Promise.all([
+        this.userModel.findById(userObjectId).select('score').lean().exec(),
+        this.connection
+          .collection('tasks')
+          .countDocuments({ assignedTo: userObjectId }),
+        this.connection.collection('tasks').countDocuments({
+          assignedTo: userObjectId,
+          status: 'done',
+        }),
+        this.connection
+          .collection('fixedtasktemplates')
+          .countDocuments({ assignedTo: userObjectId, isActive: true }),
+        this.connection.collection('fixedtasktemplates').countDocuments({
+          assignedTo: userObjectId,
+          isActive: true,
+          status: 'done',
+        }),
+      ]);
+
+    if (!user) return null;
+
+    return {
+      userId: id,
+      totalTasks,
+      completedTasks,
+      totalFixedTasks,
+      completedFixedTasks,
+      score: user.score ?? 0,
     };
   }
 

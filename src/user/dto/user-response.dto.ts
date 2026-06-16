@@ -75,3 +75,23 @@ export class SpecialistProgressResponseDto {
   @ApiProperty({ minimum: 0, maximum: 100, example: 75 })
   progressPercentage: number;
 }
+
+export class UserWorkSummaryResponseDto {
+  @ApiProperty()
+  userId: string;
+
+  @ApiProperty({ example: 12 })
+  totalTasks: number;
+
+  @ApiProperty({ example: 8 })
+  completedTasks: number;
+
+  @ApiProperty({ example: 20 })
+  totalFixedTasks: number;
+
+  @ApiProperty({ example: 15 })
+  completedFixedTasks: number;
+
+  @ApiProperty({ example: 120 })
+  score: number;
+}

@@ -7,6 +7,7 @@ import { UserService } from './user.service';
 describe('UserService specialist progress', () => {
   const repository = {
     findSpecialistProgressById: jest.fn(),
+    findUserWorkSummary: jest.fn(),
   };
   const configService = {
     get: jest.fn(),
@@ -40,5 +41,26 @@ describe('UserService specialist progress', () => {
     await expect(service.getSpecialistProgress(userId)).rejects.toBeInstanceOf(
       NotFoundException,
     );
+  });
+
+  it('returns work summary for the authenticated specialist', async () => {
+    const userId = new Types.ObjectId().toString();
+    repository.findUserWorkSummary.mockResolvedValue({
+      userId,
+      totalTasks: 3,
+      completedTasks: 2,
+      totalFixedTasks: 5,
+      completedFixedTasks: 4,
+      score: 20,
+    });
+
+    await expect(service.getMyWorkSummary(userId)).resolves.toEqual({
+      userId,
+      totalTasks: 3,
+      completedTasks: 2,
+      totalFixedTasks: 5,
+      completedFixedTasks: 4,
+      score: 20,
+    });
   });
 });

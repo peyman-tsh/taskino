@@ -31,6 +31,7 @@ import {
   ApproveUserResponseDto,
   PaginatedUsersResponseDto,
   SpecialistProgressResponseDto,
+  UserWorkSummaryResponseDto,
   UserResponseDto,
 } from './dto/user-response.dto';
 import { CurrentUserId } from '../auth/decorators/current-user-id.decorator';
@@ -101,6 +102,23 @@ export class UserController {
   @ApiResponse({ status: 404, description: 'Specialist user not found' })
   getMyProgress(@CurrentUserId() userId: string) {
     return this.userService.getSpecialistProgress(userId);
+  }
+
+  @Get('me/work-summary')
+  @Roles(UserRole.SPECIALIST)
+  @ApiOperation({
+    summary: 'Get current specialist work summary',
+    description:
+      'Returns task count, completed task count, fixed task count, completed fixed task count, and score for the authenticated specialist.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Specialist work summary retrieved successfully',
+    type: UserWorkSummaryResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  getMyWorkSummary(@CurrentUserId() userId: string) {
+    return this.userService.getMyWorkSummary(userId);
   }
 
   @Get(':id')

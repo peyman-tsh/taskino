@@ -127,6 +127,26 @@ export class UserService {
     return progress;
   }
 
+  async getMyWorkSummary(userId: string): Promise<{
+    userId: string;
+    totalTasks: number;
+    completedTasks: number;
+    totalFixedTasks: number;
+    completedFixedTasks: number;
+    score: number;
+  }> {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new NotFoundException('Invalid user ID');
+    }
+
+    const summary = await this.userRepository.findUserWorkSummary(userId);
+    if (!summary) {
+      throw new NotFoundException('User not found');
+    }
+
+    return summary;
+  }
+
   /**
    * Find a user by mobile number (with password for authentication)
    */

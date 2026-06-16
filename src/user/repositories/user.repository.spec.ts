@@ -1,4 +1,4 @@
-import { Model } from 'mongoose';
+import { Connection, Model, Types } from 'mongoose';
 import { UserDocument, UserRole } from '../schemas/user.schema';
 import { UserRepository } from './user.repository';
 
@@ -49,5 +49,31 @@ describe('UserRepository score adjustment', () => {
       ],
       { new: true, session: undefined },
     );
+  });
+
+  it('counts only active fixed tasks in work summary', async () => {
+    const userId = new Types.ObjectId().toString();
+    const exec = jest.fn().mockResolvedValue({ score: 30 });
+    const lean = jest.fn().mockReturnValue({ exec });
+    const select = jest.fn().mockReturnValue({ lean });
+    const findById = jest.fn().mockReturnValue({ select });
+    const countDocuments = jest.fn().mockResolvedValue(0);
+    const collection = jest.fn().mockReturnValue({ countDocuments });
+    const repository = new UserRepository(
+      { findById } as unknown as Model<UserDocument>,
+      { collection } as unknown as Connection,
+    );
+
+    await repository.findUserWorkSummary(userId);
+
+    expect(countDocuments).toHaveBeenCalledWith({
+      assignedTo: expect.any(Types.ObjectId),
+      isActive: true,
+    });
+    expect(countDocuments).toHaveBeenCalledWith({
+      assignedTo: expect.any(Types.ObjectId),
+      isActive: true,
+      status: 'done',
+    });
   });
 });
