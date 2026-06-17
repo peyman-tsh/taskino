@@ -3,12 +3,16 @@ import { SupervisorMemberRepository } from '../repositories/supervisor-member.re
 import { SupervisorMemberWorkRepository } from '../repositories/supervisor-member-work.repository';
 import { SupervisorMemberService } from './supervisor-member.service';
 import { SupervisorPolicyService } from './supervisor-policy.service';
+import { WorkField } from '../../common/enums/work-field.enum';
+import { UserPerformanceStatus, UserRole } from '../../user/schemas/user.schema';
 
 describe('SupervisorMemberService', () => {
   const supervisorId = new Types.ObjectId().toString();
   const memberId = new Types.ObjectId();
   const repository = {
     findMembersByIds: jest.fn(),
+    findSupervisorWorkField: jest.fn(),
+    findSpecialistsByWorkField: jest.fn(),
   };
   const workRepository = {
     findMemberIds: jest.fn(),
@@ -60,5 +64,52 @@ describe('SupervisorMemberService', () => {
         completedFixedTasks: 1,
       }),
     );
+  });
+
+  it('returns active specialists from the supervisor work field', async () => {
+    repository.findSupervisorWorkField.mockResolvedValue(WorkField.HUMAN_RESOURCES);
+    repository.findSpecialistsByWorkField.mockResolvedValue({
+      specialists: [
+        {
+          _id: memberId,
+          firstName: 'Sara',
+          lastName: 'Karimi',
+          email: 'sara@example.com',
+          mobile: '09120000000',
+          roles: UserRole.SPECIALIST,
+          workField: WorkField.HUMAN_RESOURCES,
+          isActive: true,
+          score: 12,
+          progressPercentage: 80,
+          performanceStatus: UserPerformanceStatus.GOOD,
+        },
+      ],
+      total: 1,
+    });
+
+    const result = await service.findWorkFieldSpecialists(supervisorId, {
+      page: 1,
+      limit: 10,
+    });
+
+    expect(repository.findSpecialistsByWorkField).toHaveBeenCalledWith(
+      WorkField.HUMAN_RESOURCES,
+      1,
+      10,
+    );
+    expect(result).toEqual({
+      data: [
+        expect.objectContaining({
+          userId: memberId.toString(),
+          firstName: 'Sara',
+          workField: WorkField.HUMAN_RESOURCES,
+          role: UserRole.SPECIALIST,
+        }),
+      ],
+      total: 1,
+      page: 1,
+      limit: 10,
+      workField: WorkField.HUMAN_RESOURCES,
+    });
   });
 });

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { SupervisorPaginationQueryDto } from '../dto/supervisor-query.dto';
 import { SupervisorPolicyService } from './supervisor-policy.service';
 import { SupervisorMemberRepository } from '../repositories/supervisor-member.repository';
@@ -70,6 +70,44 @@ export class SupervisorMemberService {
       page: query.page,
       limit: query.limit,
       recurrence: query.recurrence ?? null,
+    };
+  }
+
+  async findWorkFieldSpecialists(
+    supervisorId: string,
+    query: SupervisorPaginationQueryDto,
+  ) {
+    const objectId = this.policy.toObjectId(supervisorId);
+    const workField = await this.repository.findSupervisorWorkField(objectId);
+    if (!workField) {
+      throw new NotFoundException('Supervisor not found');
+    }
+
+    const { specialists, total } =
+      await this.repository.findSpecialistsByWorkField(
+        workField,
+        query.page,
+        query.limit,
+      );
+
+    return {
+      data: specialists.map((specialist) => ({
+        userId: specialist._id.toString(),
+        firstName: specialist.firstName,
+        lastName: specialist.lastName,
+        email: specialist.email,
+        mobile: specialist.mobile,
+        role: specialist.roles,
+        workField: specialist.workField,
+        isActive: specialist.isActive,
+        score: specialist.score ?? 0,
+        progressPercentage: specialist.progressPercentage ?? 0,
+        performanceStatus: specialist.performanceStatus,
+      })),
+      total,
+      page: query.page,
+      limit: query.limit,
+      workField,
     };
   }
 

@@ -35,4 +35,11 @@ export class SupervisorService {
   findMembers(supervisorId: string, query: SupervisorPaginationQueryDto) {
     return this.memberService.findMembers(supervisorId, query);
   }
+
+  findWorkFieldSpecialists(
+    supervisorId: string,
+    query: SupervisorPaginationQueryDto,
+  ) {
+    return this.memberService.findWorkFieldSpecialists(supervisorId, query);
+  }
 }

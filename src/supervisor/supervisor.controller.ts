@@ -20,6 +20,7 @@ import {
 } from './dto/supervisor-query.dto';
 import {
   PaginatedSupervisorMembersResponseDto,
+  PaginatedSupervisorWorkFieldSpecialistsResponseDto,
   SupervisorStatisticsResponseDto,
 } from './dto/supervisor-response.dto';
 import { SupervisorService } from './services/supervisor.service';
@@ -58,6 +59,23 @@ export class SupervisorController {
     @Query() query: SupervisorPaginationQueryDto,
   ) {
     return this.supervisorService.findMembers(supervisorId, query);
+  }
+
+  @Get('work-field-specialists')
+  @ApiOperation({
+    summary: 'Get specialists in current supervisor work field',
+    description:
+      'Returns active specialists that have the same work field as the authenticated supervisor.',
+  })
+  @ApiOkResponse({ type: PaginatedSupervisorWorkFieldSpecialistsResponseDto })
+  findWorkFieldSpecialists(
+    @CurrentUserId() supervisorId: string,
+    @Query() query: SupervisorPaginationQueryDto,
+  ) {
+    return this.supervisorService.findWorkFieldSpecialists(
+      supervisorId,
+      query,
+    );
   }
 
   @Get('tasks')
