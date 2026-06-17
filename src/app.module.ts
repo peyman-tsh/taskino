@@ -16,6 +16,14 @@ import { InternalEventBusModule } from './common/events/internal-event-bus.modul
 import { FixedTaskModule } from './fixedTask/fixed-task.module';
 import { SupervisorModule } from './supervisor/supervisor.module';
 
+function withRetryableWritesDisabled(uri: string): string {
+  if (/[?&]retryWrites=/.test(uri)) {
+    return uri.replace(/([?&])retryWrites=[^&]*/, '$1retryWrites=false');
+  }
+
+  return `${uri}${uri.includes('?') ? '&' : '?'}retryWrites=false`;
+}
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -28,7 +36,9 @@ import { SupervisorModule } from './supervisor/supervisor.module';
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGODB_URI'),
+        uri: withRetryableWritesDisabled(
+          configService.get<string>('MONGODB_URI')!,
+        ),
       }),
       inject: [ConfigService],
     }),
