@@ -346,7 +346,7 @@ export class TaskController {
   }
 
   @Post('completion-stats')
-  @Roles(UserRole.MANAGER)
+  @Roles(UserRole.MANAGER,UserRole.SUPERVISOR)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get task completion statistics',
