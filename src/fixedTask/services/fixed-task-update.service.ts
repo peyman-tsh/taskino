@@ -57,15 +57,14 @@ export class FixedTaskUpdateService {
     isAssignee: boolean,
   ): Promise<void> {
     if (isAssignee) {
-      console.log('in ')
       this.assertAssigneeStatusOnlyUpdate(dto);
       return;
     }
-    // if (dto.status !== undefined) {
-    //   throw new ForbiddenException(
-    //     'Only the fixed task assignee can update the status',
-    //   );
-    // }
+    if (dto.status !== undefined) {
+      throw new ForbiddenException(
+        'Only the fixed task assignee can update the status',
+      );
+    }
 
     const assignedTo = dto.assignedTo ?? template.assignedTo.toString();
     await this.policy.validateParticipants(requesterId, assignedTo);
@@ -131,7 +130,7 @@ export class FixedTaskUpdateService {
 
   private assertAssigneeStatusOnlyUpdate(dto: UpdateFixedTaskDto): void {
     const fields = Object.keys(dto);
-    if (dto.status === undefined || fields.some((field) => !fields.includes(field))) {
+    if (dto.status === undefined || fields.some((field) => field !== 'status')) {
       throw new ForbiddenException(
         'Fixed task assignee can only update the status',
       );
