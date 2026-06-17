@@ -1,0 +1,29 @@
+name: Test NestJS
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: دریافت کد پروژه
+        uses: actions/checkout@v5
+
+      - name: نصب Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: نصب پکیج‌ها
+        run: npm ci
+
+      - name: اجرای تست
+        run: npm run test
+
+      - name: بیلد پروژه
+        run: npm run build
