@@ -105,7 +105,9 @@ export class TaskScoreService {
     const message = error instanceof Error ? error.message : String(error);
     return (
       message.includes('Transaction numbers are only allowed') ||
-      message.includes('replica set member or mongos')
+      message.includes('replica set member or mongos') ||
+      message.includes('does not support retryable writes') ||
+      message.includes('retryWrites=false')
     );
   }
 

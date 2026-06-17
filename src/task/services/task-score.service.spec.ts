@@ -93,6 +93,27 @@ describe('TaskScoreService', () => {
     );
   });
 
+  it('falls back without transaction when retryable writes are unsupported', async () => {
+    session.withTransaction.mockRejectedValueOnce(
+      new Error(
+        'This MongoDB deployment does not support retryable writes. Please add retryWrites=false to your connection string.',
+      ),
+    );
+    const task = createTask(TaskStatus.DONE, {
+      dueDate: new Date('2026-06-12T12:00:00.000Z'),
+      doneTime: new Date('2026-06-12T11:00:00.000Z'),
+    });
+    repository.claimScoreAdjustment.mockResolvedValue(task);
+
+    await service.adjustCompletedTaskScore(task);
+
+    expect(repository.claimScoreAdjustment).toHaveBeenLastCalledWith(task._id);
+    expect(userService.adjustSpecialistScore).toHaveBeenCalledWith(
+      userId.toString(),
+      10,
+    );
+  });
+
   function createTask(
     status: TaskStatus,
     dates: { dueDate?: Date; doneTime?: Date; endTime?: string },
