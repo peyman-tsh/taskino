@@ -16,7 +16,7 @@ export class SpecialistFixedTaskQueryService {
   ) {}
 
   async findBySpecialist(userId: string, page = 1, limit = 10) {
-    await this.assertSpecialist(userId);
+    await this.assertAllowedAssignee(userId);
     const { data, total } = await this.repository.findPaginated(
       { assignedTo: new Types.ObjectId(userId) },
       page,
@@ -26,14 +26,16 @@ export class SpecialistFixedTaskQueryService {
     return { data, total, page, limit };
   }
 
-  private async assertSpecialist(userId: string): Promise<void> {
+  private async assertAllowedAssignee(userId: string): Promise<void> {
     if (!Types.ObjectId.isValid(userId)) {
-      throw new BadRequestException('Invalid specialist user ID');
+      throw new BadRequestException('Invalid assignee user ID');
     }
 
     const user = await this.userService.findById(userId);
-    if (user.roles !== UserRole.SPECIALIST) {
-      throw new ForbiddenException('User must have the specialist role');
+    if (![UserRole.SPECIALIST, UserRole.SUPERVISOR].includes(user.roles as UserRole)) {
+      throw new ForbiddenException(
+        'User must have the specialist or supervisor role',
+      );
     }
   }
 }

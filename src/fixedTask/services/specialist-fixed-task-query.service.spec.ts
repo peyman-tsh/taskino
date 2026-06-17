@@ -33,7 +33,21 @@ describe('SpecialistFixedTaskQueryService', () => {
     expect(result.total).toBe(0);
   });
 
-  it('rejects a user without specialist role', async () => {
+  it('returns fixed tasks assigned to a supervisor', async () => {
+    userService.findById.mockResolvedValue({ roles: UserRole.SUPERVISOR });
+    repository.findPaginated.mockResolvedValue({ data: [], total: 0 });
+
+    const result = await service.findBySpecialist(userId, 1, 10);
+
+    expect(repository.findPaginated).toHaveBeenCalledWith(
+      { assignedTo: new Types.ObjectId(userId) },
+      1,
+      10,
+    );
+    expect(result.total).toBe(0);
+  });
+
+  it('rejects a user without specialist or supervisor role', async () => {
     userService.findById.mockResolvedValue({ roles: UserRole.MANAGER });
 
     await expect(service.findBySpecialist(userId)).rejects.toBeInstanceOf(

@@ -89,8 +89,13 @@ export class FixedTaskController {
 
   @Get('specialist/:userId')
   @Public()
-  @ApiOperation({ summary: 'Get fixed tasks assigned to a specialist' })
-  @ApiParam({ name: 'userId', description: 'Specialist user ID' })
+  @ApiOperation({
+    summary: 'Get fixed tasks assigned to a specialist or supervisor',
+  })
+  @ApiParam({
+    name: 'userId',
+    description: 'Specialist or supervisor user ID',
+  })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiOkResponse({ type: PaginatedFixedTasksResponseDto })
