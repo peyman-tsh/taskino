@@ -311,7 +311,7 @@ export class TaskController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.MANAGER)
+  @Roles(UserRole.MANAGER,UserRole.SUPERVISOR)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Delete task',
