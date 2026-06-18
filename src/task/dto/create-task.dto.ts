@@ -39,14 +39,20 @@ export class CreateTaskDto {
   @IsString()
   createdBy: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description:
-      'Exactly one responsible user ID. The array shape is retained for future compatibility.',
+      'Optional responsible user ID. If omitted, the task is assigned to its creator.',
     example: ['64a7b1c2d3e4f5a6b7c8d9e1'],
   })
   @IsOptional()
   @IsArray()
-  @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+  @Transform(({ value }) =>
+    value === undefined || value === null
+      ? value
+      : Array.isArray(value)
+        ? value
+        : [value],
+  )
   @ArrayMinSize(1, { message: 'A task must be assigned to exactly one user' })
   @ArrayMaxSize(1, {
     message: 'A task can currently be assigned to only one user',

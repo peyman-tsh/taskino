@@ -15,6 +15,12 @@ describe('TaskCreationService', () => {
   const policy = {
     validateObjectId: jest.fn(),
     assertSpecialist: jest.fn(),
+    normalizeAssignedTo: jest.fn((value: string | string[] | undefined) =>
+      Array.isArray(value) ? value : value ? [value] : [],
+    ),
+    assertSingleAssignee: jest.fn(),
+    assertValidAssigneeIds: jest.fn(),
+    assertParticipants: jest.fn(),
     parseDateTime: jest.fn(),
     assertValidDeadline: jest.fn(),
     assertValidTimeRange: jest.fn(),
@@ -53,5 +59,27 @@ describe('TaskCreationService', () => {
       }),
     );
     expect(excelService.uploadFile).not.toHaveBeenCalled();
+  });
+
+  it('assigns a regular task to its creator when assignedTo is omitted', async () => {
+    const task = {
+      _id: new Types.ObjectId(),
+      title: 'Self assigned task',
+      status: TaskStatus.TODO,
+    } as TaskDocument;
+    repository.create.mockResolvedValue(task);
+
+    await service.create({
+      title: 'Self assigned task',
+      createdBy: specialistId,
+    });
+
+    expect(policy.normalizeAssignedTo).toHaveBeenCalledWith(specialistId);
+    expect(repository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        createdBy: new Types.ObjectId(specialistId),
+        assignedTo: [new Types.ObjectId(specialistId)],
+      }),
+    );
   });
 });
