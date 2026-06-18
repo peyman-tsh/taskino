@@ -44,6 +44,7 @@ export class CreateTaskDto {
       'Exactly one responsible user ID. The array shape is retained for future compatibility.',
     example: ['64a7b1c2d3e4f5a6b7c8d9e1'],
   })
+  @IsOptional()
   @IsArray()
   @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
   @ArrayMinSize(1, { message: 'A task must be assigned to exactly one user' })
@@ -51,7 +52,7 @@ export class CreateTaskDto {
     message: 'A task can currently be assigned to only one user',
   })
   @IsString({ each: true })
-  assignedTo: string[];
+  assignedTo?: string[];
   @ApiPropertyOptional({
     description: 'Status of the task',
     enum: TaskStatus,
