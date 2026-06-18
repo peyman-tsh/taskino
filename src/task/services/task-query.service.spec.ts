@@ -57,4 +57,17 @@ describe('TaskQueryService', () => {
       }),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
+
+  it('returns only public tasks with a non-expired due date', async () => {
+    await service.findActivePublicTasks(1, 10);
+
+    expect(repository.findPaginated).toHaveBeenCalledWith(
+      {
+        isPublic: true,
+        dueDate: { $type: 'date', $gte: expect.any(Date) },
+      },
+      1,
+      10,
+    );
+  });
 });

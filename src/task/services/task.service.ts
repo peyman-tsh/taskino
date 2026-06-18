@@ -73,6 +73,10 @@ export class TaskService {
     return this.taskQueryService.findAll(page, limit, filters);
   }
 
+  findActivePublicTasks(page = 1, limit = 10) {
+    return this.taskQueryService.findActivePublicTasks(page, limit);
+  }
+
   /**
    * Find a task by ID with populated user fields
    * @throws NotFoundException if task not found

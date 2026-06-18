@@ -207,6 +207,29 @@ export class TaskController {
     });
   }
 
+  @Get('public/active')
+  @Public()
+  @ApiOperation({
+    summary: 'Get active public tasks',
+    description:
+      'Returns public tasks whose dueDate exists and has not expired.',
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiResponse({
+    status: 200,
+    description: 'Active public tasks retrieved successfully',
+    type: PaginatedTasksResponseDto,
+  })
+  findActivePublicTasks(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
+    return this.taskService.findActivePublicTasks(
+      Number(page),
+      Number(limit),
+    );
+  }
 
   @Get('user')
   @ApiOperation({

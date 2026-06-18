@@ -34,6 +34,19 @@ export class TaskQueryService {
     return { data, total, page, limit };
   }
 
+  async findActivePublicTasks(page: number, limit: number) {
+    const { data, total } = await this.repository.findPaginated(
+      {
+        isPublic: true,
+        dueDate: { $type: 'date', $gte: new Date() },
+      },
+      page,
+      limit,
+    );
+
+    return { data, total, page, limit };
+  }
+
   private buildFilter(filters?: TaskListFilters): Record<string, unknown> {
     const query: Record<string, unknown> = {};
     this.addParticipantFilters(query, filters);
