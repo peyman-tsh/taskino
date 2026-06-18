@@ -18,7 +18,7 @@ describe('TaskCreationService', () => {
     normalizeAssignedTo: jest.fn((value: string | string[] | undefined) =>
       Array.isArray(value) ? value : value ? [value] : [],
     ),
-    assertSingleAssignee: jest.fn(),
+    assertAtMostOneAssignee: jest.fn(),
     assertValidAssigneeIds: jest.fn(),
     assertParticipants: jest.fn(),
     parseDateTime: jest.fn(),
@@ -61,25 +61,30 @@ describe('TaskCreationService', () => {
     expect(excelService.uploadFile).not.toHaveBeenCalled();
   });
 
-  it('assigns a regular task to its creator when assignedTo is omitted', async () => {
+  it('creates a regular task without an assignee when assignedTo is omitted', async () => {
     const task = {
       _id: new Types.ObjectId(),
-      title: 'Self assigned task',
+      title: 'Unassigned task',
+      assignedTo: [],
       status: TaskStatus.TODO,
-    } as TaskDocument;
+    } as unknown as TaskDocument;
     repository.create.mockResolvedValue(task);
 
     await service.create({
-      title: 'Self assigned task',
+      title: 'Unassigned task',
       createdBy: specialistId,
     });
 
-    expect(policy.normalizeAssignedTo).toHaveBeenCalledWith(specialistId);
     expect(repository.create).toHaveBeenCalledWith(
       expect.objectContaining({
         createdBy: new Types.ObjectId(specialistId),
-        assignedTo: [new Types.ObjectId(specialistId)],
+        assignedTo: [],
       }),
+    );
+    expect(notificationService.notifyAssignedUsers).toHaveBeenCalledWith(
+      [],
+      task._id.toString(),
+      task.title,
     );
   });
 });

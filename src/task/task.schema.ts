@@ -26,10 +26,10 @@ export class Task {
 
   @Prop({
     type: [{ type: Types.ObjectId, ref: User.name }],
-    required: true,
+    default: [],
     validate: {
-      validator: (assignedTo: Types.ObjectId[]) => assignedTo.length === 1,
-      message: 'A task must be assigned to exactly one user',
+      validator: (assignedTo: Types.ObjectId[]) => assignedTo.length <= 1,
+      message: 'A task can currently be assigned to only one user',
     },
   })
   assignedTo: Types.ObjectId[];

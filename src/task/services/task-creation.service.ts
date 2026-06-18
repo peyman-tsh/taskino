@@ -74,10 +74,8 @@ export class TaskCreationService {
 
   private async validateParticipants(dto: CreateTaskDto): Promise<string[]> {
     this.policy.validateObjectId(dto.createdBy);
-    const assignedTo = this.policy.normalizeAssignedTo(
-      dto.assignedTo ?? dto.createdBy,
-    );
-    this.policy.assertSingleAssignee(assignedTo);
+    const assignedTo = this.policy.normalizeAssignedTo(dto.assignedTo);
+    this.policy.assertAtMostOneAssignee(assignedTo);
     this.policy.assertValidAssigneeIds(assignedTo);
     await this.policy.assertParticipants(dto.createdBy, assignedTo);
     return assignedTo;

@@ -1,6 +1,5 @@
 import {
   ArrayMaxSize,
-  ArrayMinSize,
   IsString,
   IsNotEmpty,
   IsArray,
@@ -41,7 +40,7 @@ export class CreateTaskDto {
 
   @ApiPropertyOptional({
     description:
-      'Optional responsible user ID. If omitted, the task is assigned to its creator.',
+      'Optional responsible user ID. When omitted, the task is created without an assignee.',
     example: ['64a7b1c2d3e4f5a6b7c8d9e1'],
   })
   @IsOptional()
@@ -53,7 +52,6 @@ export class CreateTaskDto {
         ? value
         : [value],
   )
-  @ArrayMinSize(1, { message: 'A task must be assigned to exactly one user' })
   @ArrayMaxSize(1, {
     message: 'A task can currently be assigned to only one user',
   })

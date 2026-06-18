@@ -30,6 +30,14 @@ export class TaskPolicyService {
     }
   }
 
+  assertAtMostOneAssignee(assignedTo: string[]): void {
+    if (assignedTo.length > 1) {
+      throw new BadRequestException(
+        'A task can currently be assigned to only one user',
+      );
+    }
+  }
+
   assertValidAssigneeIds(assignedTo: string[]): void {
     if (assignedTo.some((userId) => !Types.ObjectId.isValid(userId))) {
       throw new BadRequestException('Invalid assignedTo user IDs');
