@@ -130,7 +130,7 @@ export class FixedTaskUpdateService {
 
   private assertAssigneeStatusOnlyUpdate(dto: UpdateFixedTaskDto): void {
     const fields = Object.keys(dto);
-    if (dto.status === undefined || fields.some((field) => field !== 'status')) {
+    if (dto.status === undefined || !fields.includes("status" )) {
       throw new ForbiddenException(
         'Fixed task assignee can only update the status',
       );
