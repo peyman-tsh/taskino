@@ -7,6 +7,7 @@ import {
   IsEnum,
   Matches,
   IsDateString,
+  IsBoolean,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
@@ -57,6 +58,14 @@ export class UpdateTaskDto {
   @IsOptional()
   @IsString()
   taskComment?: string;
+
+  @ApiPropertyOptional({
+    description: 'Whether the task is publicly visible',
+    example: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isPublic?: boolean;
 
   @ApiPropertyOptional({
     description: 'Exact task start date and time, including timezone',
