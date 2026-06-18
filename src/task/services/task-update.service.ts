@@ -82,8 +82,13 @@ export class TaskUpdateService {
       dto.dueDate !== undefined
         ? this.policy.parseDateTime(dto.dueDate, 'dueDate')
         : task.dueDate;
+    const endDate =
+      dto.endDate !== undefined
+        ? this.policy.parseDateTime(dto.endDate, 'endDate')
+        : task.endDate;
 
     this.policy.assertValidDeadline(startDate, dueDate);
+    this.policy.assertValidDeadline(startDate, endDate);
     this.policy.assertValidTimeRange(
       dto.startTime ?? task.startTime,
       dto.endTime ?? task.endTime,
@@ -94,6 +99,9 @@ export class TaskUpdateService {
     }
     if (dto.dueDate !== undefined) {
       updateData.dueDate = dueDate;
+    }
+    if (dto.endDate !== undefined) {
+      updateData.endDate = endDate;
     }
   }
 

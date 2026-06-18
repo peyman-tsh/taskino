@@ -64,7 +64,7 @@ describe('TaskQueryService', () => {
     expect(repository.findPaginated).toHaveBeenCalledWith(
       {
         isPublic: true,
-        dueDate: { $type: 'date', $gte: expect.any(Date) },
+        endDate: { $type: 'date', $gte: expect.any(Date) },
       },
       1,
       10,

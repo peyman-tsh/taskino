@@ -90,6 +90,7 @@ export class TaskCreationService {
       assignedTo: _assignedTo,
       startDate,
       dueDate,
+      endDate,
       startTime,
       endTime,
       ...rest
@@ -100,8 +101,12 @@ export class TaskCreationService {
     const parsedDueDate = dueDate
       ? this.policy.parseDateTime(dueDate, 'dueDate')
       : undefined;
+    const parsedEndDate = endDate
+      ? this.policy.parseDateTime(endDate, 'endDate')
+      : undefined;
 
     this.policy.assertValidDeadline(parsedStartDate, parsedDueDate);
+    this.policy.assertValidDeadline(parsedStartDate, parsedEndDate);
     this.policy.assertValidTimeRange(startTime, endTime);
 
     return {
@@ -111,6 +116,7 @@ export class TaskCreationService {
       assignedTo: assignedTo.map((userId) => new Types.ObjectId(userId)),
       startDate: parsedStartDate,
       dueDate: parsedDueDate,
+      endDate: parsedEndDate,
       startTime,
       endTime,
       doneTime: rest.status === TaskStatus.DONE ? new Date() : undefined,

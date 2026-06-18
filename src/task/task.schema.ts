@@ -70,6 +70,9 @@ export class Task {
   @Prop({ type: Date, index: true })
   dueDate?: Date;
 
+  @Prop({ type: Date, index: true })
+  endDate?: Date;
+
   @Prop({ type: String, match: TIME_PATTERN })
   startTime?: string;
 
@@ -90,4 +93,4 @@ export type TaskDocument = HydratedDocument<Task>;
 
 export const TaskSchema = SchemaFactory.createForClass(Task);
 
-TaskSchema.index({ recurrence: 1, startDate: 1, dueDate: 1 });
+TaskSchema.index({ recurrence: 1, startDate: 1, dueDate: 1, endDate: 1 });

@@ -49,6 +49,13 @@ export class TaskResponseDto {
   })
   dueDate?: Date;
 
+  @ApiPropertyOptional({
+    type: String,
+    format: 'date-time',
+    example: '2026-06-07T13:30:00.000Z',
+  })
+  endDate?: Date;
+
   @ApiPropertyOptional({ example: '09:00' })
   startTime?: string;
 

@@ -212,7 +212,7 @@ export class TaskController {
   @ApiOperation({
     summary: 'Get active public tasks',
     description:
-      'Returns public tasks whose dueDate exists and has not expired.',
+      'Returns public tasks whose endDate exists and has not expired.',
   })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })

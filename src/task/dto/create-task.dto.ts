@@ -107,6 +107,17 @@ export class CreateTaskDto {
   dueDate?: string;
 
   @ApiPropertyOptional({
+    description: 'Task end date and time used for public task expiration',
+    example: '2026-06-07T17:00:00+03:30',
+  })
+  @IsOptional()
+  @IsDateString()
+  @Matches(TASK_DATE_TIME_PATTERN, {
+    message: `endDate ${TASK_DATE_TIME_MESSAGE}`,
+  })
+  endDate?: string;
+
+  @ApiPropertyOptional({
     description: 'Daily start time in 24-hour HH:mm format',
     example: '09:00',
   })

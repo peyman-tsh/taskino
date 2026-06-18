@@ -38,7 +38,7 @@ export class TaskQueryService {
     const { data, total } = await this.repository.findPaginated(
       {
         isPublic: true,
-        dueDate: { $type: 'date', $gte: new Date() },
+        endDate: { $type: 'date', $gte: new Date() },
       },
       page,
       limit,
