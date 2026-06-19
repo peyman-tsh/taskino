@@ -1,13 +1,12 @@
+import { IsNotEmpty, IsString, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { Matches } from 'class-validator';
 
 export class ForgotPasswordDto {
-  @ApiProperty({
-    description: 'Mobile number of the account receiving the reset email',
-    example: '09123456789',
-  })
-  @Matches(/^[0-9+*-]+$/, {
-    message: 'Mobile number must contain only digits and + sign',
+  @ApiProperty({ example: '09223689925' })
+  @IsString()
+  @IsNotEmpty()
+  @Matches(/^09\d{9}$/, {
+    message: 'شماره موبایل معتبر نیست',
   })
   mobile: string;
 }

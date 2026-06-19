@@ -82,10 +82,6 @@ export class EnvironmentVariables {
   @IsOptional()
   MAIL_FROM?: string;
 
-  @IsString()
-  @IsOptional()
-  PASSWORD_RESET_URL?: string;
-
   @IsInt()
   @Min(1)
   @Max(1440)

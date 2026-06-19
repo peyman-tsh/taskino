@@ -20,17 +20,21 @@ export class EmailService {
     });
   }
 
-  async sendPasswordReset(
+  async sendPasswordResetCode(
     recipient: string,
     firstName: string,
+    verificationCode: string,
   ): Promise<void> {
     try {
       await this.transporter.sendMail({
         from: this.from,
         to: recipient,
-        subject: 'بازیابی رمز عبور تسکینو',
-        text: `سلام ${firstName}`,
-        html: this.buildPasswordResetTemplate(firstName),
+        subject: 'کد بازیابی رمز عبور تسکینو',
+        text: `سلام ${firstName}، کد بازیابی رمز عبور شما: ${verificationCode}`,
+        html: this.buildPasswordResetCodeTemplate(
+          firstName,
+          verificationCode,
+        ),
       });
     } catch {
       throw new ServiceUnavailableException(
@@ -39,15 +43,19 @@ export class EmailService {
     }
   }
 
-  private buildPasswordResetTemplate(
+  private buildPasswordResetCodeTemplate(
     firstName: string,
+    verificationCode: string,
   ): string {
     return `
       <div dir="rtl" style="font-family:Tahoma,Arial,sans-serif">
         <h2>بازیابی رمز عبور تسکینو</h2>
         <p>سلام ${this.escapeHtml(firstName)}،</p>
-        <p>برای ثبت رمز عبور جدید روی لینک زیر کلیک کنید:</p>
-        <p>این لینک پس از ۱۵ دقیقه منقضی می‌شود.</p>
+        <p>کد تأیید شما:</p>
+        <p style="font-size:28px;font-weight:bold;letter-spacing:6px">
+          ${this.escapeHtml(verificationCode)}
+        </p>
+        <p>این کد پس از ۱۵ دقیقه منقضی می‌شود.</p>
       </div>
     `;
   }

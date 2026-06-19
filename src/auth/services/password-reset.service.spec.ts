@@ -9,21 +9,22 @@ import { PasswordResetService } from './password-reset.service';
 
 describe('PasswordResetService', () => {
   const repository = {
-    replaceUserToken: jest.fn(),
-    consumeValidToken: jest.fn(),
+    replaceUserCode: jest.fn(),
+    verifyCode: jest.fn(),
+    recordFailedAttempt: jest.fn(),
+    consumeVerifiedToken: jest.fn(),
   };
   const userService = {
     findOptionalByMobile: jest.fn(),
     updatePasswordHash: jest.fn(),
   };
   const emailService = {
-    sendPasswordReset: jest.fn(),
+    sendPasswordResetCode: jest.fn(),
   };
   const configService = {
     get: jest.fn((key: string) => {
       const values: Record<string, unknown> = {
         'mail.resetTokenExpiresMinutes': 15,
-        'mail.resetUrl': 'http://localhost:3001/reset-password',
         'app.bcryptSaltRounds': 4,
       };
       return values[key];
@@ -35,30 +36,30 @@ describe('PasswordResetService', () => {
     emailService as unknown as EmailService,
     configService as unknown as ConfigService,
   );
+  const user = {
+    _id: new Types.ObjectId(),
+    firstName: 'Ali',
+    email: 'ali@example.com',
+  } as UserDocument;
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('creates a hashed token and sends the raw token by email', async () => {
-    const user = {
-      _id: new Types.ObjectId(),
-      firstName: 'Ali',
-      email: 'ali@example.com',
-    } as UserDocument;
+  it('creates a six-digit code and sends it by email', async () => {
     userService.findOptionalByMobile.mockResolvedValue(user);
 
     await service.requestReset('09120000000');
 
-    expect(repository.replaceUserToken).toHaveBeenCalledWith(
+    expect(repository.replaceUserCode).toHaveBeenCalledWith(
       user._id,
       expect.stringMatching(/^[a-f0-9]{64}$/),
       expect.any(Date),
     );
-    expect(emailService.sendPasswordReset).toHaveBeenCalledWith(
+    expect(emailService.sendPasswordResetCode).toHaveBeenCalledWith(
       user.email,
       user.firstName,
-      expect.stringContaining('/reset-password?token='),
+      expect.stringMatching(/^\d{6}$/),
     );
   });
 
@@ -66,33 +67,64 @@ describe('PasswordResetService', () => {
     userService.findOptionalByMobile.mockResolvedValue(null);
 
     await expect(service.requestReset('09120000000')).resolves.toEqual({
-      message: 'If the account exists, a password reset email has been sent',
+      message: 'If the account exists, a verification code has been sent',
     });
-    expect(repository.replaceUserToken).not.toHaveBeenCalled();
-    expect(emailService.sendPasswordReset).not.toHaveBeenCalled();
+    expect(repository.replaceUserCode).not.toHaveBeenCalled();
+    expect(emailService.sendPasswordResetCode).not.toHaveBeenCalled();
   });
 
-  it('updates the password when the token is valid', async () => {
-    const userId = new Types.ObjectId();
-    repository.consumeValidToken.mockResolvedValue({ userId });
+  it('returns a reset token after code verification', async () => {
+    userService.findOptionalByMobile.mockResolvedValue(user);
+    repository.verifyCode.mockResolvedValue({ userId: user._id });
 
-    await service.resetPassword('a'.repeat(64), 'new-password');
+    const result = await service.verifyCode('09120000000', '123456');
 
-    expect(repository.consumeValidToken).toHaveBeenCalledWith(
+    expect(repository.verifyCode).toHaveBeenCalledWith(
+      user._id,
+      expect.stringMatching(/^[a-f0-9]{64}$/),
+      expect.stringMatching(/^[a-f0-9]{64}$/),
+      expect.any(Date),
+      expect.any(Date),
+    );
+    expect(result).toEqual({
+      resetToken: expect.stringMatching(/^[a-f0-9]{64}$/),
+      changePasswordEndpoint: '/api/auth/password/change',
+    });
+  });
+
+  it('records a failed verification attempt', async () => {
+    userService.findOptionalByMobile.mockResolvedValue(user);
+    repository.verifyCode.mockResolvedValue(null);
+
+    await expect(
+      service.verifyCode('09120000000', '000000'),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(repository.recordFailedAttempt).toHaveBeenCalledWith(
+      user._id,
+      expect.any(Date),
+    );
+  });
+
+  it('changes the password with a verified reset token', async () => {
+    repository.consumeVerifiedToken.mockResolvedValue({ userId: user._id });
+
+    await service.changePassword('a'.repeat(64), 'new-password');
+
+    expect(repository.consumeVerifiedToken).toHaveBeenCalledWith(
       expect.stringMatching(/^[a-f0-9]{64}$/),
       expect.any(Date),
     );
     expect(userService.updatePasswordHash).toHaveBeenCalledWith(
-      userId.toString(),
+      user._id.toString(),
       expect.not.stringMatching(/^new-password$/),
     );
   });
 
-  it('rejects an invalid or expired token', async () => {
-    repository.consumeValidToken.mockResolvedValue(null);
+  it('rejects an invalid password reset session', async () => {
+    repository.consumeVerifiedToken.mockResolvedValue(null);
 
     await expect(
-      service.resetPassword('a'.repeat(64), 'new-password'),
+      service.changePassword('a'.repeat(64), 'new-password'),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(userService.updatePasswordHash).not.toHaveBeenCalled();
   });

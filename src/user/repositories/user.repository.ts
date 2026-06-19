@@ -25,6 +25,8 @@ export class UserRepository {
   }
 
   findOptionalByMobile(mobile: string): Promise<UserDocument | null> {
+    console.log(mobile);
+    
     return this.userModel.findOne({ mobile }).exec();
   }
 

@@ -13,6 +13,18 @@ export class PasswordResetToken {
   @Prop({ type: Date, required: true, index: { expires: 0 } })
   expiresAt: Date;
 
+  @Prop({ type: Number, default: 0 })
+  failedAttempts: number;
+
+  @Prop({ type: Date, default: null })
+  verifiedAt?: Date | null;
+
+  @Prop({ type: String, default: null, index: true })
+  resetTokenHash?: string | null;
+
+  @Prop({ type: Date, default: null })
+  resetTokenExpiresAt?: Date | null;
+
   @Prop({ type: Date, default: null })
   usedAt?: Date | null;
 }

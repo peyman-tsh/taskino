@@ -13,22 +13,71 @@ export class PasswordResetTokenRepository {
     private readonly model: Model<PasswordResetTokenDocument>,
   ) {}
 
-  async replaceUserToken(
+  async replaceUserCode(
     userId: Types.ObjectId,
-    tokenHash: string,
+    codeHash: string,
     expiresAt: Date,
   ): Promise<void> {
     await this.model.deleteMany({ userId }).exec();
-    await new this.model({ userId, tokenHash, expiresAt }).save();
+    await new this.model({
+      userId,
+      tokenHash: codeHash,
+      expiresAt,
+      failedAttempts: 0,
+    }).save();
   }
 
-  consumeValidToken(tokenHash: string, now: Date) {
+  verifyCode(
+    userId: Types.ObjectId,
+    codeHash: string,
+    resetTokenHash: string,
+    resetTokenExpiresAt: Date,
+    now: Date,
+  ) {
     return this.model
       .findOneAndUpdate(
         {
-          tokenHash,
+          userId,
+          tokenHash: codeHash,
+          verifiedAt: null,
           usedAt: null,
           expiresAt: { $gt: now },
+          failedAttempts: { $lt: 5 },
+        },
+        {
+          $set: {
+            verifiedAt: now,
+            resetTokenHash,
+            resetTokenExpiresAt,
+          },
+        },
+        { returnDocument: 'after' },
+      )
+      .exec();
+  }
+
+  recordFailedAttempt(userId: Types.ObjectId, now: Date) {
+    return this.model
+      .updateOne(
+        {
+          userId,
+          verifiedAt: null,
+          usedAt: null,
+          expiresAt: { $gt: now },
+        },
+        { $inc: { failedAttempts: 1 } },
+      )
+      .exec();
+  }
+
+  consumeVerifiedToken(resetTokenHash: string, now: Date) {
+    return this.model
+      .findOneAndUpdate(
+        {
+          resetTokenHash,
+          verifiedAt: { $type: 'date' },
+          usedAt: null,
+          resetTokenExpiresAt: { $gt: now },
         },
         { $set: { usedAt: now } },
         { returnDocument: 'after' },
