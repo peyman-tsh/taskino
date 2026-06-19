@@ -16,6 +16,8 @@ import { InternalEventBusModule } from './common/events/internal-event-bus.modul
 import { FixedTaskModule } from './fixedTask/fixed-task.module';
 import { SupervisorModule } from './supervisor/supervisor.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import mailConfig from './config/mail.config';
+import { EmailModule } from './email/email.module';
 
 function withRetryableWritesDisabled(uri: string): string {
   if (/[?&]retryWrites=/.test(uri)) {
@@ -31,7 +33,7 @@ function withRetryableWritesDisabled(uri: string): string {
       isGlobal: true,
       envFilePath: '.env',
       validate,
-      load: [appConfig],
+      load: [appConfig, mailConfig],
     }),
     InternalEventBusModule,
     ScheduleModule.forRoot(),
@@ -45,6 +47,7 @@ function withRetryableWritesDisabled(uri: string): string {
       inject: [ConfigService],
     }),
     UserModule,
+    EmailModule,
     AuthModule,
     TaskModule,
     LeaveRequestModule,

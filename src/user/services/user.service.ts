@@ -60,6 +60,23 @@ export class UserService {
   findByName(userName: string, lastName: string): Promise<UserDocument> {
     return this.userRepository.findByName(userName, lastName);
   }
+
+  findOptionalByMobile(mobile: string): Promise<UserDocument | null> {
+    return this.userRepository.findOptionalByMobile(mobile);
+  }
+
+  async updatePasswordHash(
+    userId: string,
+    passwordHash: string,
+  ): Promise<void> {
+    const user = await this.userRepository.updatePasswordHash(
+      userId,
+      passwordHash,
+    );
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+  }
   async findAll(
     page: number = 1,
     limit: number = 10,

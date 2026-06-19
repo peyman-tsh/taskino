@@ -24,12 +24,22 @@ export class UserRepository {
     return this.userModel.findOne({ email }).exec();
   }
 
+  findOptionalByMobile(mobile: string): Promise<UserDocument | null> {
+    return this.userModel.findOne({ mobile }).exec();
+  }
+
   findRawById(id: string): Promise<UserDocument | null> {
     return this.userModel.findById(id).exec();
   }
 
   updateById(id: string, update: Record<string, unknown>) {
     return this.userModel.findByIdAndUpdate(id, update, { new: true }).exec();
+  }
+
+  updatePasswordHash(id: string, password: string) {
+    return this.userModel
+      .findByIdAndUpdate(id, { $set: { password } })
+      .exec();
   }
 
   adjustScoreWithFloor(id: string, score: number) {
