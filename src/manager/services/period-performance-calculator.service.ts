@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { FixedTaskStatus } from '../../fixedTask/fixed-task.schema';
 import { TaskRecurrence, TaskStatus } from '../../task/task.schema';
-import { UserPerformanceStatus } from '../../user/schemas/user.schema';
+import { calculatePerformanceStatus } from '../utils/performance-status.util';
 import { PerformancePeriod } from './performance-period.service';
 import {
   PeriodPerformanceFixedTask,
@@ -38,9 +38,8 @@ export class PeriodPerformanceCalculatorService {
     const totalWork = tasks.length + fixedTasks.length;
     const completedWork =
       completedTasksInPeriod + completedFixedTasksInPeriod;
-    const allTasksOnTime = onTimeTasks === tasks.length;
-    const allFixedTasksCompleted =
-      completedFixedTasksInPeriod === fixedTasks.length;
+    const progressPercentage =
+      totalWork === 0 ? 0 : Math.round((completedWork / totalWork) * 100);
 
     return {
       recurrence,
@@ -51,12 +50,8 @@ export class PeriodPerformanceCalculatorService {
       onTimeTasks,
       totalFixedTasks: fixedTasks.length,
       completedFixedTasksInPeriod,
-      progressPercentage:
-        totalWork === 0 ? 0 : Math.round((completedWork / totalWork) * 100),
-      performanceStatus:
-        totalWork > 0 && allTasksOnTime && allFixedTasksCompleted
-          ? UserPerformanceStatus.GOOD
-          : UserPerformanceStatus.WEAK,
+      progressPercentage,
+      performanceStatus: calculatePerformanceStatus(progressPercentage),
     };
   }
 

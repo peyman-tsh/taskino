@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { FixedTaskStatus } from '../../fixedTask/fixed-task.schema';
 import { TaskStatus } from '../../task/task.schema';
-import { UserPerformanceStatus } from '../../user/schemas/user.schema';
+import { calculatePerformanceStatus } from '../utils/performance-status.util';
 import {
   ProgressFixedTask,
   ProgressMetrics,
@@ -46,7 +46,7 @@ export class UserProgressCalculatorService {
       completedFixedTasks,
       inProgressFixedTasks,
       progressPercentage,
-      performanceStatus: this.calculatePerformanceStatus(progressPercentage),
+      performanceStatus: calculatePerformanceStatus(progressPercentage),
     };
   }
 
@@ -116,11 +116,4 @@ export class UserProgressCalculatorService {
     return 0;
   }
 
-  private calculatePerformanceStatus(
-    progressPercentage: number,
-  ): UserPerformanceStatus {
-    if (progressPercentage <= 40) return UserPerformanceStatus.WEAK;
-    if (progressPercentage <= 70) return UserPerformanceStatus.NORMAL;
-    return UserPerformanceStatus.GOOD;
-  }
 }

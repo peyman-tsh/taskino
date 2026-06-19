@@ -12,6 +12,11 @@ import { UserDocument, UserRole } from '../schemas/user.schema';
 import * as bcrypt from 'bcryptjs';
 import { UserRepository } from '../repositories/user.repository';
 import { WorkField } from '../../common/enums/work-field.enum';
+import { InternalEventBus } from '../../common/events/internal-event-bus.service';
+import {
+  UserProgressEvents,
+  UserProgressRefreshRequestedEvent,
+} from '../../common/events/user-progress.events';
 
 @Injectable()
 export class UserService {
@@ -20,6 +25,7 @@ export class UserService {
   constructor(
     private readonly configService: ConfigService,
     private readonly userRepository: UserRepository,
+    private readonly eventBus: InternalEventBus,
   ) {
     this.bcryptSaltRounds =
       this.configService.get<number>('app.bcryptSaltRounds') ?? 10;
@@ -117,11 +123,16 @@ export class UserService {
       throw new NotFoundException('Invalid user ID');
     }
 
+    await this.eventBus.publishAndWait(
+      UserProgressEvents.REFRESH_REQUESTED,
+      new UserProgressRefreshRequestedEvent([userId]),
+    );
+
     const progress = await this.userRepository.findSpecialistProgressById(
       userId,
     );
     if (!progress) {
-      throw new NotFoundException('Specialist user not found');
+      throw new NotFoundException('Specialist or supervisor user not found');
     }
 
     return progress;

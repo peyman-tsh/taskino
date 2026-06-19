@@ -17,6 +17,7 @@ import { ManagerTasksService } from './services/manager-tasks.service';
 import { LeaveRequestModule } from '../LeaveRequest/LeaveRequest.module';
 import { ManagerLeaveRequestService } from './services/manager-leave-request.service';
 import { ManagerUserScoreService } from './services/manager-user-score.service';
+import { UserProgressEventListener } from './user-progress-event.listener';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { ManagerUserScoreService } from './services/manager-user-score.service';
     ManagerTasksService,
     ManagerLeaveRequestService,
     ManagerUserScoreService,
+    UserProgressEventListener,
   ],
 })
 export class ManagerModule {}

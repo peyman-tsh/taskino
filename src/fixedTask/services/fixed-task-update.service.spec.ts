@@ -11,6 +11,8 @@ import { FixedTaskPolicyService } from './fixed-task-policy.service';
 import { FixedTaskQueryService } from './fixed-task-query.service';
 import { FixedTaskScoreService } from './fixed-task-score.service';
 import { FixedTaskUpdateService } from './fixed-task-update.service';
+import { InternalEventBus } from '../../common/events/internal-event-bus.service';
+import { UserProgressEvents } from '../../common/events/user-progress.events';
 
 describe('FixedTaskUpdateService', () => {
   const assigneeId = new Types.ObjectId();
@@ -29,12 +31,14 @@ describe('FixedTaskUpdateService', () => {
   const scoreService = { adjustTaskScore: jest.fn() };
   const notificationService = { notifyCreatorWhenCompleted: jest.fn() };
   const queryService = { findById: jest.fn() };
+  const eventBus = { publish: jest.fn() };
   const service = new FixedTaskUpdateService(
     repository as unknown as FixedTaskRepository,
     policy as unknown as FixedTaskPolicyService,
     scoreService as unknown as FixedTaskScoreService,
     notificationService as unknown as FixedTaskNotificationService,
     queryService as unknown as FixedTaskQueryService,
+    eventBus as unknown as InternalEventBus,
   );
 
   beforeEach(() => jest.clearAllMocks());
@@ -56,6 +60,12 @@ describe('FixedTaskUpdateService', () => {
 
     expect(scoreService.adjustTaskScore).toHaveBeenCalledWith(updatedTemplate);
     expect(notificationService.notifyCreatorWhenCompleted).toHaveBeenCalled();
+    expect(eventBus.publish).toHaveBeenCalledWith(
+      UserProgressEvents.REFRESH_REQUESTED,
+      expect.objectContaining({
+        userIds: [assigneeId.toString()],
+      }),
+    );
   });
 
   it('prevents the assignee from editing fixed task fields', async () => {

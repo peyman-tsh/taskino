@@ -230,7 +230,10 @@ export class UserRepository {
     id: string,
   ): Promise<{ userId: string; progressPercentage: number } | null> {
     const user = await this.userModel
-      .findOne({ _id: id, roles: UserRole.SPECIALIST })
+      .findOne({
+        _id: id,
+        roles: { $in: [UserRole.SPECIALIST, UserRole.SUPERVISOR] },
+      })
       .select('progressPercentage')
       .lean()
       .exec();

@@ -5,6 +5,8 @@ import { TaskNotificationService } from './task-notification.service';
 import { TaskPolicyService } from './task-policy.service';
 import { TaskScoreService } from './task-score.service';
 import { TaskUpdateService } from './task-update.service';
+import { InternalEventBus } from '../../common/events/internal-event-bus.service';
+import { UserProgressEvents } from '../../common/events/user-progress.events';
 
 describe('TaskUpdateService', () => {
   const creatorId = new Types.ObjectId();
@@ -31,11 +33,13 @@ describe('TaskUpdateService', () => {
   const scoreService = {
     adjustCompletedTaskScore: jest.fn(),
   };
+  const eventBus = { publish: jest.fn() };
   const service = new TaskUpdateService(
     repository as unknown as TaskRepository,
     policy as unknown as TaskPolicyService,
     notificationService as unknown as TaskNotificationService,
     scoreService as unknown as TaskScoreService,
+    eventBus as unknown as InternalEventBus,
   );
 
   beforeEach(() => {
@@ -66,6 +70,12 @@ describe('TaskUpdateService', () => {
       TaskStatus.DONE,
     );
     expect(notificationService.notifyCreatorWhenCompleted).toHaveBeenCalled();
+    expect(eventBus.publish).toHaveBeenCalledWith(
+      UserProgressEvents.REFRESH_REQUESTED,
+      expect.objectContaining({
+        userIds: [assigneeId.toString()],
+      }),
+    );
   });
 
   function createTask(status: TaskStatus): TaskDocument {

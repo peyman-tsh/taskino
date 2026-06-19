@@ -10,6 +10,11 @@ import { FixedTaskNotificationService } from './fixed-task-notification.service'
 import { FixedTaskPolicyService } from './fixed-task-policy.service';
 import { FixedTaskQueryService } from './fixed-task-query.service';
 import { FixedTaskScoreService } from './fixed-task-score.service';
+import { InternalEventBus } from '../../common/events/internal-event-bus.service';
+import {
+  UserProgressEvents,
+  UserProgressRefreshRequestedEvent,
+} from '../../common/events/user-progress.events';
 
 @Injectable()
 export class FixedTaskUpdateService {
@@ -19,6 +24,7 @@ export class FixedTaskUpdateService {
     private readonly scoreService: FixedTaskScoreService,
     private readonly notificationService: FixedTaskNotificationService,
     private readonly queryService: FixedTaskQueryService,
+    private readonly eventBus: InternalEventBus,
   ) {}
 
   async update(id: string, requesterId: string, dto: UpdateFixedTaskDto) {
@@ -47,6 +53,7 @@ export class FixedTaskUpdateService {
     }
 
     await this.runCompletionActions(template, updatedTemplate, dto, isAssignee);
+    this.publishProgressRefresh(template, updatedTemplate, dto);
     return this.queryService.findById(updatedTemplate._id.toString());
   }
 
@@ -135,5 +142,24 @@ export class FixedTaskUpdateService {
         'Fixed task assignee can only update the status',
       );
     }
+  }
+
+  private publishProgressRefresh(
+    previousTemplate: FixedTaskTemplateDocument,
+    updatedTemplate: FixedTaskTemplateDocument,
+    dto: UpdateFixedTaskDto,
+  ): void {
+    if (dto.status === undefined && dto.assignedTo === undefined) return;
+
+    const userIds = [
+      ...new Set([
+        previousTemplate.assignedTo.toString(),
+        updatedTemplate.assignedTo.toString(),
+      ]),
+    ];
+    this.eventBus.publish(
+      UserProgressEvents.REFRESH_REQUESTED,
+      new UserProgressRefreshRequestedEvent(userIds),
+    );
   }
 }

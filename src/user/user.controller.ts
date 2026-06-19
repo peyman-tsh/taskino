@@ -88,18 +88,18 @@ export class UserController {
   }
 
   @Get('me/progress')
-  @Roles(UserRole.SPECIALIST)
+  @Roles(UserRole.SPECIALIST, UserRole.SUPERVISOR)
   @ApiOperation({
-    summary: 'Get current specialist progress percentage',
+    summary: 'Get current specialist or supervisor progress percentage',
     description:
-      'Returns progressPercentage for the authenticated specialist only.',
+      'Recalculates and returns progressPercentage for the authenticated specialist or supervisor.',
   })
   @ApiResponse({
     status: 200,
-    description: 'Specialist progress retrieved successfully',
+    description: 'User progress retrieved successfully',
     type: SpecialistProgressResponseDto,
   })
-  @ApiResponse({ status: 404, description: 'Specialist user not found' })
+  @ApiResponse({ status: 404, description: 'Specialist or supervisor not found' })
   getMyProgress(@CurrentUserId() userId: string) {
     return this.userService.getSpecialistProgress(userId);
   }

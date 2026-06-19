@@ -3,8 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import { Types } from 'mongoose';
 import { UserRepository } from '../repositories/user.repository';
 import { UserService } from './user.service';
+import { InternalEventBus } from '../../common/events/internal-event-bus.service';
+import { UserProgressEvents } from '../../common/events/user-progress.events';
 
-describe('UserService specialist progress', () => {
+describe('UserService user progress', () => {
   const repository = {
     findSpecialistProgressById: jest.fn(),
     findUserWorkSummary: jest.fn(),
@@ -12,9 +14,13 @@ describe('UserService specialist progress', () => {
   const configService = {
     get: jest.fn(),
   };
+  const eventBus = {
+    publishAndWait: jest.fn(),
+  };
   const service = new UserService(
     configService as unknown as ConfigService,
     repository as unknown as UserRepository,
+    eventBus as unknown as InternalEventBus,
   );
 
   beforeEach(() => {
@@ -32,9 +38,26 @@ describe('UserService specialist progress', () => {
       userId,
       progressPercentage: 75,
     });
+    expect(eventBus.publishAndWait).toHaveBeenCalledWith(
+      UserProgressEvents.REFRESH_REQUESTED,
+      expect.objectContaining({ userIds: [userId] }),
+    );
   });
 
-  it('rejects a user that is not a specialist', async () => {
+  it('returns progress for the authenticated supervisor', async () => {
+    const userId = new Types.ObjectId().toString();
+    repository.findSpecialistProgressById.mockResolvedValue({
+      userId,
+      progressPercentage: 75,
+    });
+
+    await expect(service.getSpecialistProgress(userId)).resolves.toEqual({
+      userId,
+      progressPercentage: 75,
+    });
+  });
+
+  it('rejects a user that is not a specialist or supervisor', async () => {
     const userId = new Types.ObjectId().toString();
     repository.findSpecialistProgressById.mockResolvedValue(null);
 

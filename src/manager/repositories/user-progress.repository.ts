@@ -29,6 +29,27 @@ export class UserProgressRepository {
     return users as unknown as ProgressUser[];
   }
 
+  async findEvaluableUserById(
+    userId: Types.ObjectId,
+  ): Promise<ProgressUser | null> {
+    const user = await this.connection.collection('users').findOne(
+      {
+        _id: userId,
+        roles: { $in: [UserRole.SPECIALIST, UserRole.SUPERVISOR] },
+      },
+      {
+        projection: {
+          firstName: 1,
+          lastName: 1,
+          email: 1,
+          roles: 1,
+        },
+      },
+    );
+
+    return user as unknown as ProgressUser | null;
+  }
+
   async findAssignedWork(userId: Types.ObjectId): Promise<{
     tasks: ProgressTask[];
     fixedTasks: ProgressFixedTask[];

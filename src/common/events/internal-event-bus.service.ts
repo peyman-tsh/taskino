@@ -27,4 +27,17 @@ export class InternalEventBus {
       });
     });
   }
+
+  async publishAndWait<T>(eventName: string, event: T): Promise<void> {
+    const eventHandlers = [...(this.handlers.get(eventName) ?? [])];
+    await Promise.all(
+      eventHandlers.map((handler) =>
+        Promise.resolve(handler(event)).catch((error: unknown) => {
+          const message = error instanceof Error ? error.message : String(error);
+          this.logger.error(`Event handler failed for "${eventName}": ${message}`);
+          throw error;
+        }),
+      ),
+    );
+  }
 }

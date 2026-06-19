@@ -6,12 +6,18 @@ import { TaskDocument, TaskStatus } from '../task.schema';
 import { TaskNotificationService } from './task-notification.service';
 import { TaskPolicyService } from './task-policy.service';
 import { TaskScoreService } from './task-score.service';
+import { InternalEventBus } from '../../common/events/internal-event-bus.service';
+import {
+  UserProgressEvents,
+  UserProgressRefreshRequestedEvent,
+} from '../../common/events/user-progress.events';
 
 interface UpdateContext {
   updateData: Record<string, unknown>;
   newlyAssignedUserIds: string[];
   changedToDone: boolean;
   statusChanged: boolean;
+  progressUserIds: string[];
 }
 
 @Injectable()
@@ -21,6 +27,7 @@ export class TaskUpdateService {
     private readonly policy: TaskPolicyService,
     private readonly notificationService: TaskNotificationService,
     private readonly scoreService: TaskScoreService,
+    private readonly eventBus: InternalEventBus,
   ) {}
 
   async update(id: string, dto: UpdateTaskDto): Promise<TaskDocument> {
@@ -60,6 +67,7 @@ export class TaskUpdateService {
       statusChanged:
         dto.status !== undefined && dto.status !== task.status,
       newlyAssignedUserIds: this.getNewAssigneeIds(task, dto),
+      progressUserIds: this.getAffectedProgressUserIds(task, dto),
     };
   }
 
@@ -153,6 +161,20 @@ export class TaskUpdateService {
     );
   }
 
+  private getAffectedProgressUserIds(
+    task: TaskDocument,
+    dto: UpdateTaskDto,
+  ): string[] {
+    if (dto.status === undefined && dto.assignedTo === undefined) return [];
+
+    return [
+      ...new Set([
+        ...task.assignedTo.map((userId) => userId.toString()),
+        ...(dto.assignedTo ?? []),
+      ]),
+    ];
+  }
+
   private async runPostUpdateActions(
     previousTask: TaskDocument,
     updatedTask: TaskDocument,
@@ -169,6 +191,13 @@ export class TaskUpdateService {
         updatedTask._id.toString(),
         updatedTask.title,
         updatedTask.status,
+      );
+    }
+
+    if (context.progressUserIds.length > 0) {
+      this.eventBus.publish(
+        UserProgressEvents.REFRESH_REQUESTED,
+        new UserProgressRefreshRequestedEvent(context.progressUserIds),
       );
     }
 

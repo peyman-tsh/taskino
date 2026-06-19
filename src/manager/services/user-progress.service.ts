@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { UserProgressCalculatorService } from './user-progress-calculator.service';
 import { UserProgressRepository } from '../repositories/user-progress.repository';
 import { ProgressUser } from '../types/user-progress.types';
+import { Types } from 'mongoose';
 
 @Injectable()
 export class UserProgressService {
@@ -20,6 +21,25 @@ export class UserProgressService {
     return results.sort(
       (first, second) => second.progressPercentage - first.progressPercentage,
     );
+  }
+
+  async refreshUsers(userIds: string[]): Promise<void> {
+    const uniqueValidUserIds = [...new Set(userIds)].filter(
+      Types.ObjectId.isValid,
+    );
+
+    await Promise.all(
+      uniqueValidUserIds.map((userId) => this.refreshUser(userId)),
+    );
+  }
+
+  async refreshUser(userId: string): Promise<void> {
+    const user = await this.repository.findEvaluableUserById(
+      new Types.ObjectId(userId),
+    );
+    if (!user) return;
+
+    await this.evaluateUser(user, new Date());
   }
 
   private async evaluateUser(user: ProgressUser, evaluatedAt: Date) {
