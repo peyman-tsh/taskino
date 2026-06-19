@@ -35,7 +35,6 @@ export class PasswordResetService {
     await this.emailService.sendPasswordReset(
       user.email,
       user.firstName,
-      this.createResetUrl(token),
     );
     return response;
   }
