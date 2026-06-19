@@ -108,6 +108,14 @@ export class UpdateTaskDto {
   endDate?: string;
 
   @ApiPropertyOptional({
+    description: 'Task completion date and time',
+    example: '2026-06-07T16:30:00+03:30',
+  })
+  @IsOptional()
+  @IsDateString()
+  doneTime?: string;
+
+  @ApiPropertyOptional({
     description: 'Daily start time in 24-hour HH:mm format',
     example: '09:00',
   })
