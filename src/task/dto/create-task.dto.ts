@@ -82,6 +82,12 @@ export class CreateTaskDto {
     default: false,
   })
   @IsOptional()
+  @Transform(({ obj, key, value }) => {
+    const rawValue = obj[key];
+    if (rawValue === 'true') return true;
+    if (rawValue === 'false') return false;
+    return value;
+  })
   @IsBoolean()
   isPublic?: boolean;
 
