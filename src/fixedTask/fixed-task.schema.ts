@@ -80,6 +80,9 @@ export class FixedTaskTemplate {
 
   @Prop({ type: Number })
   sourceRow?: number;
+
+  @Prop({ type: Number })
+  originalSourceRow?: number;
 }
 
 export type FixedTaskTemplateDocument = HydratedDocument<FixedTaskTemplate>;
@@ -93,4 +96,12 @@ FixedTaskTemplateSchema.index(
 
 FixedTaskTemplateSchema.index(
   { sourceExcel: 1, sourceSheet: 1, sourceRow: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      sourceExcel: { $type: 'string' },
+      sourceSheet: { $type: 'string' },
+      sourceRow: { $type: 'number' },
+    },
+  },
 );

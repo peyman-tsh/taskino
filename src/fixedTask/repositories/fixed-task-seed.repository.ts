@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
-import { Connection } from 'mongoose';
+import { Connection, Types } from 'mongoose';
 import { FixedTaskRecurrence } from '../fixed-task.schema';
 import { UserRole } from '../../user/schemas/user.schema';
 import { WorkField } from '../../common/enums/work-field.enum';
@@ -29,17 +29,16 @@ export interface SeedFixedTaskData {
 
 @Injectable()
 export class FixedTaskSeedRepository {
-  private sourceIndexReady?: Promise<void>;
-
   constructor(@InjectConnection() private readonly connection: Connection) {}
 
   async upsertUser(user: SeedUserData, password: string) {
     return this.connection.collection('users').findOneAndUpdate(
-      { email: user.email },
+      { mobile: user.mobile },
       {
         $set: {
           firstName: user.firstName,
           lastName: user.lastName,
+          email: user.email,
           mobile: user.mobile,
           password,
           roles: user.role,
@@ -63,10 +62,15 @@ export class FixedTaskSeedRepository {
     creatorId: unknown,
     assigneeId: unknown,
   ): Promise<void> {
-    await this.ensureSourceIndexAllowsDuplicates();
     const now = new Date();
+    const fixedTaskId = new Types.ObjectId();
+    const uniqueSourceRow = -Number.parseInt(
+      fixedTaskId.toHexString().slice(-12),
+      16,
+    );
 
     await this.connection.collection('fixedtasktemplates').insertOne({
+      _id: fixedTaskId,
       title: data.title,
       createdBy: creatorId,
       assignedTo: assigneeId,
@@ -82,32 +86,10 @@ export class FixedTaskSeedRepository {
       scoreAdjusted: false,
       sourceExcel: data.sourceExcel,
       sourceSheet: data.sourceSheet,
-      sourceRow: data.sourceRow,
+      sourceRow: uniqueSourceRow,
+      originalSourceRow: data.sourceRow,
       createdAt: now,
       updatedAt: now,
     });
-  }
-
-  private ensureSourceIndexAllowsDuplicates(): Promise<void> {
-    this.sourceIndexReady ??= this.replaceUniqueSourceIndex();
-    return this.sourceIndexReady;
-  }
-
-  private async replaceUniqueSourceIndex(): Promise<void> {
-    const collection = this.connection.collection('fixedtasktemplates');
-    const indexName = 'sourceExcel_1_sourceSheet_1_sourceRow_1';
-    const indexes = await collection.indexes();
-    const sourceIndex = indexes.find((index) => index.name === indexName);
-
-    if (sourceIndex?.unique) {
-      await collection.dropIndex(indexName);
-    }
-
-    if (!sourceIndex || sourceIndex.unique) {
-      await collection.createIndex(
-        { sourceExcel: 1, sourceSheet: 1, sourceRow: 1 },
-        { name: indexName },
-      );
-    }
   }
 }

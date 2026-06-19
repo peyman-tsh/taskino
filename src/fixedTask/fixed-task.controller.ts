@@ -130,6 +130,7 @@ export class FixedTaskController {
   }
 
   @Get('active')
+  @Roles(UserRole.SPECIALIST, UserRole.SUPERVISOR,UserRole.MANAGER)
   @ApiOperation({
     summary: 'Get active fixed tasks',
     description: 'Returns fixed tasks whose isActive field is true.',
