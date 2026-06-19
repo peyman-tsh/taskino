@@ -15,8 +15,63 @@ import { FixedTaskDeadlineService } from './fixed-task-deadline.service';
 type ExcelRow = Array<string | number | null>;
 
 const PASSWORD = '123456';
+const SEED_END_TIME = '00:01';
 export const FIXED_TASK_SEED_EXCEL_PATH =
   'C:\\Users\\Zarnegar\\Downloads\\-1408847228164432127_81294547954101.xlsx';
+
+export interface FixedTaskSeedSchedule {
+  startDate: Date;
+  startTime: string;
+  endDate: Date;
+  endTime: string;
+}
+
+export function buildFixedTaskSeedSchedule(
+  recurrence: FixedTaskRecurrence,
+  now = new Date(),
+): FixedTaskSeedSchedule {
+  const startDate = new Date(now);
+  const endDate = calculateSeedEndDate(recurrence, now);
+
+  return {
+    startDate,
+    startTime: formatTime(now),
+    endDate,
+    endTime: SEED_END_TIME,
+  };
+}
+
+function calculateSeedEndDate(
+  recurrence: FixedTaskRecurrence,
+  now: Date,
+): Date {
+  const endDate = new Date(now);
+
+  if (recurrence === FixedTaskRecurrence.DAILY) {
+    endDate.setDate(endDate.getDate() + 1);
+  } else if (recurrence === FixedTaskRecurrence.WEEKLY) {
+    endDate.setDate(endDate.getDate() + 7);
+  } else {
+    const originalDay = endDate.getDate();
+    endDate.setDate(1);
+    endDate.setMonth(endDate.getMonth() + 1);
+    const lastDayOfTargetMonth = new Date(
+      endDate.getFullYear(),
+      endDate.getMonth() + 1,
+      0,
+    ).getDate();
+    endDate.setDate(Math.min(originalDay, lastDayOfTargetMonth));
+  }
+
+  endDate.setHours(0, 0, 0, 0);
+  return endDate;
+}
+
+function formatTime(date: Date): string {
+  return [date.getHours(), date.getMinutes()]
+    .map((value) => value.toString().padStart(2, '0'))
+    .join(':');
+}
 
 const recurrenceMap: Record<string, FixedTaskRecurrence> = {
   روزانه: FixedTaskRecurrence.DAILY,
@@ -122,6 +177,7 @@ export class FixedTaskSeedService {
             `Unknown recurrence "${recurrenceLabel}" in sheet "${sheetName}" row ${sourceRow}`,
           );
         }
+        const schedule = buildFixedTaskSeedSchedule(recurrence);
 
         const result = await this.repository.upsertFixedTask(
           {
@@ -129,6 +185,7 @@ export class FixedTaskSeedService {
             recurrence,
             description: this.createDescription(values),
             nextRunAt: this.deadlineService.getNextDeadline(recurrence),
+            ...schedule,
             sourceExcel: basename(sourcePath),
             sourceSheet: sheetName,
             sourceRow,

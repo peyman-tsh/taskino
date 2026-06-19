@@ -57,6 +57,7 @@ export class FixedTaskController {
   @Public()
   @ApiOperation({
     summary: 'Seed users and fixed tasks from the configured four-sheet Excel',
+    security: [],
   })
   @ApiCreatedResponse({
     description: 'Users and fixed tasks seeded successfully',

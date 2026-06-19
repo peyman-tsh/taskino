@@ -18,6 +18,10 @@ export interface SeedFixedTaskData {
   recurrence: FixedTaskRecurrence;
   description: string;
   nextRunAt: Date;
+  startDate: Date;
+  startTime: string;
+  endDate: Date;
+  endTime: string;
   sourceExcel: string;
   sourceSheet: string;
   sourceRow: number;
@@ -71,6 +75,10 @@ export class FixedTaskSeedRepository {
           recurrence: data.recurrence,
           description: data.description,
           nextRunAt: data.nextRunAt,
+          startDate: data.startDate,
+          startTime: data.startTime,
+          endDate: data.endDate,
+          endTime: data.endTime,
           isActive: false,
           sourceExcel: data.sourceExcel,
           sourceSheet: data.sourceSheet,
