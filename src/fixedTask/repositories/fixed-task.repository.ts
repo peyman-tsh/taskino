@@ -2,10 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import {
+  FixedTaskRecurrence,
   FixedTaskTemplate,
   FixedTaskTemplateDocument,
   FixedTaskStatus,
 } from '../fixed-task.schema';
+
+export interface FixedTaskRolloverSchedule {
+  startDate: Date;
+  startTime: string;
+  endDate: Date;
+  endTime: string;
+}
 
 @Injectable()
 export class FixedTaskRepository {
@@ -58,7 +66,7 @@ export class FixedTaskRepository {
       .findOneAndUpdate(
         { _id: id, scoreAdjusted: { $ne: true } },
         { $set: { scoreAdjusted: true } },
-        { new: true },
+        { returnDocument: 'after' },
       )
       .exec();
   }
@@ -77,8 +85,78 @@ export class FixedTaskRepository {
     return this.model.findByIdAndDelete(id).exec();
   }
 
-  findActive() {
-    return this.populate(this.model.find({ isActive: true })).exec();
+  findActive(filter: Record<string, unknown> = { isActive: true }) {
+    return this.populate(this.model.find(filter)).exec();
+  }
+
+  findActiveRolloverCandidates(now: Date) {
+    return this.model
+      .find({
+        isActive: true,
+        $or: [
+          { status: FixedTaskStatus.DONE },
+          { endDate: { $type: 'date', $lte: now } },
+        ],
+      })
+      .exec();
+  }
+
+  claimExpiredOccurrence(id: Types.ObjectId, generatedAt: Date) {
+    return this.model
+      .findOneAndUpdate(
+        { _id: id, isActive: true },
+        {
+          $set: {
+            isActive: false,
+            lastGeneratedAt: generatedAt,
+          },
+        },
+        { returnDocument: 'after' },
+      )
+      .exec();
+  }
+
+  reactivateOccurrence(id: Types.ObjectId) {
+    return this.model
+      .updateOne(
+        { _id: id },
+        {
+          $set: { isActive: true },
+          $unset: { lastGeneratedAt: 1 },
+        },
+      )
+      .exec();
+  }
+
+  createNextOccurrence(
+    previous: FixedTaskTemplateDocument,
+    schedule: FixedTaskRolloverSchedule,
+  ) {
+    const occurrenceId = new Types.ObjectId();
+    const occurrenceSourceRow = -Number.parseInt(
+      occurrenceId.toHexString().slice(-12),
+      16,
+    );
+
+    return new this.model({
+      _id: occurrenceId,
+      title: previous.title,
+      assignedTo: previous.assignedTo,
+      createdBy: previous.createdBy,
+      recurrence: previous.recurrence as FixedTaskRecurrence,
+      description: previous.description,
+      isActive: true,
+      status: FixedTaskStatus.TODO,
+      doneTime: null,
+      scoreAdjusted: false,
+      startDate: schedule.startDate,
+      startTime: schedule.startTime,
+      endDate: schedule.endDate,
+      endTime: schedule.endTime,
+      sourceExcel: previous.sourceExcel,
+      sourceSheet: previous.sourceSheet,
+      sourceRow: occurrenceSourceRow,
+    }).save();
   }
 
   count(filter: Record<string, unknown>) {

@@ -40,6 +40,7 @@ import {
 import { FixedTaskSeedService } from './services/fixed-task-seed.service';
 import { Public } from '../auth/decorators/public.decorator';
 import { SpecialistFixedTaskQueryService } from './services/specialist-fixed-task-query.service';
+import { QueryActiveFixedTaskDto } from './dto/query-active-fixed-task.dto';
 
 @ApiTags('Fixed Tasks')
 @ApiBearerAuth()
@@ -126,6 +127,20 @@ export class FixedTaskController {
   })
   getStatusCounts() {
     return this.fixedTaskService.getStatusCounts();
+  }
+
+  @Get('active')
+  @ApiOperation({
+    summary: 'Get active fixed tasks',
+    description: 'Returns fixed tasks whose isActive field is true.',
+  })
+  @ApiOkResponse({
+    description: 'Active fixed tasks retrieved successfully',
+    type: FixedTaskResponseDto,
+    isArray: true,
+  })
+  findActive(@Query() query: QueryActiveFixedTaskDto) {
+    return this.fixedTaskService.findActiveTemplates(query.name);
   }
 
   @Get(':id')

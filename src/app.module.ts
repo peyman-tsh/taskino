@@ -15,6 +15,7 @@ import { ManagerModule } from './manager/manager.module';
 import { InternalEventBusModule } from './common/events/internal-event-bus.module';
 import { FixedTaskModule } from './fixedTask/fixed-task.module';
 import { SupervisorModule } from './supervisor/supervisor.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 function withRetryableWritesDisabled(uri: string): string {
   if (/[?&]retryWrites=/.test(uri)) {
@@ -33,6 +34,7 @@ function withRetryableWritesDisabled(uri: string): string {
       load: [appConfig],
     }),
     InternalEventBusModule,
+    ScheduleModule.forRoot(),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({

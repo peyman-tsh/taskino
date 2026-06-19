@@ -19,6 +19,7 @@ import { FixedTaskQueryService } from './services/fixed-task-query.service';
 import { FixedTaskUpdateService } from './services/fixed-task-update.service';
 import { FixedTaskDeleteService } from './services/fixed-task-delete.service';
 import { FixedTaskDeadlineService } from './services/fixed-task-deadline.service';
+import { FixedTaskRolloverService } from './services/fixed-task-rollover.service';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { FixedTaskDeadlineService } from './services/fixed-task-deadline.service
     FixedTaskUpdateService,
     FixedTaskDeleteService,
     FixedTaskDeadlineService,
+    FixedTaskRolloverService,
   ],
   exports: [FixedTaskService],
 })

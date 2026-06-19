@@ -79,7 +79,7 @@ export class FixedTaskSeedRepository {
           startTime: data.startTime,
           endDate: data.endDate,
           endTime: data.endTime,
-          isActive: false,
+          isActive: true,
           sourceExcel: data.sourceExcel,
           sourceSheet: data.sourceSheet,
           sourceRow: data.sourceRow,

@@ -62,8 +62,17 @@ export class FixedTaskQueryService {
     };
   }
 
-  findActiveTemplates() {
-    return this.repository.findActive();
+  findActiveTemplates(name?: string) {
+    const filter: Record<string, unknown> = { isActive: true };
+
+    if (name?.trim()) {
+      filter.title = {
+        $regex: this.escapeRegex(name.trim()),
+        $options: 'i',
+      };
+    }
+
+    return this.repository.findActive(filter);
   }
 
   private buildFilter(queryDto: QueryFixedTaskDto): Record<string, unknown> {

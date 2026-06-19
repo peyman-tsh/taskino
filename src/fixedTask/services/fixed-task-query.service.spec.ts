@@ -8,6 +8,7 @@ describe('FixedTaskQueryService', () => {
   const repository = {
     findPaginated: jest.fn(),
     count: jest.fn(),
+    findActive: jest.fn(),
   };
   const policy = {
     parseDate: jest.fn((value: string) => new Date(value)),
@@ -64,6 +65,29 @@ describe('FixedTaskQueryService', () => {
       status: FixedTaskStatus.TODO,
       startDate: { $type: 'date' },
       endDate: { $type: 'date', $gte: expect.any(Date) },
+    });
+  });
+
+  it('returns all active fixed tasks when name is not provided', async () => {
+    repository.findActive.mockResolvedValue([{ isActive: true }]);
+
+    await expect(service.findActiveTemplates()).resolves.toEqual([
+      { isActive: true },
+    ]);
+    expect(repository.findActive).toHaveBeenCalledWith({ isActive: true });
+  });
+
+  it('filters active fixed tasks by title when name is provided', async () => {
+    repository.findActive.mockResolvedValue([{ isActive: true }]);
+
+    await service.findActiveTemplates('گزارش.*');
+
+    expect(repository.findActive).toHaveBeenCalledWith({
+      isActive: true,
+      title: {
+        $regex: 'گزارش\\.\\*',
+        $options: 'i',
+      },
     });
   });
 });
