@@ -29,6 +29,8 @@ export interface SeedFixedTaskData {
 
 @Injectable()
 export class FixedTaskSeedRepository {
+  private sourceIndexReady?: Promise<void>;
+
   constructor(@InjectConnection() private readonly connection: Connection) {}
 
   async upsertUser(user: SeedUserData, password: string) {
@@ -56,43 +58,56 @@ export class FixedTaskSeedRepository {
     );
   }
 
-  async upsertFixedTask(
+  async insertFixedTask(
     data: SeedFixedTaskData,
     creatorId: unknown,
     assigneeId: unknown,
-  ): Promise<'created' | 'updated'> {
-    const result = await this.connection.collection('fixedtasktemplates').updateOne(
-      {
-        sourceExcel: data.sourceExcel,
-        sourceSheet: data.sourceSheet,
-        sourceRow: data.sourceRow,
-      },
-      {
-        $set: {
-          title: data.title,
-          createdBy: creatorId,
-          assignedTo: assigneeId,
-          recurrence: data.recurrence,
-          description: data.description,
-          nextRunAt: data.nextRunAt,
-          startDate: data.startDate,
-          startTime: data.startTime,
-          endDate: data.endDate,
-          endTime: data.endTime,
-          isActive: true,
-          sourceExcel: data.sourceExcel,
-          sourceSheet: data.sourceSheet,
-          sourceRow: data.sourceRow,
-          updatedAt: new Date(),
-        },
-        $setOnInsert: {
-          status: 'todo',
-          createdAt: new Date(),
-        },
-      },
-      { upsert: true },
-    );
+  ): Promise<void> {
+    await this.ensureSourceIndexAllowsDuplicates();
+    const now = new Date();
 
-    return result.upsertedCount > 0 ? 'created' : 'updated';
+    await this.connection.collection('fixedtasktemplates').insertOne({
+      title: data.title,
+      createdBy: creatorId,
+      assignedTo: assigneeId,
+      recurrence: data.recurrence,
+      description: data.description,
+      nextRunAt: data.nextRunAt,
+      startDate: data.startDate,
+      startTime: data.startTime,
+      endDate: data.endDate,
+      endTime: data.endTime,
+      isActive: true,
+      status: 'todo',
+      scoreAdjusted: false,
+      sourceExcel: data.sourceExcel,
+      sourceSheet: data.sourceSheet,
+      sourceRow: data.sourceRow,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  private ensureSourceIndexAllowsDuplicates(): Promise<void> {
+    this.sourceIndexReady ??= this.replaceUniqueSourceIndex();
+    return this.sourceIndexReady;
+  }
+
+  private async replaceUniqueSourceIndex(): Promise<void> {
+    const collection = this.connection.collection('fixedtasktemplates');
+    const indexName = 'sourceExcel_1_sourceSheet_1_sourceRow_1';
+    const indexes = await collection.indexes();
+    const sourceIndex = indexes.find((index) => index.name === indexName);
+
+    if (sourceIndex?.unique) {
+      await collection.dropIndex(indexName);
+    }
+
+    if (!sourceIndex || sourceIndex.unique) {
+      await collection.createIndex(
+        { sourceExcel: 1, sourceSheet: 1, sourceRow: 1 },
+        { name: indexName },
+      );
+    }
   }
 }

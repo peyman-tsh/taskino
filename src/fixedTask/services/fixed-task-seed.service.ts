@@ -83,7 +83,7 @@ const recurrenceMap: Record<string, FixedTaskRecurrence> = {
 const manager: SeedUserData = {
   firstName: 'پوریا',
   lastName: 'یاری زاده',
-  email: 'pouria.yarizadeh@taskino.local',
+  email: 'Sina.allaee.txt@gmail.com',
   mobile: '09378675840',
   role: UserRole.MANAGER,
 };
@@ -92,28 +92,28 @@ const sheetUsers: Record<string, SeedUserData> = {
   جلالیان: {
     firstName: 'امیر رضا',
     lastName: 'جلالیان',
-    email: 'amirreza.jalalian@taskino.local',
+    email: 'Sina.allaee.txt@gmail.com',
     mobile: '09223689925',
     role: UserRole.SPECIALIST,
   },
   'امیر گنجی': {
     firstName: 'امیر',
     lastName: 'گنجی',
-    email: 'amir.ganji@taskino.local',
+    email: 'Sina.allaee.txt@gmail.com',
     mobile: '09102425368',
     role: UserRole.SPECIALIST,
   },
   اعلایی: {
     firstName: 'سینا',
     lastName: 'اعلایی',
-    email: 'sina.alaei@taskino.local',
+    email: 'Sina.allaee.txt@gmail.com',
     mobile: '09358776662',
     role: UserRole.SUPERVISOR,
   },
   'اکبر گنجی': {
     firstName: 'اکبر',
     lastName: 'گنجی',
-    email: 'akbar.ganji@taskino.local',
+    email: 'Sina.allaee.txt@gmail.com',
     mobile: '09363611863',
     role: UserRole.SPECIALIST,
   },
@@ -179,7 +179,7 @@ export class FixedTaskSeedService {
         }
         const schedule = buildFixedTaskSeedSchedule(recurrence);
 
-        const result = await this.repository.upsertFixedTask(
+        await this.repository.insertFixedTask(
           {
             title: String(values[2]).trim(),
             recurrence,
@@ -194,8 +194,7 @@ export class FixedTaskSeedService {
           assignedUser._id,
         );
 
-        if (result === 'created') createdTemplates += 1;
-        else updatedTemplates += 1;
+        createdTemplates += 1;
       }
 
       sheets.push({
