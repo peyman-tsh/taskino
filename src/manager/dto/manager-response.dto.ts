@@ -118,6 +118,9 @@ export class UserProgressResponseDto {
   completedFixedTasks: number;
 
   @ApiProperty()
+  onTimeFixedTasks: number;
+
+  @ApiProperty()
   inProgressFixedTasks: number;
 
   @ApiProperty()

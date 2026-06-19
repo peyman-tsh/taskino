@@ -7,6 +7,9 @@ import {
 import { FixedTaskRepository } from '../repositories/fixed-task.repository';
 import { FixedTaskDeadlineService } from './fixed-task-deadline.service';
 import { FixedTaskRolloverService } from './fixed-task-rollover.service';
+import { FixedTaskScoreService } from './fixed-task-score.service';
+import { InternalEventBus } from '../../common/events/internal-event-bus.service';
+import { UserProgressEvents } from '../../common/events/user-progress.events';
 
 describe('FixedTaskRolloverService', () => {
   const repository = {
@@ -18,9 +21,17 @@ describe('FixedTaskRolloverService', () => {
   const deadlineService = {
     getScoreDeadline: jest.fn(),
   };
+  const scoreService = {
+    adjustTaskScore: jest.fn(),
+  };
+  const eventBus = {
+    publish: jest.fn(),
+  };
   const service = new FixedTaskRolloverService(
     repository as unknown as FixedTaskRepository,
     deadlineService as unknown as FixedTaskDeadlineService,
+    scoreService as unknown as FixedTaskScoreService,
+    eventBus as unknown as InternalEventBus,
   );
   const now = new Date(2026, 5, 19, 14, 35);
 
@@ -56,12 +67,19 @@ describe('FixedTaskRolloverService', () => {
       task._id,
       now,
     );
+    expect(scoreService.adjustTaskScore).toHaveBeenCalledWith(task);
     expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
       startDate: now,
       startTime: '14:35',
       endDate: new Date(2026, 5, 20, 0, 0, 0, 0),
       endTime: '00:01',
     });
+    expect(eventBus.publish).toHaveBeenCalledWith(
+      UserProgressEvents.REFRESH_REQUESTED,
+      expect.objectContaining({
+        userIds: [task.assignedTo.toString()],
+      }),
+    );
   });
 
   it('rolls over a completed occurrence before its deadline', async () => {
@@ -78,6 +96,7 @@ describe('FixedTaskRolloverService', () => {
     await expect(service.runOnce(now)).resolves.toBe(1);
 
     expect(deadlineService.getScoreDeadline).not.toHaveBeenCalled();
+    expect(scoreService.adjustTaskScore).toHaveBeenCalledWith(task);
     expect(repository.createNextOccurrence).toHaveBeenCalled();
   });
 
@@ -95,6 +114,7 @@ describe('FixedTaskRolloverService', () => {
 
     expect(repository.claimExpiredOccurrence).not.toHaveBeenCalled();
     expect(repository.createNextOccurrence).not.toHaveBeenCalled();
+    expect(scoreService.adjustTaskScore).not.toHaveBeenCalled();
   });
 
   it('reactivates the old occurrence when creating the next one fails', async () => {

@@ -23,6 +23,8 @@ export interface ProgressTask {
 export interface ProgressFixedTask {
   status: FixedTaskStatus;
   doneTime?: Date;
+  endDate?: Date;
+  endTime?: string;
 }
 
 export interface ProgressMetrics {
@@ -32,6 +34,7 @@ export interface ProgressMetrics {
   inProgressTasks: number;
   totalFixedTasks: number;
   completedFixedTasks: number;
+  onTimeFixedTasks: number;
   inProgressFixedTasks: number;
   progressPercentage: number;
   performanceStatus: UserPerformanceStatus;

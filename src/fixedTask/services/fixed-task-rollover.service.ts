@@ -5,6 +5,12 @@ import { FixedTaskStatus } from '../fixed-task.schema';
 import { FixedTaskRepository } from '../repositories/fixed-task.repository';
 import { FixedTaskDeadlineService } from './fixed-task-deadline.service';
 import { buildFixedTaskSeedSchedule } from './fixed-task-seed.service';
+import { FixedTaskScoreService } from './fixed-task-score.service';
+import { InternalEventBus } from '../../common/events/internal-event-bus.service';
+import {
+  UserProgressEvents,
+  UserProgressRefreshRequestedEvent,
+} from '../../common/events/user-progress.events';
 
 @Injectable()
 export class FixedTaskRolloverService {
@@ -14,6 +20,8 @@ export class FixedTaskRolloverService {
   constructor(
     private readonly repository: FixedTaskRepository,
     private readonly deadlineService: FixedTaskDeadlineService,
+    private readonly scoreService: FixedTaskScoreService,
+    private readonly eventBus: InternalEventBus,
   ) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
@@ -50,6 +58,8 @@ export class FixedTaskRolloverService {
       if (!deadline || deadline.getTime() > now.getTime()) return false;
     }
 
+    await this.scoreService.adjustTaskScore(candidate);
+
     const claimed = await this.repository.claimExpiredOccurrence(
       candidate._id,
       now,
@@ -59,6 +69,12 @@ export class FixedTaskRolloverService {
     try {
       const schedule = buildFixedTaskSeedSchedule(candidate.recurrence, now);
       await this.repository.createNextOccurrence(candidate, schedule);
+      this.eventBus.publish(
+        UserProgressEvents.REFRESH_REQUESTED,
+        new UserProgressRefreshRequestedEvent([
+          candidate.assignedTo.toString(),
+        ]),
+      );
       return true;
     } catch (error) {
       await this.repository.reactivateOccurrence(candidate._id);

@@ -63,7 +63,7 @@ export class UserProgressRepository {
       this.connection
         .collection('fixedtasktemplates')
         .find({ assignedTo: userId })
-        .project({ status: 1, doneTime: 1 })
+        .project({ status: 1, doneTime: 1, endDate: 1, endTime: 1 })
         .toArray(),
     ]);
 

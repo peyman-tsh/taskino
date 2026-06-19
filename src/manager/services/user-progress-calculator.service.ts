@@ -21,6 +21,7 @@ export class UserProgressCalculatorService {
     const onTimeTasks = this.countOnTimeTasks(tasks);
     const inProgressTasks = this.countInProgressTasks(tasks);
     const completedFixedTasks = this.countCompletedFixedTasks(fixedTasks);
+    const onTimeFixedTasks = this.countOnTimeFixedTasks(fixedTasks);
     const inProgressFixedTasks = this.countInProgressFixedTasks(fixedTasks);
     const weights = this.calculateWeights(tasks.length, fixedTasks.length);
     const progressPercentage = Math.round(
@@ -31,7 +32,8 @@ export class UserProgressCalculatorService {
         weights.task,
       ) +
         this.calculateFixedTaskProgress(
-          completedFixedTasks,
+          fixedTasks.length,
+          onTimeFixedTasks,
           inProgressFixedTasks,
           weights.fixedTask,
         ),
@@ -44,6 +46,7 @@ export class UserProgressCalculatorService {
       inProgressTasks,
       totalFixedTasks: fixedTasks.length,
       completedFixedTasks,
+      onTimeFixedTasks,
       inProgressFixedTasks,
       progressPercentage,
       performanceStatus: calculatePerformanceStatus(progressPercentage),
@@ -81,6 +84,18 @@ export class UserProgressCalculatorService {
     ).length;
   }
 
+  private countOnTimeFixedTasks(fixedTasks: ProgressFixedTask[]): number {
+    return fixedTasks.filter((task) => {
+      const deadline = this.getFixedTaskDeadline(task.endDate, task.endTime);
+      return (
+        task.status === FixedTaskStatus.DONE &&
+        task.doneTime instanceof Date &&
+        deadline !== null &&
+        task.doneTime.getTime() <= deadline.getTime()
+      );
+    }).length;
+  }
+
   private calculateCategoryProgress(
     total: number,
     successful: number,
@@ -107,13 +122,34 @@ export class UserProgressCalculatorService {
   }
 
   private calculateFixedTaskProgress(
-    completed: number,
+    total: number,
+    successful: number,
     inProgress: number,
     weight: number,
   ): number {
-    if (completed > 0) return weight;
-    if (inProgress > 0) return weight * this.inProgressCredit;
-    return 0;
+    return this.calculateCategoryProgress(
+      total,
+      successful,
+      inProgress,
+      weight,
+    );
+  }
+
+  private getFixedTaskDeadline(
+    endDate?: Date,
+    endTime?: string,
+  ): Date | null {
+    if (!(endDate instanceof Date)) return null;
+
+    const deadline = new Date(endDate);
+    if (!endTime) {
+      deadline.setHours(23, 59, 59, 999);
+      return deadline;
+    }
+
+    const [hours, minutes] = endTime.split(':').map(Number);
+    deadline.setHours(hours, minutes, 0, 0);
+    return deadline;
   }
 
 }
