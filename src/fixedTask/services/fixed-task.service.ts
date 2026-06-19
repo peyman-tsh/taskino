@@ -43,7 +43,7 @@ export class FixedTaskService {
     return this.deleteService.delete(id);
   }
 
-  findActiveTemplates(name?: string) {
-    return this.queryService.findActiveTemplates(name);
+  findActiveTemplates(userId?: string) {
+    return this.queryService.findActiveTemplates(userId);
   }
 }

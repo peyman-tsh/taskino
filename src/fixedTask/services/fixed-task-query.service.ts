@@ -62,14 +62,14 @@ export class FixedTaskQueryService {
     };
   }
 
-  findActiveTemplates(name?: string) {
+  findActiveTemplates(userId?: string) {
     const filter: Record<string, unknown> = { isActive: true };
 
-    if (name?.trim()) {
-      filter.title = {
-        $regex: this.escapeRegex(name.trim()),
-        $options: 'i',
-      };
+    if (userId) {
+      filter.assignedTo = this.policy.toObjectId(
+        userId,
+        'assigned user ID',
+      );
     }
 
     return this.repository.findActive(filter);

@@ -77,17 +77,15 @@ describe('FixedTaskQueryService', () => {
     expect(repository.findActive).toHaveBeenCalledWith({ isActive: true });
   });
 
-  it('filters active fixed tasks by title when name is provided', async () => {
+  it('filters active fixed tasks by assigned user ID when provided', async () => {
+    const userId = new Types.ObjectId();
     repository.findActive.mockResolvedValue([{ isActive: true }]);
 
-    await service.findActiveTemplates('گزارش.*');
+    await service.findActiveTemplates(userId.toString());
 
     expect(repository.findActive).toHaveBeenCalledWith({
       isActive: true,
-      title: {
-        $regex: 'گزارش\\.\\*',
-        $options: 'i',
-      },
+      assignedTo: userId,
     });
   });
 });

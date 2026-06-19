@@ -140,7 +140,7 @@ export class FixedTaskController {
     isArray: true,
   })
   findActive(@Query() query: QueryActiveFixedTaskDto) {
-    return this.fixedTaskService.findActiveTemplates(query.name);
+    return this.fixedTaskService.findActiveTemplates(query.userId);
   }
 
   @Get(':id')

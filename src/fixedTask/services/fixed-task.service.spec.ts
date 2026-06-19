@@ -31,7 +31,7 @@ describe('FixedTaskService', () => {
     service.getStatusCounts();
     service.update('fixed-id', 'requester-id', {} as never);
     service.delete('fixed-id');
-    service.findActiveTemplates('report');
+    service.findActiveTemplates('user-id');
 
     expect(creationService.create).toHaveBeenCalled();
     expect(queryService.findAll).toHaveBeenCalled();
@@ -40,6 +40,6 @@ describe('FixedTaskService', () => {
     expect(queryService.getStatusCounts).toHaveBeenCalled();
     expect(updateService.update).toHaveBeenCalled();
     expect(deleteService.delete).toHaveBeenCalled();
-    expect(queryService.findActiveTemplates).toHaveBeenCalledWith('report');
+    expect(queryService.findActiveTemplates).toHaveBeenCalledWith('user-id');
   });
 });

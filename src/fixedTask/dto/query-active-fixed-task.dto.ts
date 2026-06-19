@@ -1,12 +1,12 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { IsMongoId, IsOptional } from 'class-validator';
 
 export class QueryActiveFixedTaskDto {
   @ApiPropertyOptional({
-    description: 'Filter active fixed tasks by title',
-    example: 'گزارش',
+    description: 'Filter active fixed tasks by assigned user ID',
+    example: '6a2ecfdb0c6b5da82182e9fa',
   })
   @IsOptional()
-  @IsString()
-  name?: string;
+  @IsMongoId()
+  userId?: string;
 }
