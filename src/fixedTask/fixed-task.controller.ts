@@ -113,6 +113,32 @@ export class FixedTaskController {
     );
   }
 
+  @Get('user/:userId/done')
+  @Roles(UserRole.MANAGER, UserRole.SUPERVISOR, UserRole.SPECIALIST)
+  @ApiOperation({
+    summary: 'Get completed fixed tasks assigned to a user',
+    description:
+      'Returns paginated fixed tasks whose assignedTo matches userId and status is done.',
+  })
+  @ApiParam({
+    name: 'userId',
+    description: 'Specialist or supervisor user ID',
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiOkResponse({ type: PaginatedFixedTasksResponseDto })
+  getCompletedFixedTasksByUser(
+    @Param('userId') userId: string,
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+  ) {
+    return this.specialistFixedTaskQueryService.findCompletedByUser(
+      userId,
+      Number(page),
+      Number(limit),
+    );
+  }
+
   
   @Get('status-counts')
   @Roles(UserRole.SPECIALIST, UserRole.SUPERVISOR)

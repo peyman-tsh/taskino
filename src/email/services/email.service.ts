@@ -1,9 +1,14 @@
-import { Injectable, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class EmailService {
+  private readonly logger = new Logger(EmailService.name);
   private readonly transporter: nodemailer.Transporter;
   private readonly from: string;
 
@@ -36,7 +41,11 @@ export class EmailService {
           verificationCode,
         ),
       });
-    } catch {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        `Password reset email failed for "${recipient}": ${message}`,
+      );
       throw new ServiceUnavailableException(
         'Password reset email could not be sent',
       );

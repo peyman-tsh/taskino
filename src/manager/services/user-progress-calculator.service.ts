@@ -30,9 +30,8 @@ export class UserProgressCalculatorService {
         onTimeTasks,
         inProgressTasks,
         weights.task,
-      ) +
+        ) +
         this.calculateFixedTaskProgress(
-          fixedTasks.length,
           onTimeFixedTasks,
           inProgressFixedTasks,
           weights.fixedTask,
@@ -122,17 +121,13 @@ export class UserProgressCalculatorService {
   }
 
   private calculateFixedTaskProgress(
-    total: number,
     successful: number,
     inProgress: number,
     weight: number,
   ): number {
-    return this.calculateCategoryProgress(
-      total,
-      successful,
-      inProgress,
-      weight,
-    );
+    if (successful > 0) return weight;
+    if (inProgress > 0) return weight * this.inProgressCredit;
+    return 0;
   }
 
   private getFixedTaskDeadline(

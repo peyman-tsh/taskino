@@ -95,7 +95,7 @@ describe('UserProgressCalculatorService', () => {
     expect(result.performanceStatus).toBe(UserPerformanceStatus.GOOD);
   });
 
-  it('calculates fixed task progress from successful occurrences', () => {
+  it('does not divide fixed task progress by total fixed task count', () => {
     const result = calculator.calculate(
       [],
       [
@@ -113,8 +113,8 @@ describe('UserProgressCalculatorService', () => {
     expect(result.totalFixedTasks).toBe(39);
     expect(result.completedFixedTasks).toBe(1);
     expect(result.onTimeFixedTasks).toBe(1);
-    expect(result.progressPercentage).toBe(3);
-    expect(result.performanceStatus).toBe(UserPerformanceStatus.WEAK);
+    expect(result.progressPercentage).toBe(100);
+    expect(result.performanceStatus).toBe(UserPerformanceStatus.GOOD);
   });
 
   it('combines task and fixed task progress using equal category weights', () => {
@@ -130,7 +130,7 @@ describe('UserProgressCalculatorService', () => {
       ],
     );
 
-    expect(result.progressPercentage).toBe(75);
+    expect(result.progressPercentage).toBe(100);
     expect(result.performanceStatus).toBe(UserPerformanceStatus.GOOD);
   });
 

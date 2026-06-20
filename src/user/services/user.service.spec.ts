@@ -10,6 +10,7 @@ describe('UserService user progress', () => {
   const repository = {
     findSpecialistProgressById: jest.fn(),
     findUserWorkSummary: jest.fn(),
+    updatePerformanceStatus: jest.fn(),
   };
   const configService = {
     get: jest.fn(),
@@ -32,15 +33,21 @@ describe('UserService user progress', () => {
     repository.findSpecialistProgressById.mockResolvedValue({
       userId,
       progressPercentage: 75,
+      performanceStatus: 'weak',
     });
 
     await expect(service.getSpecialistProgress(userId)).resolves.toEqual({
       userId,
       progressPercentage: 75,
+      performanceStatus: 'good',
     });
     expect(eventBus.publishAndWait).toHaveBeenCalledWith(
       UserProgressEvents.REFRESH_REQUESTED,
       expect.objectContaining({ userIds: [userId] }),
+    );
+    expect(repository.updatePerformanceStatus).toHaveBeenCalledWith(
+      userId,
+      'good',
     );
   });
 
@@ -49,11 +56,13 @@ describe('UserService user progress', () => {
     repository.findSpecialistProgressById.mockResolvedValue({
       userId,
       progressPercentage: 75,
+      performanceStatus: 'good',
     });
 
     await expect(service.getSpecialistProgress(userId)).resolves.toEqual({
       userId,
       progressPercentage: 75,
+      performanceStatus: 'good',
     });
   });
 

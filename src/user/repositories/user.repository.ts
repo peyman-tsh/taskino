@@ -5,7 +5,12 @@ import {
 } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { ClientSession, Connection, Model, Types } from 'mongoose';
-import { User, UserDocument, UserRole } from '../schemas/user.schema';
+import {
+  User,
+  UserDocument,
+  UserPerformanceStatus,
+  UserRole,
+} from '../schemas/user.schema';
 import { WorkField } from '../../common/enums/work-field.enum';
 
 @Injectable()
@@ -25,8 +30,6 @@ export class UserRepository {
   }
 
   findOptionalByMobile(mobile: string): Promise<UserDocument | null> {
-    console.log(mobile);
-    
     return this.userModel.findOne({ mobile }).exec();
   }
 
@@ -240,13 +243,17 @@ export class UserRepository {
 
   async findSpecialistProgressById(
     id: string,
-  ): Promise<{ userId: string; progressPercentage: number } | null> {
+  ): Promise<{
+    userId: string;
+    progressPercentage: number;
+    performanceStatus: UserPerformanceStatus;
+  } | null> {
     const user = await this.userModel
       .findOne({
         _id: id,
         roles: { $in: [UserRole.SPECIALIST, UserRole.SUPERVISOR] },
       })
-      .select('progressPercentage')
+      .select('progressPercentage performanceStatus')
       .lean()
       .exec();
 
@@ -257,7 +264,18 @@ export class UserRepository {
     return {
       userId: user._id.toString(),
       progressPercentage: user.progressPercentage ?? 0,
+      performanceStatus:
+        user.performanceStatus ?? UserPerformanceStatus.WEAK,
     };
+  }
+
+  updatePerformanceStatus(
+    id: string,
+    performanceStatus: UserPerformanceStatus,
+  ) {
+    return this.userModel
+      .updateOne({ _id: id }, { $set: { performanceStatus } })
+      .exec();
   }
 
   async findUserWorkSummary(id: string): Promise<{

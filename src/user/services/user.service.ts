@@ -8,7 +8,11 @@ import { ConfigService } from '@nestjs/config';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { IncreaseScoreDto } from '../dto/increase-score.dto';
-import { UserDocument, UserRole } from '../schemas/user.schema';
+import {
+  UserDocument,
+  UserPerformanceStatus,
+  UserRole,
+} from '../schemas/user.schema';
 import * as bcrypt from 'bcryptjs';
 import { UserRepository } from '../repositories/user.repository';
 import { WorkField } from '../../common/enums/work-field.enum';
@@ -17,6 +21,7 @@ import {
   UserProgressEvents,
   UserProgressRefreshRequestedEvent,
 } from '../../common/events/user-progress.events';
+import { calculatePerformanceStatus } from '../../common/utils/performance-status.util';
 
 @Injectable()
 export class UserService {
@@ -135,7 +140,11 @@ export class UserService {
 
   async getSpecialistProgress(
     userId: string,
-  ): Promise<{ userId: string; progressPercentage: number }> {
+  ): Promise<{
+    userId: string;
+    progressPercentage: number;
+    performanceStatus: UserPerformanceStatus;
+  }> {
     if (!Types.ObjectId.isValid(userId)) {
       throw new NotFoundException('Invalid user ID');
     }
@@ -152,7 +161,21 @@ export class UserService {
       throw new NotFoundException('Specialist or supervisor user not found');
     }
 
-    return progress;
+    const performanceStatus = calculatePerformanceStatus(
+      progress.progressPercentage,
+    );
+    if (progress.performanceStatus !== performanceStatus) {
+      await this.userRepository.updatePerformanceStatus(
+        userId,
+        performanceStatus,
+      );
+    }
+
+    return {
+      userId: progress.userId,
+      progressPercentage: progress.progressPercentage,
+      performanceStatus,
+    };
   }
 
   async getMyWorkSummary(userId: string): Promise<{

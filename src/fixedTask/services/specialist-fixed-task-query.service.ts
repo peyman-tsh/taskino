@@ -7,6 +7,7 @@ import { Types } from 'mongoose';
 import { UserRole } from '../../user/schemas/user.schema';
 import { UserService } from '../../user/services/user.service';
 import { FixedTaskRepository } from '../repositories/fixed-task.repository';
+import { FixedTaskStatus } from '../fixed-task.schema';
 
 @Injectable()
 export class SpecialistFixedTaskQueryService {
@@ -19,6 +20,20 @@ export class SpecialistFixedTaskQueryService {
     await this.assertAllowedAssignee(userId);
     const { data, total } = await this.repository.findPaginated(
       { assignedTo: new Types.ObjectId(userId) },
+      page,
+      limit,
+    );
+
+    return { data, total, page, limit };
+  }
+
+  async findCompletedByUser(userId: string, page = 1, limit = 10) {
+    await this.assertAllowedAssignee(userId);
+    const { data, total } = await this.repository.findPaginated(
+      {
+        assignedTo: new Types.ObjectId(userId),
+        status: FixedTaskStatus.DONE,
+      },
       page,
       limit,
     );

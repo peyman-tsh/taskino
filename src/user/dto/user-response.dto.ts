@@ -74,6 +74,9 @@ export class SpecialistProgressResponseDto {
 
   @ApiProperty({ minimum: 0, maximum: 100, example: 75 })
   progressPercentage: number;
+
+  @ApiProperty({ enum: UserPerformanceStatus, example: UserPerformanceStatus.GOOD })
+  performanceStatus: UserPerformanceStatus;
 }
 
 export class UserWorkSummaryResponseDto {
