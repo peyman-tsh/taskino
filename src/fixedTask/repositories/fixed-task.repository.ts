@@ -89,14 +89,15 @@ export class FixedTaskRepository {
     return this.populate(this.model.find(filter)).exec();
   }
 
-  findActiveRolloverCandidates(now: Date) {
+  findActiveRolloverCandidates(
+    recurrence: FixedTaskRecurrence,
+    now: Date,
+  ) {
     return this.model
       .find({
         isActive: true,
-        $or: [
-          { status: FixedTaskStatus.DONE },
-          { endDate: { $type: 'date', $lte: now } },
-        ],
+        recurrence,
+        endDate: { $type: 'date', $lte: now },
       })
       .exec();
   }

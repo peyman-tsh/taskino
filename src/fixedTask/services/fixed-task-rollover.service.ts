@@ -1,7 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { FixedTaskTemplateDocument } from '../fixed-task.schema';
-import { FixedTaskStatus } from '../fixed-task.schema';
+import { Cron } from '@nestjs/schedule';
+import {
+  FixedTaskRecurrence,
+  FixedTaskTemplateDocument,
+} from '../fixed-task.schema';
 import { FixedTaskRepository } from '../repositories/fixed-task.repository';
 import { FixedTaskDeadlineService } from './fixed-task-deadline.service';
 import { buildFixedTaskSeedSchedule } from './fixed-task-seed.service';
@@ -15,7 +17,7 @@ import {
 @Injectable()
 export class FixedTaskRolloverService {
   private readonly logger = new Logger(FixedTaskRolloverService.name);
-  private isRunning = false;
+  private readonly runningRecurrences = new Set<FixedTaskRecurrence>();
 
   constructor(
     private readonly repository: FixedTaskRepository,
@@ -24,18 +26,31 @@ export class FixedTaskRolloverService {
     private readonly eventBus: InternalEventBus,
   ) {}
 
-  @Cron(CronExpression.EVERY_MINUTE)
-  async handleRollover(): Promise<void> {
-    await this.runOnce();
+  @Cron('1 0 * * *', { timeZone: 'Asia/Tehran' })
+  async handleDailyRollover(): Promise<void> {
+    await this.runForRecurrence(FixedTaskRecurrence.DAILY);
   }
 
-  async runOnce(now = new Date()): Promise<number> {
-    if (this.isRunning) return 0;
-    this.isRunning = true;
+  @Cron('1 0 * * 6', { timeZone: 'Asia/Tehran' })
+  async handleWeeklyRollover(): Promise<void> {
+    await this.runForRecurrence(FixedTaskRecurrence.WEEKLY);
+  }
+
+  @Cron('1 0 1 * *', { timeZone: 'Asia/Tehran' })
+  async handleMonthlyRollover(): Promise<void> {
+    await this.runForRecurrence(FixedTaskRecurrence.MONTHLY);
+  }
+
+  async runForRecurrence(
+    recurrence: FixedTaskRecurrence,
+    now = new Date(),
+  ): Promise<number> {
+    if (this.runningRecurrences.has(recurrence)) return 0;
+    this.runningRecurrences.add(recurrence);
 
     try {
       const candidates =
-        await this.repository.findActiveRolloverCandidates(now);
+        await this.repository.findActiveRolloverCandidates(recurrence, now);
       let createdCount = 0;
 
       for (const candidate of candidates) {
@@ -45,18 +60,25 @@ export class FixedTaskRolloverService {
 
       return createdCount;
     } finally {
-      this.isRunning = false;
+      this.runningRecurrences.delete(recurrence);
     }
+  }
+
+  async runOnce(now = new Date()): Promise<number> {
+    const counts = await Promise.all(
+      Object.values(FixedTaskRecurrence).map((recurrence) =>
+        this.runForRecurrence(recurrence, now),
+      ),
+    );
+    return counts.reduce((total, count) => total + count, 0);
   }
 
   private async rolloverIfExpired(
     candidate: FixedTaskTemplateDocument,
     now: Date,
   ): Promise<boolean> {
-    if (candidate.status !== FixedTaskStatus.DONE) {
-      const deadline = this.deadlineService.getScoreDeadline(candidate);
-      if (!deadline || deadline.getTime() > now.getTime()) return false;
-    }
+    const deadline = this.deadlineService.getScoreDeadline(candidate);
+    if (!deadline || deadline.getTime() > now.getTime()) return false;
 
     await this.scoreService.adjustTaskScore(candidate);
 
