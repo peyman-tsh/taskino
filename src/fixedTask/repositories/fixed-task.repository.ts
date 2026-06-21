@@ -91,13 +91,11 @@ export class FixedTaskRepository {
 
   findActiveRolloverCandidates(
     recurrence: FixedTaskRecurrence,
-    now: Date,
   ) {
     return this.model
       .find({
         isActive: true,
         recurrence,
-        endDate: { $type: 'date', $lte: now },
       })
       .exec();
   }

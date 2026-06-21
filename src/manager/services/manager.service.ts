@@ -9,6 +9,7 @@ import { ManagerTasksQueryDto } from '../dto/manager-tasks-query.dto';
 import { ManagerTasksService } from './manager-tasks.service';
 import { PaginationQueryDto } from '../dto/pagination-query.dto';
 import { ManagerLeaveRequestService } from './manager-leave-request.service';
+import { ManagerWorkStatusService } from './manager-work-status.service';
 
 @Injectable()
 export class ManagerService extends BaseManagerService {
@@ -18,6 +19,7 @@ export class ManagerService extends BaseManagerService {
     private readonly userProgressService: UserProgressService,
     private readonly managerTasksService: ManagerTasksService,
     private readonly managerLeaveRequestService: ManagerLeaveRequestService,
+    private readonly managerWorkStatusService: ManagerWorkStatusService,
   ) {
     super();
   }
@@ -60,6 +62,10 @@ export class ManagerService extends BaseManagerService {
 
   getTaskCountsByUsers() {
     return this.taskReportService.getTaskCountsByAssignee();
+  }
+
+  getWorkStatusCounts(from: string, to: string) {
+    return this.managerWorkStatusService.getStatusCounts(from, to);
   }
 
   getMonthlyUserPerformance(query: MonthlyPerformanceQueryDto) {

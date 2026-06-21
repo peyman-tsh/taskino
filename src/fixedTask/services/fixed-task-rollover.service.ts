@@ -5,7 +5,6 @@ import {
   FixedTaskTemplateDocument,
 } from '../fixed-task.schema';
 import { FixedTaskRepository } from '../repositories/fixed-task.repository';
-import { FixedTaskDeadlineService } from './fixed-task-deadline.service';
 import { buildFixedTaskSeedSchedule } from './fixed-task-seed.service';
 import { FixedTaskScoreService } from './fixed-task-score.service';
 import { InternalEventBus } from '../../common/events/internal-event-bus.service';
@@ -21,7 +20,6 @@ export class FixedTaskRolloverService {
 
   constructor(
     private readonly repository: FixedTaskRepository,
-    private readonly deadlineService: FixedTaskDeadlineService,
     private readonly scoreService: FixedTaskScoreService,
     private readonly eventBus: InternalEventBus,
   ) {}
@@ -50,7 +48,7 @@ export class FixedTaskRolloverService {
 
     try {
       const candidates =
-        await this.repository.findActiveRolloverCandidates(recurrence, now);
+        await this.repository.findActiveRolloverCandidates(recurrence);
       let createdCount = 0;
 
       for (const candidate of candidates) {
@@ -77,9 +75,6 @@ export class FixedTaskRolloverService {
     candidate: FixedTaskTemplateDocument,
     now: Date,
   ): Promise<boolean> {
-    const deadline = this.deadlineService.getScoreDeadline(candidate);
-    if (!deadline || deadline.getTime() > now.getTime()) return false;
-
     await this.scoreService.adjustTaskScore(candidate);
 
     const claimed = await this.repository.claimExpiredOccurrence(

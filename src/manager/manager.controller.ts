@@ -41,6 +41,7 @@ import { PaginationQueryDto } from './dto/pagination-query.dto';
 import { CurrentUserId } from '../auth/decorators/current-user-id.decorator';
 import { AdjustSpecialistScoreDto } from './dto/adjust-specialist-score.dto';
 import { ManagerUserScoreService } from './services/manager-user-score.service';
+import { WorkStatusRangeQueryDto } from './dto/work-status-range-query.dto';
 
 @ApiTags('Manager')
 @ApiBearerAuth()
@@ -118,6 +119,20 @@ export class ManagerController {
   @ApiOkResponse({ type: TaskStatusOverviewResponseDto })
   getTaskStatusOverview() {
     return this.managerService.getTaskStatusOverview();
+  }
+
+  @Get('tasks/status-range')
+  @ApiOperation({
+    summary: 'Get regular and fixed task status counts for a date range',
+    description:
+      'Returns mutually exclusive done, in-progress, todo, and overdue unfinished counts, including separate Task and FixedTask breakdowns.',
+  })
+  @ApiOkResponse({
+    description: 'Date-range work status counts retrieved successfully',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid date range' })
+  getWorkStatusCounts(@Query() query: WorkStatusRangeQueryDto) {
+    return this.managerService.getWorkStatusCounts(query.from, query.to);
   }
 
   @Get('tasks/users/counts')

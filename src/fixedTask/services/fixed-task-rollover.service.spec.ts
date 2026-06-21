@@ -5,7 +5,6 @@ import {
   FixedTaskTemplateDocument,
 } from '../fixed-task.schema';
 import { FixedTaskRepository } from '../repositories/fixed-task.repository';
-import { FixedTaskDeadlineService } from './fixed-task-deadline.service';
 import { FixedTaskRolloverService } from './fixed-task-rollover.service';
 import { FixedTaskScoreService } from './fixed-task-score.service';
 import { InternalEventBus } from '../../common/events/internal-event-bus.service';
@@ -18,9 +17,6 @@ describe('FixedTaskRolloverService', () => {
     createNextOccurrence: jest.fn(),
     reactivateOccurrence: jest.fn(),
   };
-  const deadlineService = {
-    getScoreDeadline: jest.fn(),
-  };
   const scoreService = {
     adjustTaskScore: jest.fn(),
   };
@@ -29,7 +25,6 @@ describe('FixedTaskRolloverService', () => {
   };
   const service = new FixedTaskRolloverService(
     repository as unknown as FixedTaskRepository,
-    deadlineService as unknown as FixedTaskDeadlineService,
     scoreService as unknown as FixedTaskScoreService,
     eventBus as unknown as InternalEventBus,
   );
@@ -46,7 +41,6 @@ describe('FixedTaskRolloverService', () => {
 
     expect(repository.findActiveRolloverCandidates).toHaveBeenCalledWith(
       FixedTaskRecurrence.DAILY,
-      expect.any(Date),
     );
   });
 
@@ -57,7 +51,6 @@ describe('FixedTaskRolloverService', () => {
 
     expect(repository.findActiveRolloverCandidates).toHaveBeenCalledWith(
       FixedTaskRecurrence.WEEKLY,
-      expect.any(Date),
     );
   });
 
@@ -68,7 +61,6 @@ describe('FixedTaskRolloverService', () => {
 
     expect(repository.findActiveRolloverCandidates).toHaveBeenCalledWith(
       FixedTaskRecurrence.MONTHLY,
-      expect.any(Date),
     );
   });
 
@@ -78,9 +70,6 @@ describe('FixedTaskRolloverService', () => {
       FixedTaskStatus.IN_PROGRESS,
     );
     repository.findActiveRolloverCandidates.mockResolvedValue([task]);
-    deadlineService.getScoreDeadline.mockReturnValue(
-      new Date(2026, 5, 19, 14, 34),
-    );
     repository.claimExpiredOccurrence.mockResolvedValue(task);
     repository.createNextOccurrence.mockResolvedValue({ _id: new Types.ObjectId() });
 
@@ -90,7 +79,6 @@ describe('FixedTaskRolloverService', () => {
 
     expect(repository.findActiveRolloverCandidates).toHaveBeenCalledWith(
       FixedTaskRecurrence.DAILY,
-      now,
     );
 
     expect(repository.claimExpiredOccurrence).toHaveBeenCalledWith(
@@ -112,38 +100,47 @@ describe('FixedTaskRolloverService', () => {
     );
   });
 
-  it('does not roll over a completed occurrence before its deadline', async () => {
+  it('rolls over a completed occurrence regardless of its deadline', async () => {
     const task = createTask(FixedTaskRecurrence.DAILY, FixedTaskStatus.DONE);
     repository.findActiveRolloverCandidates.mockResolvedValue([task]);
-    deadlineService.getScoreDeadline.mockReturnValue(
-      new Date(2026, 5, 20, 0, 1),
-    );
+    repository.claimExpiredOccurrence.mockResolvedValue(task);
+    repository.createNextOccurrence.mockResolvedValue({
+      _id: new Types.ObjectId(),
+    });
+
     await expect(
       service.runForRecurrence(FixedTaskRecurrence.DAILY, now),
-    ).resolves.toBe(0);
+    ).resolves.toBe(1);
 
-    expect(scoreService.adjustTaskScore).not.toHaveBeenCalled();
-    expect(repository.claimExpiredOccurrence).not.toHaveBeenCalled();
-    expect(repository.createNextOccurrence).not.toHaveBeenCalled();
+    expect(scoreService.adjustTaskScore).toHaveBeenCalledWith(task);
+    expect(repository.claimExpiredOccurrence).toHaveBeenCalledWith(
+      task._id,
+      now,
+    );
+    expect(repository.createNextOccurrence).toHaveBeenCalled();
   });
 
-  it('does not roll over before endDate and endTime expire', async () => {
+  it('rolls over unfinished work regardless of its deadline', async () => {
     const task = createTask(
       FixedTaskRecurrence.WEEKLY,
       FixedTaskStatus.IN_PROGRESS,
     );
     repository.findActiveRolloverCandidates.mockResolvedValue([task]);
-    deadlineService.getScoreDeadline.mockReturnValue(
-      new Date(2026, 5, 19, 14, 36),
-    );
+    repository.claimExpiredOccurrence.mockResolvedValue(task);
+    repository.createNextOccurrence.mockResolvedValue({
+      _id: new Types.ObjectId(),
+    });
 
     await expect(
       service.runForRecurrence(FixedTaskRecurrence.WEEKLY, now),
-    ).resolves.toBe(0);
+    ).resolves.toBe(1);
 
-    expect(repository.claimExpiredOccurrence).not.toHaveBeenCalled();
-    expect(repository.createNextOccurrence).not.toHaveBeenCalled();
-    expect(scoreService.adjustTaskScore).not.toHaveBeenCalled();
+    expect(scoreService.adjustTaskScore).toHaveBeenCalledWith(task);
+    expect(repository.claimExpiredOccurrence).toHaveBeenCalledWith(
+      task._id,
+      now,
+    );
+    expect(repository.createNextOccurrence).toHaveBeenCalled();
   });
 
   it('reactivates the old occurrence when creating the next one fails', async () => {
@@ -152,9 +149,6 @@ describe('FixedTaskRolloverService', () => {
       FixedTaskStatus.DONE,
     );
     repository.findActiveRolloverCandidates.mockResolvedValue([task]);
-    deadlineService.getScoreDeadline.mockReturnValue(
-      new Date(2026, 5, 19, 14, 34),
-    );
     repository.claimExpiredOccurrence.mockResolvedValue(task);
     repository.createNextOccurrence.mockRejectedValue(new Error('create failed'));
 

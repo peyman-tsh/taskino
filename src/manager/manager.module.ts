@@ -18,6 +18,8 @@ import { LeaveRequestModule } from '../LeaveRequest/LeaveRequest.module';
 import { ManagerLeaveRequestService } from './services/manager-leave-request.service';
 import { ManagerUserScoreService } from './services/manager-user-score.service';
 import { UserProgressEventListener } from './user-progress-event.listener';
+import { ManagerWorkStatusRepository } from './repositories/manager-work-status.repository';
+import { ManagerWorkStatusService } from './services/manager-work-status.service';
 
 @Module({
   imports: [
@@ -40,6 +42,8 @@ import { UserProgressEventListener } from './user-progress-event.listener';
     ManagerLeaveRequestService,
     ManagerUserScoreService,
     UserProgressEventListener,
+    ManagerWorkStatusRepository,
+    ManagerWorkStatusService,
   ],
 })
 export class ManagerModule {}
