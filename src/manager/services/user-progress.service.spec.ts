@@ -31,6 +31,8 @@ describe('UserProgressService', () => {
       fixedTasks: [],
     });
     calculator.calculate.mockReturnValue({
+      taskProgressPercentage: 60,
+      fixedTaskProgressPercentage: 90,
       progressPercentage: 75,
       performanceStatus: 'good',
     });
@@ -40,6 +42,8 @@ describe('UserProgressService', () => {
     expect(repository.findAssignedWork).toHaveBeenCalledTimes(1);
     expect(repository.saveEvaluation).toHaveBeenCalledWith(
       userId,
+      60,
+      90,
       75,
       'good',
       expect.any(Date),

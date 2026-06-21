@@ -10,50 +10,59 @@ import {
 
 @Injectable()
 export class UserProgressCalculatorService {
-  private readonly categoryWeight = 50;
-  private readonly inProgressCredit = 0.5;
-
   calculate(
     tasks: ProgressTask[],
     fixedTasks: ProgressFixedTask[],
   ): ProgressMetrics {
-    const completedTasks = this.countCompletedTasks(tasks);
-    const onTimeTasks = this.countOnTimeTasks(tasks);
-    const inProgressTasks = this.countInProgressTasks(tasks);
-    const completedFixedTasks = this.countCompletedFixedTasks(fixedTasks);
-    const onTimeFixedTasks = this.countOnTimeFixedTasks(fixedTasks);
-    const inProgressFixedTasks = this.countInProgressFixedTasks(fixedTasks);
-    const weights = this.calculateWeights(tasks.length, fixedTasks.length);
-    const progressPercentage = Math.round(
-      this.calculateCategoryProgress(
-        tasks.length,
-        onTimeTasks,
-        inProgressTasks,
-        weights.task,
-        ) +
-        this.calculateFixedTaskProgress(
-          onTimeFixedTasks,
-          inProgressFixedTasks,
-          weights.fixedTask,
-        ),
+    const completedTasks = this.countByStatus(tasks, TaskStatus.DONE);
+    const inProgressTasks = this.countByStatus(
+      tasks,
+      TaskStatus.IN_PROGRESS,
+    );
+    const completedFixedTasks = this.countByStatus(
+      fixedTasks,
+      FixedTaskStatus.DONE,
+    );
+    const inProgressFixedTasks = this.countByStatus(
+      fixedTasks,
+      FixedTaskStatus.IN_PROGRESS,
+    );
+    const taskProgressPercentage = this.calculateCompletionPercentage(
+      completedTasks,
+      tasks.length,
+    );
+    const fixedTaskProgressPercentage = this.calculateCompletionPercentage(
+      completedFixedTasks,
+      fixedTasks.length,
+    );
+    const progressPercentage = this.calculateOverallProgress(
+      taskProgressPercentage,
+      fixedTaskProgressPercentage,
+      tasks.length,
+      fixedTasks.length,
     );
 
     return {
       totalTasks: tasks.length,
       completedTasks,
-      onTimeTasks,
+      onTimeTasks: this.countOnTimeTasks(tasks),
       inProgressTasks,
+      taskProgressPercentage,
       totalFixedTasks: fixedTasks.length,
       completedFixedTasks,
-      onTimeFixedTasks,
+      onTimeFixedTasks: this.countOnTimeFixedTasks(fixedTasks),
       inProgressFixedTasks,
+      fixedTaskProgressPercentage,
       progressPercentage,
       performanceStatus: calculatePerformanceStatus(progressPercentage),
     };
   }
 
-  private countCompletedTasks(tasks: ProgressTask[]): number {
-    return tasks.filter((task) => task.status === TaskStatus.DONE).length;
+  private countByStatus<T extends { status: string }>(
+    items: T[],
+    status: string,
+  ): number {
+    return items.filter((item) => item.status === status).length;
   }
 
   private countOnTimeTasks(tasks: ProgressTask[]): number {
@@ -62,24 +71,7 @@ export class UserProgressCalculatorService {
         task.status === TaskStatus.DONE &&
         task.doneTime instanceof Date &&
         task.dueDate instanceof Date &&
-        task.doneTime.getTime() < task.dueDate.getTime(),
-    ).length;
-  }
-
-  private countInProgressTasks(tasks: ProgressTask[]): number {
-    return tasks.filter((task) => task.status === TaskStatus.IN_PROGRESS).length;
-  }
-
-  private countCompletedFixedTasks(fixedTasks: ProgressFixedTask[]): number {
-    return fixedTasks.filter((task) => task.status === FixedTaskStatus.DONE)
-      .length;
-  }
-
-  private countInProgressFixedTasks(
-    fixedTasks: ProgressFixedTask[],
-  ): number {
-    return fixedTasks.filter(
-      (task) => task.status === FixedTaskStatus.IN_PROGRESS,
+        task.doneTime.getTime() <= task.dueDate.getTime(),
     ).length;
   }
 
@@ -95,38 +87,24 @@ export class UserProgressCalculatorService {
     }).length;
   }
 
-  private calculateCategoryProgress(
+  private calculateCompletionPercentage(
+    completed: number,
     total: number,
-    successful: number,
-    inProgress: number,
-    weight: number,
   ): number {
-    if (total === 0) return 0;
-
-    const earnedItems = successful + inProgress * this.inProgressCredit;
-    return (earnedItems / total) * weight;
+    return total === 0 ? 0 : Math.round((completed / total) * 100);
   }
 
-  private calculateWeights(
+  private calculateOverallProgress(
+    taskProgress: number,
+    fixedTaskProgress: number,
     totalTasks: number,
     totalFixedTasks: number,
-  ): { task: number; fixedTask: number } {
-    if (totalTasks > 0 && totalFixedTasks > 0) {
-      return { task: this.categoryWeight, fixedTask: this.categoryWeight };
-    }
-
-    if (totalTasks > 0) return { task: 100, fixedTask: 0 };
-    if (totalFixedTasks > 0) return { task: 0, fixedTask: 100 };
-    return { task: 0, fixedTask: 0 };
-  }
-
-  private calculateFixedTaskProgress(
-    successful: number,
-    inProgress: number,
-    weight: number,
   ): number {
-    if (successful > 0) return weight;
-    if (inProgress > 0) return weight * this.inProgressCredit;
+    if (totalTasks > 0 && totalFixedTasks > 0) {
+      return Math.round((taskProgress + fixedTaskProgress) / 2);
+    }
+    if (totalTasks > 0) return taskProgress;
+    if (totalFixedTasks > 0) return fixedTaskProgress;
     return 0;
   }
 
@@ -146,5 +124,4 @@ export class UserProgressCalculatorService {
     deadline.setHours(hours, minutes, 0, 0);
     return deadline;
   }
-
 }

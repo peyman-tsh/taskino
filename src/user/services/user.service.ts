@@ -142,8 +142,11 @@ export class UserService {
     userId: string,
   ): Promise<{
     userId: string;
+    taskProgressPercentage: number;
+    fixedTaskProgressPercentage: number;
     progressPercentage: number;
     performanceStatus: UserPerformanceStatus;
+    score: number;
   }> {
     if (!Types.ObjectId.isValid(userId)) {
       throw new NotFoundException('Invalid user ID');
@@ -173,8 +176,11 @@ export class UserService {
 
     return {
       userId: progress.userId,
+      taskProgressPercentage: progress.taskProgressPercentage,
+      fixedTaskProgressPercentage: progress.fixedTaskProgressPercentage,
       progressPercentage: progress.progressPercentage,
       performanceStatus,
+      score: progress.score,
     };
   }
 

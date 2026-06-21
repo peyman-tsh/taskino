@@ -66,6 +66,9 @@ export class MonthlyUserPerformanceItemDto {
   inProgressTasks: number;
 
   @ApiProperty()
+  taskProgressPercentage: number;
+
+  @ApiProperty()
   pendingTasks: number;
 
   @ApiProperty()
@@ -122,6 +125,9 @@ export class UserProgressResponseDto {
 
   @ApiProperty()
   inProgressFixedTasks: number;
+
+  @ApiProperty()
+  fixedTaskProgressPercentage: number;
 
   @ApiProperty()
   progressPercentage: number;

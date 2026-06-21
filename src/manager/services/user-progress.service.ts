@@ -50,6 +50,8 @@ export class UserProgressService {
 
     await this.repository.saveEvaluation(
       user._id,
+      metrics.taskProgressPercentage,
+      metrics.fixedTaskProgressPercentage,
       metrics.progressPercentage,
       metrics.performanceStatus,
       evaluatedAt,

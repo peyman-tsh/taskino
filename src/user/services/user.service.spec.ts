@@ -32,14 +32,20 @@ describe('UserService user progress', () => {
     const userId = new Types.ObjectId().toString();
     repository.findSpecialistProgressById.mockResolvedValue({
       userId,
+      taskProgressPercentage: 60,
+      fixedTaskProgressPercentage: 90,
       progressPercentage: 75,
       performanceStatus: 'weak',
+      score: 30,
     });
 
     await expect(service.getSpecialistProgress(userId)).resolves.toEqual({
       userId,
+      taskProgressPercentage: 60,
+      fixedTaskProgressPercentage: 90,
       progressPercentage: 75,
       performanceStatus: 'good',
+      score: 30,
     });
     expect(eventBus.publishAndWait).toHaveBeenCalledWith(
       UserProgressEvents.REFRESH_REQUESTED,
@@ -55,14 +61,20 @@ describe('UserService user progress', () => {
     const userId = new Types.ObjectId().toString();
     repository.findSpecialistProgressById.mockResolvedValue({
       userId,
+      taskProgressPercentage: 60,
+      fixedTaskProgressPercentage: 90,
       progressPercentage: 75,
       performanceStatus: 'good',
+      score: 20,
     });
 
     await expect(service.getSpecialistProgress(userId)).resolves.toEqual({
       userId,
+      taskProgressPercentage: 60,
+      fixedTaskProgressPercentage: 90,
       progressPercentage: 75,
       performanceStatus: 'good',
+      score: 20,
     });
   });
 

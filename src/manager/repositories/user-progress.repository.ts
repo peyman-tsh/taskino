@@ -62,7 +62,7 @@ export class UserProgressRepository {
         .toArray(),
       this.connection
         .collection('fixedtasktemplates')
-        .find({ assignedTo: userId })
+        .find({ assignedTo: userId, isActive: true })
         .project({ status: 1, doneTime: 1, endDate: 1, endTime: 1 })
         .toArray(),
     ]);
@@ -75,6 +75,8 @@ export class UserProgressRepository {
 
   async saveEvaluation(
     userId: Types.ObjectId,
+    taskProgressPercentage: number,
+    fixedTaskProgressPercentage: number,
     progressPercentage: number,
     performanceStatus: UserPerformanceStatus,
     evaluatedAt: Date,
@@ -83,6 +85,8 @@ export class UserProgressRepository {
       { _id: userId },
       {
         $set: {
+          taskProgressPercentage,
+          fixedTaskProgressPercentage,
           progressPercentage,
           performanceStatus,
           performanceEvaluatedAt: evaluatedAt,

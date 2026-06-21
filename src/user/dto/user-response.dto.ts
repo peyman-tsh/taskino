@@ -75,8 +75,17 @@ export class SpecialistProgressResponseDto {
   @ApiProperty({ minimum: 0, maximum: 100, example: 75 })
   progressPercentage: number;
 
+  @ApiProperty({ minimum: 0, maximum: 100, example: 60 })
+  taskProgressPercentage: number;
+
+  @ApiProperty({ minimum: 0, maximum: 100, example: 40 })
+  fixedTaskProgressPercentage: number;
+
   @ApiProperty({ enum: UserPerformanceStatus, example: UserPerformanceStatus.GOOD })
   performanceStatus: UserPerformanceStatus;
+
+  @ApiProperty({ minimum: 0, example: 30 })
+  score: number;
 }
 
 export class UserWorkSummaryResponseDto {

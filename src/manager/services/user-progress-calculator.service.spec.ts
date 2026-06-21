@@ -5,164 +5,109 @@ import { UserProgressCalculatorService } from './user-progress-calculator.servic
 
 describe('UserProgressCalculatorService', () => {
   const calculator = new UserProgressCalculatorService();
-  const dueDate = new Date('2026-06-11T12:00:00.000Z');
-  const onTime = new Date('2026-06-11T11:00:00.000Z');
-  const late = new Date('2026-06-11T13:00:00.000Z');
-  const fixedTaskOnTime = new Date(2026, 5, 11, 11, 0);
-  const fixedTaskLate = new Date(2026, 5, 11, 13, 0);
-  const fixedTaskDeadline = {
-    endDate: new Date(2026, 5, 11),
-    endTime: '12:00',
-  };
 
-  it('returns 100 and good when all work is successful', () => {
+  it('returns separate task and fixed-task percentages and their average', () => {
     const result = calculator.calculate(
       [
-        { status: TaskStatus.DONE, dueDate, doneTime: onTime },
-        { status: TaskStatus.DONE, dueDate, doneTime: onTime },
+        { status: TaskStatus.DONE },
+        { status: TaskStatus.DONE },
+        { status: TaskStatus.TODO },
+        { status: TaskStatus.TODO },
       ],
       [
-        {
-          status: FixedTaskStatus.DONE,
-          doneTime: fixedTaskOnTime,
-          ...fixedTaskDeadline,
-        },
-        {
-          status: FixedTaskStatus.DONE,
-          doneTime: fixedTaskOnTime,
-          ...fixedTaskDeadline,
-        },
+        { status: FixedTaskStatus.DONE },
+        { status: FixedTaskStatus.TODO },
       ],
     );
 
-    expect(result.progressPercentage).toBe(100);
-    expect(result.performanceStatus).toBe(UserPerformanceStatus.GOOD);
-  });
-
-  it('returns 50 and normal when all work is in progress', () => {
-    const result = calculator.calculate(
-      [
-        { status: TaskStatus.IN_PROGRESS },
-        { status: TaskStatus.IN_PROGRESS },
-        { status: TaskStatus.IN_PROGRESS },
-      ],
-      [
-        { status: FixedTaskStatus.IN_PROGRESS },
-        { status: FixedTaskStatus.IN_PROGRESS },
-        { status: FixedTaskStatus.IN_PROGRESS },
-      ],
-    );
-
-    expect(result.inProgressTasks).toBe(3);
-    expect(result.inProgressFixedTasks).toBe(3);
+    expect(result.taskProgressPercentage).toBe(50);
+    expect(result.fixedTaskProgressPercentage).toBe(50);
     expect(result.progressPercentage).toBe(50);
     expect(result.performanceStatus).toBe(UserPerformanceStatus.NORMAL);
   });
 
-  it('does not give progress credit to late completed tasks', () => {
-    const result = calculator.calculate(
-      [{ status: TaskStatus.DONE, dueDate, doneTime: late }],
-      [
-        {
-          status: FixedTaskStatus.DONE,
-          doneTime: fixedTaskOnTime,
-          ...fixedTaskDeadline,
-        },
-      ],
-    );
-
-    expect(result.completedTasks).toBe(1);
-    expect(result.onTimeTasks).toBe(0);
-    expect(result.progressPercentage).toBe(50);
-    expect(result.performanceStatus).toBe(UserPerformanceStatus.NORMAL);
-  });
-
-  it('returns 100 when a specialist only has one completed fixed task', () => {
+  it('calculates fixed-task progress as completed divided by total', () => {
     const result = calculator.calculate(
       [],
       [
-        {
-          status: FixedTaskStatus.DONE,
-          doneTime: fixedTaskOnTime,
-          ...fixedTaskDeadline,
-        },
-      ],
-    );
-
-    expect(result.totalFixedTasks).toBe(1);
-    expect(result.completedFixedTasks).toBe(1);
-    expect(result.progressPercentage).toBe(100);
-    expect(result.performanceStatus).toBe(UserPerformanceStatus.GOOD);
-  });
-
-  it('does not divide fixed task progress by total fixed task count', () => {
-    const result = calculator.calculate(
-      [],
-      [
-        {
-          status: FixedTaskStatus.DONE,
-          doneTime: fixedTaskOnTime,
-          ...fixedTaskDeadline,
-        },
-        ...Array.from({ length: 38 }, () => ({
+        { status: FixedTaskStatus.DONE },
+        { status: FixedTaskStatus.DONE },
+        ...Array.from({ length: 31 }, () => ({
           status: FixedTaskStatus.TODO,
         })),
       ],
     );
 
-    expect(result.totalFixedTasks).toBe(39);
-    expect(result.completedFixedTasks).toBe(1);
-    expect(result.onTimeFixedTasks).toBe(1);
-    expect(result.progressPercentage).toBe(100);
-    expect(result.performanceStatus).toBe(UserPerformanceStatus.GOOD);
+    expect(result.totalFixedTasks).toBe(33);
+    expect(result.completedFixedTasks).toBe(2);
+    expect(result.fixedTaskProgressPercentage).toBe(6);
+    expect(result.progressPercentage).toBe(6);
+    expect(result.performanceStatus).toBe(UserPerformanceStatus.WEAK);
   });
 
-  it('combines task and fixed task progress using equal category weights', () => {
+  it('uses task progress as overall when the user has no fixed tasks', () => {
     const result = calculator.calculate(
-      [{ status: TaskStatus.DONE, dueDate, doneTime: onTime }],
       [
-        {
-          status: FixedTaskStatus.DONE,
-          doneTime: fixedTaskOnTime,
-          ...fixedTaskDeadline,
-        },
-        { status: FixedTaskStatus.TODO },
+        { status: TaskStatus.DONE },
+        { status: TaskStatus.DONE },
+        { status: TaskStatus.DONE },
+        { status: TaskStatus.TODO },
       ],
+      [],
     );
 
-    expect(result.progressPercentage).toBe(100);
+    expect(result.taskProgressPercentage).toBe(75);
+    expect(result.fixedTaskProgressPercentage).toBe(0);
+    expect(result.progressPercentage).toBe(75);
     expect(result.performanceStatus).toBe(UserPerformanceStatus.GOOD);
   });
 
-  it('does not give progress credit to a late fixed task', () => {
+  it('uses fixed-task progress as overall when the user has no tasks', () => {
     const result = calculator.calculate(
       [],
       [
-        {
-          status: FixedTaskStatus.DONE,
-          doneTime: fixedTaskLate,
-          ...fixedTaskDeadline,
-        },
+        { status: FixedTaskStatus.DONE },
+        { status: FixedTaskStatus.DONE },
       ],
     );
 
-    expect(result.completedFixedTasks).toBe(1);
-    expect(result.onTimeFixedTasks).toBe(0);
+    expect(result.taskProgressPercentage).toBe(0);
+    expect(result.fixedTaskProgressPercentage).toBe(100);
+    expect(result.progressPercentage).toBe(100);
+    expect(result.performanceStatus).toBe(UserPerformanceStatus.GOOD);
+  });
+
+  it('does not give completion progress to in-progress work', () => {
+    const result = calculator.calculate(
+      [{ status: TaskStatus.IN_PROGRESS }],
+      [{ status: FixedTaskStatus.IN_PROGRESS }],
+    );
+
+    expect(result.taskProgressPercentage).toBe(0);
+    expect(result.fixedTaskProgressPercentage).toBe(0);
     expect(result.progressPercentage).toBe(0);
     expect(result.performanceStatus).toBe(UserPerformanceStatus.WEAK);
   });
 
-  it('returns weak when progress is 40 or less', () => {
+  it('counts done work for progress regardless of completion time', () => {
+    const late = new Date('2026-06-11T13:00:00.000Z');
+    const dueDate = new Date('2026-06-11T12:00:00.000Z');
     const result = calculator.calculate(
+      [{ status: TaskStatus.DONE, dueDate, doneTime: late }],
       [
-        { status: TaskStatus.IN_PROGRESS },
-        { status: TaskStatus.TODO },
-        { status: TaskStatus.TODO },
+        {
+          status: FixedTaskStatus.DONE,
+          endDate: dueDate,
+          endTime: '12:00',
+          doneTime: late,
+        },
       ],
-      [{ status: FixedTaskStatus.TODO }],
     );
 
-    expect(result.progressPercentage).toBe(8);
-    expect(result.performanceStatus).toBe(UserPerformanceStatus.WEAK);
+    expect(result.completedTasks).toBe(1);
+    expect(result.completedFixedTasks).toBe(1);
+    expect(result.taskProgressPercentage).toBe(100);
+    expect(result.fixedTaskProgressPercentage).toBe(100);
+    expect(result.progressPercentage).toBe(100);
   });
 });

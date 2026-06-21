@@ -64,6 +64,12 @@ export class User {
   @Prop({ type: Number, default: 0, min: 0, max: 100 })
   progressPercentage: number;
 
+  @Prop({ type: Number, default: 0, min: 0, max: 100 })
+  taskProgressPercentage: number;
+
+  @Prop({ type: Number, default: 0, min: 0, max: 100 })
+  fixedTaskProgressPercentage: number;
+
   @Prop({
     type: String,
     enum: UserPerformanceStatus,

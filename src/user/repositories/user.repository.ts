@@ -245,15 +245,20 @@ export class UserRepository {
     id: string,
   ): Promise<{
     userId: string;
+    taskProgressPercentage: number;
+    fixedTaskProgressPercentage: number;
     progressPercentage: number;
     performanceStatus: UserPerformanceStatus;
+    score: number;
   } | null> {
     const user = await this.userModel
       .findOne({
         _id: id,
         roles: { $in: [UserRole.SPECIALIST, UserRole.SUPERVISOR] },
       })
-      .select('progressPercentage performanceStatus')
+      .select(
+        'taskProgressPercentage fixedTaskProgressPercentage progressPercentage performanceStatus score',
+      )
       .lean()
       .exec();
 
@@ -263,9 +268,12 @@ export class UserRepository {
 
     return {
       userId: user._id.toString(),
+      taskProgressPercentage: user.taskProgressPercentage ?? 0,
+      fixedTaskProgressPercentage: user.fixedTaskProgressPercentage ?? 0,
       progressPercentage: user.progressPercentage ?? 0,
       performanceStatus:
         user.performanceStatus ?? UserPerformanceStatus.WEAK,
+      score: user.score ?? 0,
     };
   }
 

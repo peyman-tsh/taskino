@@ -90,9 +90,9 @@ export class UserController {
   @Get('me/progress')
   @Roles(UserRole.SPECIALIST, UserRole.SUPERVISOR)
   @ApiOperation({
-    summary: 'Get current specialist or supervisor progress percentage',
+    summary: 'Get current specialist or supervisor score and progress',
     description:
-      'Recalculates and returns progressPercentage for the authenticated specialist or supervisor.',
+      'Recalculates and returns score, task progress, fixed-task progress, overall progress, and performance status.',
   })
   @ApiResponse({
     status: 200,
