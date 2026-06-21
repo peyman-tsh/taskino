@@ -30,6 +30,7 @@ import {
   TaskCountsByUserResponseDto,
   TaskStatusOverviewResponseDto,
   UserResponseDto,
+  WorkStatusRangeResponseDto,
 } from './dto/manager-response.dto';
 import { MongoIdParamDto } from './dto/mongo-id-param.dto';
 import { MonthlyPerformanceQueryDto } from './dto/monthly-performance-query.dto';
@@ -129,6 +130,7 @@ export class ManagerController {
   })
   @ApiOkResponse({
     description: 'Date-range work status counts retrieved successfully',
+    type: WorkStatusRangeResponseDto,
   })
   @ApiBadRequestResponse({ description: 'Invalid date range' })
   getWorkStatusCounts(@Query() query: WorkStatusRangeQueryDto) {

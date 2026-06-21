@@ -139,6 +139,40 @@ export class UserProgressResponseDto {
   performanceEvaluatedAt: Date;
 }
 
+export class WorkStatusCountsResponseDto {
+  @ApiProperty()
+  total: number;
+
+  @ApiProperty()
+  done: number;
+
+  @ApiProperty()
+  inProgress: number;
+
+  @ApiProperty()
+  todo: number;
+
+  @ApiProperty()
+  overdueUnfinished: number;
+}
+
+export class WorkStatusRangeResponseDto extends WorkStatusCountsResponseDto {
+  @ApiProperty()
+  from: Date;
+
+  @ApiProperty()
+  to: Date;
+
+  @ApiProperty()
+  evaluatedAt: Date;
+
+  @ApiProperty({ type: WorkStatusCountsResponseDto })
+  tasks: WorkStatusCountsResponseDto;
+
+  @ApiProperty({ type: WorkStatusCountsResponseDto })
+  fixedTasks: WorkStatusCountsResponseDto;
+}
+
 export {
   PaginatedUsersResponseDto,
   TaskCountsByUserResponseDto,
