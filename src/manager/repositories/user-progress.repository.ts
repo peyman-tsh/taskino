@@ -50,19 +50,38 @@ export class UserProgressRepository {
     return user as unknown as ProgressUser | null;
   }
 
-  async findAssignedWork(userId: Types.ObjectId): Promise<{
+  async findAssignedWork(
+    userId: Types.ObjectId,
+    periodStart: Date,
+    periodEnd: Date,
+  ): Promise<{
     tasks: ProgressTask[];
     fixedTasks: ProgressFixedTask[];
   }> {
+    const monthlyDateFilter = {
+      $or: [
+        { startDate: { $gte: periodStart, $lt: periodEnd } },
+        {
+          startDate: null,
+          createdAt: { $gte: periodStart, $lt: periodEnd },
+        },
+      ],
+    };
     const [tasks, fixedTasks] = await Promise.all([
       this.connection
         .collection('tasks')
-        .find({ assignedTo: userId })
+        .find({
+          assignedTo: userId,
+          ...monthlyDateFilter,
+        })
         .project({ status: 1, dueDate: 1, doneTime: 1 })
         .toArray(),
       this.connection
         .collection('fixedtasktemplates')
-        .find({ assignedTo: userId, isActive: true })
+        .find({
+          assignedTo: userId,
+          ...monthlyDateFilter,
+        })
         .project({ status: 1, doneTime: 1, endDate: 1, endTime: 1 })
         .toArray(),
     ]);

@@ -40,6 +40,16 @@ describe('UserProgressService', () => {
     await service.refreshUsers([userId.toString(), userId.toString()]);
 
     expect(repository.findAssignedWork).toHaveBeenCalledTimes(1);
+    expect(repository.findAssignedWork).toHaveBeenCalledWith(
+      userId,
+      expect.any(Date),
+      expect.any(Date),
+    );
+    const [, periodStart, periodEnd] =
+      repository.findAssignedWork.mock.calls[0];
+    expect(periodStart.getDate()).toBe(1);
+    expect(periodEnd.getDate()).toBe(1);
+    expect(periodEnd.getMonth()).toBe((periodStart.getMonth() + 1) % 12);
     expect(repository.saveEvaluation).toHaveBeenCalledWith(
       userId,
       60,

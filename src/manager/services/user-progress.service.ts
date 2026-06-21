@@ -43,8 +43,20 @@ export class UserProgressService {
   }
 
   private async evaluateUser(user: ProgressUser, evaluatedAt: Date) {
+    const periodStart = new Date(
+      evaluatedAt.getFullYear(),
+      evaluatedAt.getMonth(),
+      1,
+    );
+    const periodEnd = new Date(
+      evaluatedAt.getFullYear(),
+      evaluatedAt.getMonth() + 1,
+      1,
+    );
     const { tasks, fixedTasks } = await this.repository.findAssignedWork(
       user._id,
+      periodStart,
+      periodEnd,
     );
     const metrics = this.calculator.calculate(tasks, fixedTasks);
 
