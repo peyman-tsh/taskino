@@ -79,12 +79,14 @@ export class ManagerService extends BaseManagerService {
       | FixedTaskTimingApprovalStatus.APPROVED
       | FixedTaskTimingApprovalStatus.REJECTED,
     approvedDurationMinutes?: number,
+    taskComment?: string,
   ) {
     return this.fixedTaskService.reviewTiming(
       fixedTaskId,
       managerId,
       status,
       approvedDurationMinutes,
+      taskComment,
     );
   }
 

@@ -85,6 +85,8 @@ describe('FixedTaskTimingService', () => {
       taskId.toString(),
       managerId.toString(),
       FixedTaskTimingApprovalStatus.APPROVED,
+      undefined,
+      'Timing approved by manager',
     );
 
     expect(repository.updateById).toHaveBeenCalledWith(
@@ -94,6 +96,7 @@ describe('FixedTaskTimingService', () => {
         approvedDurationMinutes: 225,
         startTime: '08:00',
         endTime: '11:45',
+        taskComment: 'Timing approved by manager',
         timingApprovedBy: managerId,
         timingApprovedAt: expect.any(Date),
       }),

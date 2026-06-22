@@ -68,6 +68,7 @@ export class FixedTaskTimingService {
       | FixedTaskTimingApprovalStatus.APPROVED
       | FixedTaskTimingApprovalStatus.REJECTED,
     approvedDurationMinutes?: number,
+    taskComment?: string,
   ) {
     const taskId = this.policy.toObjectId(id, 'fixed task ID');
     const managerObjectId = this.policy.toObjectId(
@@ -97,14 +98,19 @@ export class FixedTaskTimingService {
       ? (approvedDurationMinutes ?? task.actualDurationMinutes)
       : null;
 
-    await this.repository.updateById(taskId, {
+    const updateData: Record<string, unknown> = {
       timingApprovalStatus: status,
       approvedDurationMinutes: duration,
       startTime: approved ? formatTehranTime(task.startedAt) : null,
       endTime: approved ? formatTehranTime(task.doneTime) : null,
       timingApprovedBy: managerObjectId,
       timingApprovedAt: new Date(),
-    });
+    };
+    if (taskComment !== undefined) {
+      updateData.taskComment = taskComment;
+    }
+
+    await this.repository.updateById(taskId, updateData);
 
     return this.queryService.findById(id);
   }

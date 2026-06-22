@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsInt, IsOptional, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Min } from 'class-validator';
 import { FixedTaskTimingApprovalStatus } from '../../fixedTask/fixed-task.schema';
 
 export class FixedTaskTimingApprovalDto {
@@ -26,4 +26,12 @@ export class FixedTaskTimingApprovalDto {
   @IsInt()
   @Min(1)
   approvedDurationMinutes?: number;
+
+  @ApiPropertyOptional({
+    description: 'Manager comment about the fixed-task timing review.',
+    example: 'The recorded duration is acceptable.',
+  })
+  @IsOptional()
+  @IsString()
+  taskComment?: string;
 }

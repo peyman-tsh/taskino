@@ -53,12 +53,14 @@ export class FixedTaskService {
       | FixedTaskTimingApprovalStatus.APPROVED
       | FixedTaskTimingApprovalStatus.REJECTED,
     approvedDurationMinutes?: number,
+    taskComment?: string,
   ) {
     return this.timingService.reviewTiming(
       id,
       managerId,
       status,
       approvedDurationMinutes,
+      taskComment,
     );
   }
 

@@ -134,6 +134,7 @@ export class ManagerController {
       managerId,
       dto.status,
       dto.approvedDurationMinutes,
+      dto.taskComment,
     );
   }
 

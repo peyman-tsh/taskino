@@ -92,10 +92,10 @@ export class FixedTaskTemplate {
   @Prop({ type: Date })
   nextRunAt?: Date;
 
-  @Prop({ type: String, match: TIME_PATTERN })
+  @Prop({ type: String, match: TIME_PATTERN , default: null})
   startTime?: string | null;
 
-  @Prop({ type: String, match: TIME_PATTERN })
+  @Prop({ type: String, match: TIME_PATTERN , default: null})
   endTime?: string | null;
 
   @Prop({ type: Date, index: true })
