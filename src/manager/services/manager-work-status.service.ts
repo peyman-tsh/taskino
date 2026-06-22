@@ -13,7 +13,11 @@ export class ManagerWorkStatusService {
     private readonly repository: ManagerWorkStatusRepository,
   ) {}
 
-  async getStatusCounts(fromValue: string, toValue: string) {
+  async getStatusCounts(
+    managerId: string,
+    fromValue: string,
+    toValue: string,
+  ) {
     const from = this.parseBoundary(fromValue, false);
     const to = this.parseBoundary(toValue, true);
     if (to.getTime() < from.getTime()) {
@@ -23,6 +27,7 @@ export class ManagerWorkStatusService {
     const { tasks, fixedTasks } = await this.repository.findByDateRange(
       from,
       to,
+      managerId,
     );
     const evaluatedAt = new Date();
     const taskCounts = this.countStatuses(tasks, evaluatedAt);

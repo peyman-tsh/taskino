@@ -32,6 +32,7 @@ describe('ManagerWorkStatusService', () => {
     });
 
     const result = await service.getStatusCounts(
+      '6a39043bfc4f15b8c14eb3de',
       '2026-06-01',
       '2026-06-30',
     );
@@ -63,7 +64,11 @@ describe('ManagerWorkStatusService', () => {
 
   it('rejects an inverted date range', async () => {
     await expect(
-      service.getStatusCounts('2026-06-30', '2026-06-01'),
+      service.getStatusCounts(
+        '6a39043bfc4f15b8c14eb3de',
+        '2026-06-30',
+        '2026-06-01',
+      ),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(repository.findByDateRange).not.toHaveBeenCalled();
   });

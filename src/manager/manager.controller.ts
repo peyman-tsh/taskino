@@ -155,8 +155,15 @@ export class ManagerController {
     type: WorkStatusRangeResponseDto,
   })
   @ApiBadRequestResponse({ description: 'Invalid date range' })
-  getWorkStatusCounts(@Query() query: WorkStatusRangeQueryDto) {
-    return this.managerService.getWorkStatusCounts(query.from, query.to);
+  getWorkStatusCounts(
+    @CurrentUserId() managerId: string,
+    @Query() query: WorkStatusRangeQueryDto,
+  ) {
+    return this.managerService.getWorkStatusCounts(
+      managerId,
+      query.from,
+      query.to,
+    );
   }
 
   @Get('tasks/users/counts')

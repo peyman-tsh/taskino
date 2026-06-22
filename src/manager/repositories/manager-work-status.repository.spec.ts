@@ -1,5 +1,8 @@
 import { Model } from 'mongoose';
-import { FixedTaskTemplateDocument } from '../../fixedTask/fixed-task.schema';
+import {
+  FixedTaskTemplateDocument,
+  FixedTaskTimingApprovalStatus,
+} from '../../fixedTask/fixed-task.schema';
 import { TaskDocument } from '../../task/task.schema';
 import { ManagerWorkStatusRepository } from './manager-work-status.repository';
 
@@ -19,6 +22,7 @@ describe('ManagerWorkStatusRepository', () => {
     );
     const from = new Date('2026-06-01T00:00:00.000Z');
     const to = new Date('2026-06-30T23:59:59.999Z');
+    const managerId = '6a39043bfc4f15b8c14eb3de';
     const filter = {
       $or: [
         { startDate: { $gte: from, $lte: to } },
@@ -28,10 +32,23 @@ describe('ManagerWorkStatusRepository', () => {
         },
       ],
     };
+    const fixedTaskFilter = {
+      $and: [
+        filter,
+        {
+          $nor: [
+            {
+              timingApprovalStatus: FixedTaskTimingApprovalStatus.REJECTED,
+              timingApprovedBy: expect.anything(),
+            },
+          ],
+        },
+      ],
+    };
 
-    await repository.findByDateRange(from, to);
+    await repository.findByDateRange(from, to, managerId);
 
     expect(taskFind).toHaveBeenCalledWith(filter);
-    expect(fixedFind).toHaveBeenCalledWith(filter);
+    expect(fixedFind).toHaveBeenCalledWith(fixedTaskFilter);
   });
 });
