@@ -43,6 +43,7 @@ import { CurrentUserId } from '../auth/decorators/current-user-id.decorator';
 import { AdjustSpecialistScoreDto } from './dto/adjust-specialist-score.dto';
 import { ManagerUserScoreService } from './services/manager-user-score.service';
 import { WorkStatusRangeQueryDto } from './dto/work-status-range-query.dto';
+import { FixedTaskTimingApprovalDto } from './dto/fixed-task-timing-approval.dto';
 
 @ApiTags('Manager')
 @ApiBearerAuth()
@@ -112,6 +113,27 @@ export class ManagerController {
     return this.managerUserScoreService.adjustSpecialistScore(
       params.id,
       dto.score,
+    );
+  }
+
+  @Patch('fixed-tasks/:id/timing-approval')
+  @ApiOperation({
+    summary: 'Approve or reject a completed fixed-task timing',
+    description:
+      'Approved timing is inherited by future occurrences. Rejected timing causes future occurrences to start with empty times.',
+  })
+  @ApiParam({ name: 'id', description: 'FixedTask ID' })
+  @ApiOkResponse({ description: 'Fixed-task timing reviewed successfully' })
+  reviewFixedTaskTiming(
+    @Param() params: MongoIdParamDto,
+    @CurrentUserId() managerId: string,
+    @Body() dto: FixedTaskTimingApprovalDto,
+  ) {
+    return this.managerService.reviewFixedTaskTiming(
+      params.id,
+      managerId,
+      dto.status,
+      dto.approvedDurationMinutes,
     );
   }
 

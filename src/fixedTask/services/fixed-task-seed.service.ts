@@ -31,6 +31,13 @@ export interface FixedTaskSeedSchedule {
   endTime: string;
 }
 
+export interface InitialFixedTaskSeedSchedule {
+  startDate: Date;
+  startTime: null;
+  endDate: Date;
+  endTime: null;
+}
+
 export function buildFixedTaskSeedSchedule(
   recurrence: FixedTaskRecurrence,
   now = new Date(),
@@ -43,6 +50,20 @@ export function buildFixedTaskSeedSchedule(
     startTime: formatTehranTime(now),
     endDate,
     endTime: SEED_END_TIME,
+  };
+}
+
+export function buildInitialFixedTaskSeedSchedule(
+  recurrence: FixedTaskRecurrence,
+  now = new Date(),
+): InitialFixedTaskSeedSchedule {
+  const schedule = buildFixedTaskSeedSchedule(recurrence, now);
+
+  return {
+    startDate: schedule.startDate,
+    startTime: null,
+    endDate: schedule.endDate,
+    endTime: null,
   };
 }
 
@@ -168,7 +189,7 @@ export class FixedTaskSeedService {
             `Unknown recurrence "${recurrenceLabel}" in sheet "${sheetName}" row ${sourceRow}`,
           );
         }
-        const schedule = buildFixedTaskSeedSchedule(recurrence);
+        const schedule = buildInitialFixedTaskSeedSchedule(recurrence);
 
         await this.repository.insertFixedTask(
           {

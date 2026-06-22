@@ -1,5 +1,8 @@
 import { FixedTaskRecurrence } from '../fixed-task.schema';
-import { buildFixedTaskSeedSchedule } from './fixed-task-seed.service';
+import {
+  buildFixedTaskSeedSchedule,
+  buildInitialFixedTaskSeedSchedule,
+} from './fixed-task-seed.service';
 
 describe('buildFixedTaskSeedSchedule', () => {
   const now = new Date('2026-06-19T11:05:20.000Z');
@@ -30,5 +33,19 @@ describe('buildFixedTaskSeedSchedule', () => {
     expect(schedule.endDate).toEqual(
       new Date('2026-02-27T20:30:00.000Z'),
     );
+  });
+
+  it('leaves startTime and endTime empty for the initial Excel seed', () => {
+    const schedule = buildInitialFixedTaskSeedSchedule(
+      FixedTaskRecurrence.DAILY,
+      now,
+    );
+
+    expect(schedule).toEqual({
+      startDate: now,
+      startTime: null,
+      endDate: new Date('2026-06-19T20:30:00.000Z'),
+      endTime: null,
+    });
   });
 });

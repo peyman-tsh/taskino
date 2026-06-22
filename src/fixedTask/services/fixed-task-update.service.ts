@@ -5,6 +5,7 @@ import { FixedTaskRepository } from '../repositories/fixed-task.repository';
 import {
   FixedTaskStatus,
   FixedTaskTemplateDocument,
+  FixedTaskTimingApprovalStatus,
 } from '../fixed-task.schema';
 import { FixedTaskNotificationService } from './fixed-task-notification.service';
 import { FixedTaskPolicyService } from './fixed-task-policy.service';
@@ -92,10 +93,26 @@ export class FixedTaskUpdateService {
     if (dto.recurrence !== undefined) updateData.recurrence = dto.recurrence;
     if (dto.status !== undefined) {
       updateData.status = dto.status;
-      updateData.doneTime =
-        dto.status === FixedTaskStatus.DONE
-          ? (template.doneTime ?? new Date())
+      if (dto.status === FixedTaskStatus.DONE) {
+        const doneTime = template.doneTime ?? new Date();
+        updateData.doneTime = doneTime;
+        updateData.actualDurationMinutes = template.startedAt
+          ? Math.max(
+              1,
+              Math.ceil(
+                (doneTime.getTime() - template.startedAt.getTime()) / 60_000,
+              ),
+            )
           : null;
+        updateData.approvedDurationMinutes = null;
+        updateData.timingApprovalStatus =
+          FixedTaskTimingApprovalStatus.PENDING;
+        updateData.timingApprovedBy = null;
+        updateData.timingApprovedAt = null;
+      } else {
+        updateData.doneTime = null;
+        updateData.actualDurationMinutes = null;
+      }
     }
     if (dto.description !== undefined) updateData.description = dto.description;
     if (dto.isActive !== undefined) updateData.isActive = dto.isActive;

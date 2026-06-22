@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection, Types } from 'mongoose';
 import { FixedTaskRecurrence } from '../fixed-task.schema';
+import { FixedTaskTimingApprovalStatus } from '../fixed-task.schema';
 import { UserRole } from '../../user/schemas/user.schema';
 import { WorkField } from '../../common/enums/work-field.enum';
 
@@ -19,9 +20,9 @@ export interface SeedFixedTaskData {
   description: string;
   nextRunAt: Date;
   startDate: Date;
-  startTime: string;
+  startTime: string | null;
   endDate: Date;
-  endTime: string;
+  endTime: string | null;
   sourceExcel: string;
   sourceSheet: string;
   sourceRow: number;
@@ -83,6 +84,13 @@ export class FixedTaskSeedRepository {
       endTime: data.endTime,
       isActive: true,
       status: 'todo',
+      startedAt: null,
+      doneTime: null,
+      actualDurationMinutes: null,
+      approvedDurationMinutes: null,
+      timingApprovalStatus: FixedTaskTimingApprovalStatus.PENDING,
+      timingApprovedBy: null,
+      timingApprovedAt: null,
       scoreAdjusted: false,
       sourceExcel: data.sourceExcel,
       sourceSheet: data.sourceSheet,

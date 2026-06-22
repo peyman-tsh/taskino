@@ -5,6 +5,7 @@ import {
   FixedTaskRecurrence,
   FixedTaskStatus,
   FixedTaskTemplateDocument,
+  FixedTaskTimingApprovalStatus,
 } from '../fixed-task.schema';
 import { FixedTaskNotificationService } from './fixed-task-notification.service';
 import { FixedTaskPolicyService } from './fixed-task-policy.service';
@@ -44,7 +45,10 @@ describe('FixedTaskUpdateService', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('scores when the assignee updates status to done', async () => {
-    const template = createTemplate();
+    const template = {
+      ...createTemplate(),
+      startedAt: new Date(Date.now() - 225 * 60_000),
+    } as FixedTaskTemplateDocument;
     const updatedTemplate = {
       ...template,
       status: FixedTaskStatus.DONE,
@@ -59,6 +63,13 @@ describe('FixedTaskUpdateService', () => {
     });
 
     expect(scoreService.adjustTaskScore).toHaveBeenCalledWith(updatedTemplate);
+    expect(repository.updateById).toHaveBeenCalledWith(
+      templateId,
+      expect.objectContaining({
+        actualDurationMinutes: expect.any(Number),
+        timingApprovalStatus: FixedTaskTimingApprovalStatus.PENDING,
+      }),
+    );
     expect(notificationService.notifyCreatorWhenCompleted).toHaveBeenCalled();
     expect(eventBus.publish).toHaveBeenCalledWith(
       UserProgressEvents.REFRESH_REQUESTED,

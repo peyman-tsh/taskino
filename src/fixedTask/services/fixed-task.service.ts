@@ -7,6 +7,8 @@ import { FixedTaskDeleteService } from './fixed-task-delete.service';
 import { FixedTaskQueryService } from './fixed-task-query.service';
 import { FixedTaskUpdateService } from './fixed-task-update.service';
 import { FixedTaskScoreService } from './fixed-task-score.service';
+import { FixedTaskTimingService } from './fixed-task-timing.service';
+import { FixedTaskTimingApprovalStatus } from '../fixed-task.schema';
 
 @Injectable()
 export class FixedTaskService {
@@ -16,6 +18,7 @@ export class FixedTaskService {
     private readonly updateService: FixedTaskUpdateService,
     private readonly deleteService: FixedTaskDeleteService,
     private readonly scoreService: FixedTaskScoreService,
+    private readonly timingService: FixedTaskTimingService,
   ) {}
 
   create(creatorId: string, dto: CreateFixedTaskDto) {
@@ -37,6 +40,26 @@ export class FixedTaskService {
 
   update(id: string, requesterId: string, dto: UpdateFixedTaskDto) {
     return this.updateService.update(id, requesterId, dto);
+  }
+
+  startTimer(id: string, requesterId: string) {
+    return this.timingService.startTimer(id, requesterId);
+  }
+
+  reviewTiming(
+    id: string,
+    managerId: string,
+    status:
+      | FixedTaskTimingApprovalStatus.APPROVED
+      | FixedTaskTimingApprovalStatus.REJECTED,
+    approvedDurationMinutes?: number,
+  ) {
+    return this.timingService.reviewTiming(
+      id,
+      managerId,
+      status,
+      approvedDurationMinutes,
+    );
   }
 
   delete(id: string) {

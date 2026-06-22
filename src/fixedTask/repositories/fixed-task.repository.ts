@@ -6,13 +6,14 @@ import {
   FixedTaskTemplate,
   FixedTaskTemplateDocument,
   FixedTaskStatus,
+  FixedTaskTimingApprovalStatus,
 } from '../fixed-task.schema';
 
 export interface FixedTaskRolloverSchedule {
   startDate: Date;
-  startTime: string;
+  startTime: string | null;
   endDate: Date;
-  endTime: string;
+  endTime: string | null;
 }
 
 @Injectable()
@@ -136,6 +137,9 @@ export class FixedTaskRepository {
       occurrenceId.toHexString().slice(-12),
       16,
     );
+    const timingApproved =
+      previous.timingApprovalStatus ===
+      FixedTaskTimingApprovalStatus.APPROVED;
 
     return new this.model({
       _id: occurrenceId,
@@ -146,12 +150,22 @@ export class FixedTaskRepository {
       description: previous.description,
       isActive: true,
       status: FixedTaskStatus.TODO,
+      startedAt: null,
       doneTime: null,
+      actualDurationMinutes: null,
+      approvedDurationMinutes: timingApproved
+        ? previous.approvedDurationMinutes
+        : null,
+      timingApprovalStatus: timingApproved
+        ? FixedTaskTimingApprovalStatus.APPROVED
+        : FixedTaskTimingApprovalStatus.PENDING,
+      timingApprovedBy: timingApproved ? previous.timingApprovedBy : null,
+      timingApprovedAt: timingApproved ? previous.timingApprovedAt : null,
       scoreAdjusted: false,
       startDate: schedule.startDate,
-      startTime: schedule.startTime,
+      startTime: timingApproved ? (previous.startTime ?? null) : null,
       endDate: schedule.endDate,
-      endTime: schedule.endTime,
+      endTime: timingApproved ? (previous.endTime ?? null) : null,
       sourceExcel: previous.sourceExcel,
       sourceSheet: previous.sourceSheet,
       sourceRow: occurrenceSourceRow,
@@ -168,6 +182,7 @@ export class FixedTaskRepository {
         'assignedTo',
         'firstName lastName email mobile roles workField isActive',
       )
-      .populate('createdBy', 'firstName lastName email roles workField');
+      .populate('createdBy', 'firstName lastName email roles workField')
+      .populate('timingApprovedBy', 'firstName lastName email roles');
   }
 }

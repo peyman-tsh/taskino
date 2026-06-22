@@ -1,5 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { FixedTaskRecurrence, FixedTaskStatus } from '../fixed-task.schema';
+import {
+  FixedTaskRecurrence,
+  FixedTaskStatus,
+  FixedTaskTimingApprovalStatus,
+} from '../fixed-task.schema';
 
 export class FixedTaskResponseDto {
   @ApiProperty()
@@ -22,6 +26,24 @@ export class FixedTaskResponseDto {
 
   @ApiPropertyOptional()
   doneTime?: Date;
+
+  @ApiPropertyOptional()
+  startedAt?: Date;
+
+  @ApiPropertyOptional({ example: 225 })
+  actualDurationMinutes?: number;
+
+  @ApiPropertyOptional({ example: 225 })
+  approvedDurationMinutes?: number;
+
+  @ApiProperty({ enum: FixedTaskTimingApprovalStatus })
+  timingApprovalStatus: FixedTaskTimingApprovalStatus;
+
+  @ApiPropertyOptional()
+  timingApprovedBy?: object;
+
+  @ApiPropertyOptional()
+  timingApprovedAt?: Date;
 
   @ApiProperty()
   description: string;

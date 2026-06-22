@@ -10,6 +10,8 @@ import { ManagerTasksService } from './manager-tasks.service';
 import { PaginationQueryDto } from '../dto/pagination-query.dto';
 import { ManagerLeaveRequestService } from './manager-leave-request.service';
 import { ManagerWorkStatusService } from './manager-work-status.service';
+import { FixedTaskService } from '../../fixedTask/services/fixed-task.service';
+import { FixedTaskTimingApprovalStatus } from '../../fixedTask/fixed-task.schema';
 
 @Injectable()
 export class ManagerService extends BaseManagerService {
@@ -20,6 +22,7 @@ export class ManagerService extends BaseManagerService {
     private readonly managerTasksService: ManagerTasksService,
     private readonly managerLeaveRequestService: ManagerLeaveRequestService,
     private readonly managerWorkStatusService: ManagerWorkStatusService,
+    private readonly fixedTaskService: FixedTaskService,
   ) {
     super();
   }
@@ -66,6 +69,22 @@ export class ManagerService extends BaseManagerService {
 
   getWorkStatusCounts(from: string, to: string) {
     return this.managerWorkStatusService.getStatusCounts(from, to);
+  }
+
+  reviewFixedTaskTiming(
+    fixedTaskId: string,
+    managerId: string,
+    status:
+      | FixedTaskTimingApprovalStatus.APPROVED
+      | FixedTaskTimingApprovalStatus.REJECTED,
+    approvedDurationMinutes?: number,
+  ) {
+    return this.fixedTaskService.reviewTiming(
+      fixedTaskId,
+      managerId,
+      status,
+      approvedDurationMinutes,
+    );
   }
 
   getMonthlyUserPerformance(query: MonthlyPerformanceQueryDto) {

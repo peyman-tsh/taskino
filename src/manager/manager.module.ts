@@ -20,12 +20,14 @@ import { ManagerUserScoreService } from './services/manager-user-score.service';
 import { UserProgressEventListener } from './user-progress-event.listener';
 import { ManagerWorkStatusRepository } from './repositories/manager-work-status.repository';
 import { ManagerWorkStatusService } from './services/manager-work-status.service';
+import { FixedTaskModule } from '../fixedTask/fixed-task.module';
 
 @Module({
   imports: [
     UserModule,
     TaskModule,
     LeaveRequestModule,
+    FixedTaskModule,
     MongooseModule.forFeature([
       { name: Task.name, schema: TaskSchema },
       { name: FixedTaskTemplate.name, schema: FixedTaskTemplateSchema },

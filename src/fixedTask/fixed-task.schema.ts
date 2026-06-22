@@ -15,6 +15,12 @@ export enum FixedTaskStatus {
   DONE = 'done',
 }
 
+export enum FixedTaskTimingApprovalStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+}
+
 @Schema({ timestamps: true })
 export class FixedTaskTemplate {
   @Prop({ required: true, trim: true })
@@ -51,6 +57,29 @@ export class FixedTaskTemplate {
   @Prop({ type: Date })
   doneTime?: Date;
 
+  @Prop({ type: Date, default: null })
+  startedAt?: Date | null;
+
+  @Prop({ type: Number, min: 0, default: null })
+  actualDurationMinutes?: number | null;
+
+  @Prop({ type: Number, min: 0, default: null })
+  approvedDurationMinutes?: number | null;
+
+  @Prop({
+    type: String,
+    enum: FixedTaskTimingApprovalStatus,
+    default: FixedTaskTimingApprovalStatus.PENDING,
+    index: true,
+  })
+  timingApprovalStatus: FixedTaskTimingApprovalStatus;
+
+  @Prop({ type: Types.ObjectId, ref: User.name, default: null })
+  timingApprovedBy?: Types.ObjectId | null;
+
+  @Prop({ type: Date, default: null })
+  timingApprovedAt?: Date | null;
+
   @Prop({ type: Boolean, default: false })
   scoreAdjusted: boolean;
 
@@ -61,10 +90,10 @@ export class FixedTaskTemplate {
   nextRunAt?: Date;
 
   @Prop({ type: String, match: TIME_PATTERN })
-  startTime?: string;
+  startTime?: string | null;
 
   @Prop({ type: String, match: TIME_PATTERN })
-  endTime?: string;
+  endTime?: string | null;
 
   @Prop({ type: Date, index: true })
   startDate?: Date;

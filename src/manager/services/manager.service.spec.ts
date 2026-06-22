@@ -4,6 +4,8 @@ import { ManagerTasksService } from './manager-tasks.service';
 import { ManagerService } from './manager.service';
 import { UserProgressService } from './user-progress.service';
 import { ManagerLeaveRequestService } from './manager-leave-request.service';
+import { ManagerWorkStatusService } from './manager-work-status.service';
+import { FixedTaskService } from '../../fixedTask/services/fixed-task.service';
 
 describe('ManagerService', () => {
   const userService = {
@@ -15,6 +17,8 @@ describe('ManagerService', () => {
     {} as UserProgressService,
     {} as ManagerTasksService,
     {} as ManagerLeaveRequestService,
+    {} as ManagerWorkStatusService,
+    {} as FixedTaskService,
   );
 
   beforeEach(() => {

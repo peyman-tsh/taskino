@@ -181,6 +181,24 @@ export class FixedTaskController {
     return this.fixedTaskService.findById(params.id);
   }
 
+  @Patch(':id/timer/start')
+  @Roles(UserRole.SPECIALIST, UserRole.SUPERVISOR)
+  @ApiOperation({
+    summary: 'Start the current fixed-task occurrence timer',
+    description:
+      'Only the assigned specialist or supervisor can start the timer.',
+  })
+  @ApiOkResponse({
+    description: 'Fixed-task timer started successfully',
+    type: FixedTaskResponseDto,
+  })
+  startTimer(
+    @CurrentUserId() requesterId: string,
+    @Param() params: FixedTaskParamDto,
+  ) {
+    return this.fixedTaskService.startTimer(params.id, requesterId);
+  }
+
   @Patch(':id')
   @Roles(UserRole.MANAGER, UserRole.SUPERVISOR, UserRole.SPECIALIST)
   @ApiOperation({

@@ -19,7 +19,7 @@ export class FixedTaskDeadlineService {
 
   getNextDeadline(
     recurrence: FixedTaskRecurrence,
-    endTime?: string,
+    endTime?: string | null,
     now = new Date(),
   ): Date {
     if (recurrence === FixedTaskRecurrence.DAILY) {
@@ -71,14 +71,14 @@ export class FixedTaskDeadlineService {
     return deadline;
   }
 
-  private applyTehranTime(date: Date, time?: string): Date {
+  private applyTehranTime(date: Date, time?: string | null): Date {
     const parts = getTehranDateParts(date);
     return this.createDeadline(parts, time);
   }
 
   private createDeadline(
     date: { year: number; month: number; day: number },
-    time?: string,
+    time?: string | null,
   ): Date {
     const [hours, minutes] = time
       ? time.split(':').map(Number)
