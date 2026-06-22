@@ -57,6 +57,7 @@ describe('SpecialistFixedTaskQueryService', () => {
       {
         assignedTo: new Types.ObjectId(userId),
         status: 'done',
+        isActive: true,
       },
       2,
       20,

@@ -118,7 +118,7 @@ export class FixedTaskController {
   @ApiOperation({
     summary: 'Get completed fixed tasks assigned to a user',
     description:
-      'Returns paginated fixed tasks whose assignedTo matches userId and status is done.',
+      'Returns paginated active fixed tasks whose assignedTo matches userId and status is done.',
   })
   @ApiParam({
     name: 'userId',

@@ -33,6 +33,7 @@ export class SpecialistFixedTaskQueryService {
       {
         assignedTo: new Types.ObjectId(userId),
         status: FixedTaskStatus.DONE,
+        isActive: true,
       },
       page,
       limit,
