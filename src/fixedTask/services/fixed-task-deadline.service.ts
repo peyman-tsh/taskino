@@ -3,13 +3,18 @@ import {
   FixedTaskRecurrence,
   FixedTaskTemplateDocument,
 } from '../fixed-task.schema';
+import {
+  addTehranCalendarPeriod,
+  getTehranDateParts,
+  tehranDateTimeToUtc,
+} from '../../common/utils/tehran-time.util';
 
 @Injectable()
 export class FixedTaskDeadlineService {
   getScoreDeadline(task: FixedTaskTemplateDocument): Date | null {
     if (!task.endDate) return null;
 
-    return this.applyTime(new Date(task.endDate), task.endTime);
+    return this.applyTehranTime(new Date(task.endDate), task.endTime);
   }
 
   getNextDeadline(
@@ -18,40 +23,74 @@ export class FixedTaskDeadlineService {
     now = new Date(),
   ): Date {
     if (recurrence === FixedTaskRecurrence.DAILY) {
-      const deadline = this.applyTime(new Date(now), endTime);
+      let deadline = this.applyTehranTime(now, endTime);
       if (deadline.getTime() <= now.getTime()) {
-        deadline.setDate(deadline.getDate() + 1);
+        const tomorrow = addTehranCalendarPeriod(now, 1, 0);
+        deadline = this.createDeadline(tomorrow, endTime);
       }
       return deadline;
     }
 
     if (recurrence === FixedTaskRecurrence.WEEKLY) {
-      const deadline = new Date(now);
-      deadline.setDate(deadline.getDate() + ((5 - deadline.getDay() + 7) % 7));
-      this.applyTime(deadline, endTime);
+      const current = getTehranDateParts(now);
+      const calendarDate = new Date(
+        Date.UTC(current.year, current.month - 1, current.day),
+      );
+      const daysUntilFriday = (5 - calendarDate.getUTCDay() + 7) % 7;
+      const target = addTehranCalendarPeriod(now, daysUntilFriday, 0);
+      let deadline = this.createDeadline(target, endTime);
       if (deadline.getTime() <= now.getTime()) {
-        deadline.setDate(deadline.getDate() + 7);
+        const nextWeek = addTehranCalendarPeriod(deadline, 7, 0);
+        deadline = this.createDeadline(nextWeek, endTime);
       }
       return deadline;
     }
 
-    const deadline = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    this.applyTime(deadline, endTime);
+    const current = getTehranDateParts(now);
+    const lastDay = new Date(
+      Date.UTC(current.year, current.month, 0),
+    ).getUTCDate();
+    let deadline = this.createDeadline(
+      { year: current.year, month: current.month, day: lastDay },
+      endTime,
+    );
     if (deadline.getTime() <= now.getTime()) {
-      deadline.setMonth(deadline.getMonth() + 2, 0);
-      this.applyTime(deadline, endTime);
+      const nextMonth = addTehranCalendarPeriod(now, 0, 1);
+      const nextLastDay = new Date(
+        Date.UTC(nextMonth.year, nextMonth.month, 0),
+      ).getUTCDate();
+      deadline = this.createDeadline(
+        {
+          year: nextMonth.year,
+          month: nextMonth.month,
+          day: nextLastDay,
+        },
+        endTime,
+      );
     }
     return deadline;
   }
 
-  private applyTime(date: Date, time?: string): Date {
-    if (!time) {
-      date.setHours(23, 59, 59, 999);
-      return date;
-    }
+  private applyTehranTime(date: Date, time?: string): Date {
+    const parts = getTehranDateParts(date);
+    return this.createDeadline(parts, time);
+  }
 
-    const [hours, minutes] = time.split(':').map(Number);
-    date.setHours(hours, minutes, 0, 0);
-    return date;
+  private createDeadline(
+    date: { year: number; month: number; day: number },
+    time?: string,
+  ): Date {
+    const [hours, minutes] = time
+      ? time.split(':').map(Number)
+      : [23, 59];
+    return tehranDateTimeToUtc(
+      date.year,
+      date.month,
+      date.day,
+      hours,
+      minutes,
+      time ? 0 : 59,
+      time ? 0 : 999,
+    );
   }
 }

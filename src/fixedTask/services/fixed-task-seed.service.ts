@@ -11,6 +11,11 @@ import {
 } from '../repositories/fixed-task-seed.repository';
 import { UserRole } from '../../user/schemas/user.schema';
 import { FixedTaskDeadlineService } from './fixed-task-deadline.service';
+import {
+  addTehranCalendarPeriod,
+  formatTehranTime,
+  tehranDateTimeToUtc,
+} from '../../common/utils/tehran-time.util';
 
 type ExcelRow = Array<string | number | null>;
 
@@ -35,7 +40,7 @@ export function buildFixedTaskSeedSchedule(
 
   return {
     startDate,
-    startTime: formatTime(now),
+    startTime: formatTehranTime(now),
     endDate,
     endTime: SEED_END_TIME,
   };
@@ -45,32 +50,18 @@ function calculateSeedEndDate(
   recurrence: FixedTaskRecurrence,
   now: Date,
 ): Date {
-  const endDate = new Date(now);
+  const target =
+    recurrence === FixedTaskRecurrence.DAILY
+      ? addTehranCalendarPeriod(now, 1, 0)
+      : recurrence === FixedTaskRecurrence.WEEKLY
+        ? addTehranCalendarPeriod(now, 7, 0)
+        : addTehranCalendarPeriod(now, 0, 1);
 
-  if (recurrence === FixedTaskRecurrence.DAILY) {
-    endDate.setDate(endDate.getDate() + 1);
-  } else if (recurrence === FixedTaskRecurrence.WEEKLY) {
-    endDate.setDate(endDate.getDate() + 7);
-  } else {
-    const originalDay = endDate.getDate();
-    endDate.setDate(1);
-    endDate.setMonth(endDate.getMonth() + 1);
-    const lastDayOfTargetMonth = new Date(
-      endDate.getFullYear(),
-      endDate.getMonth() + 1,
-      0,
-    ).getDate();
-    endDate.setDate(Math.min(originalDay, lastDayOfTargetMonth));
-  }
-
-  endDate.setHours(0, 0, 0, 0);
-  return endDate;
-}
-
-function formatTime(date: Date): string {
-  return [date.getHours(), date.getMinutes()]
-    .map((value) => value.toString().padStart(2, '0'))
-    .join(':');
+  return tehranDateTimeToUtc(
+    target.year,
+    target.month,
+    target.day,
+  );
 }
 
 const recurrenceMap: Record<string, FixedTaskRecurrence> = {

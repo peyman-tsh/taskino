@@ -28,7 +28,7 @@ describe('FixedTaskRolloverService', () => {
     scoreService as unknown as FixedTaskScoreService,
     eventBus as unknown as InternalEventBus,
   );
-  const now = new Date(2026, 5, 19, 14, 35);
+  const now = new Date('2026-06-19T11:05:00.000Z');
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -89,7 +89,7 @@ describe('FixedTaskRolloverService', () => {
     expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
       startDate: now,
       startTime: '14:35',
-      endDate: new Date(2026, 5, 20, 0, 0, 0, 0),
+      endDate: new Date('2026-06-19T20:30:00.000Z'),
       endTime: '00:01',
     });
     expect(eventBus.publish).toHaveBeenCalledWith(

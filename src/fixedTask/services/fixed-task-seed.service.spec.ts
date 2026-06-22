@@ -2,12 +2,12 @@ import { FixedTaskRecurrence } from '../fixed-task.schema';
 import { buildFixedTaskSeedSchedule } from './fixed-task-seed.service';
 
 describe('buildFixedTaskSeedSchedule', () => {
-  const now = new Date(2026, 5, 19, 14, 35, 20);
+  const now = new Date('2026-06-19T11:05:20.000Z');
 
   it.each([
-    [FixedTaskRecurrence.DAILY, new Date(2026, 5, 20, 0, 0, 0, 0)],
-    [FixedTaskRecurrence.WEEKLY, new Date(2026, 5, 26, 0, 0, 0, 0)],
-    [FixedTaskRecurrence.MONTHLY, new Date(2026, 6, 19, 0, 0, 0, 0)],
+    [FixedTaskRecurrence.DAILY, new Date('2026-06-19T20:30:00.000Z')],
+    [FixedTaskRecurrence.WEEKLY, new Date('2026-06-25T20:30:00.000Z')],
+    [FixedTaskRecurrence.MONTHLY, new Date('2026-07-18T20:30:00.000Z')],
   ])('builds %s seed schedule', (recurrence, expectedEndDate) => {
     const schedule = buildFixedTaskSeedSchedule(recurrence, now);
 
@@ -20,13 +20,15 @@ describe('buildFixedTaskSeedSchedule', () => {
   });
 
   it('clamps monthly end date to the last valid day of the next month', () => {
-    const januaryLastDay = new Date(2026, 0, 31, 9, 15);
+    const januaryLastDay = new Date('2026-01-31T05:45:00.000Z');
 
     const schedule = buildFixedTaskSeedSchedule(
       FixedTaskRecurrence.MONTHLY,
       januaryLastDay,
     );
 
-    expect(schedule.endDate).toEqual(new Date(2026, 1, 28, 0, 0, 0, 0));
+    expect(schedule.endDate).toEqual(
+      new Date('2026-02-27T20:30:00.000Z'),
+    );
   });
 });
