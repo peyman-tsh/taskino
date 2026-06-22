@@ -33,6 +33,7 @@ export class FixedTaskCreationService {
       recurrence: dto.recurrence,
       status: FixedTaskStatus.TODO,
       description: dto.description ?? '',
+      taskComment: dto.taskComment ?? null,
       isActive: dto.isActive ?? true,
       nextRunAt: dto.nextRunAt
         ? new Date(dto.nextRunAt)

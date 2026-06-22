@@ -43,6 +43,9 @@ export class FixedTaskTemplate {
   @Prop({ type: String, default: '' })
   description: string;
 
+  @Prop({ type: String, default: null })
+  taskComment?: string | null;
+
   @Prop({ type: Boolean, default: false, index: true })
   isActive: boolean;
 

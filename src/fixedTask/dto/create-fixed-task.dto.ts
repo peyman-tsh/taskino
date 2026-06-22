@@ -42,6 +42,13 @@ export class CreateFixedTaskDto {
   @IsString()
   description?: string;
 
+  @ApiPropertyOptional({
+    description: 'Optional comment for the fixed task',
+  })
+  @IsOptional()
+  @IsString()
+  taskComment?: string;
+
   @ApiPropertyOptional({ default: true })
   @IsOptional()
   @IsBoolean()

@@ -115,6 +115,9 @@ export class FixedTaskUpdateService {
       }
     }
     if (dto.description !== undefined) updateData.description = dto.description;
+    if (dto.taskComment !== undefined) {
+      updateData.taskComment = dto.taskComment;
+    }
     if (dto.isActive !== undefined) updateData.isActive = dto.isActive;
     if (dto.nextRunAt !== undefined) updateData.nextRunAt = new Date(dto.nextRunAt);
     if (dto.startTime !== undefined) updateData.startTime = dto.startTime;

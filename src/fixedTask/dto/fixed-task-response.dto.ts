@@ -48,6 +48,9 @@ export class FixedTaskResponseDto {
   @ApiProperty()
   description: string;
 
+  @ApiPropertyOptional()
+  taskComment?: string;
+
   @ApiProperty()
   isActive: boolean;
 
