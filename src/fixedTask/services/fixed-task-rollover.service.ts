@@ -26,8 +26,10 @@ export class FixedTaskRolloverService {
     private readonly holidayService: HolidayService,
   ) {}
 
-  @Cron('1 0 * * *', { timeZone: 'Asia/Tehran' })
+  @Cron('20 0 * * *', { timeZone: 'Asia/Tehran' })
   async handleDailyRollover(): Promise<void> {
+    this.logger.log('Daily fixed task rollover started');
+
     if (await this.holidayService.isNonWorkingDay(new Date())) {
       this.logger.log(
         'Daily fixed task rollover skipped on official holiday or Friday',
@@ -35,7 +37,10 @@ export class FixedTaskRolloverService {
       return;
     }
 
-    await this.runForRecurrence(FixedTaskRecurrence.DAILY);
+    const createdCount = await this.runForRecurrence(FixedTaskRecurrence.DAILY);
+    this.logger.log(
+      `Daily fixed task rollover finished. Created ${createdCount} new occurrence(s)`,
+    );
   }
 
   @Cron('1 0 * * 6', { timeZone: 'Asia/Tehran' })

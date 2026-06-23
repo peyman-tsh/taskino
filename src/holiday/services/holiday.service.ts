@@ -24,11 +24,12 @@ export class HolidayService {
   }
 
   async isOfficialHoliday(date: Date): Promise<boolean> {
-    return Boolean(
-      await this.repository.existsByDate(
-        this.toUtcDate(this.toTehranDateKey(date)),
-      ),
+    const tehranDateKey = this.toTehranDateKey(date);
+    const existsInDatabase = await this.repository.existsByDate(
+      this.toUtcDate(tehranDateKey),
     );
+
+    return Boolean(existsInDatabase) || this.existsInSeedList(tehranDateKey);
   }
 
   async isNonWorkingDay(date: Date): Promise<boolean> {
@@ -61,5 +62,11 @@ export class HolidayService {
     }).format(date);
 
     return weekday === 'Fri';
+  }
+
+  private existsInSeedList(dateKey: string): boolean {
+    return IRAN_1405_OFFICIAL_HOLIDAYS.some(
+      (holiday) => holiday.date === dateKey,
+    );
   }
 }
