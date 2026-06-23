@@ -18,6 +18,7 @@ import { SupervisorModule } from './supervisor/supervisor.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import mailConfig from './config/mail.config';
 import { EmailModule } from './email/email.module';
+import { HolidayModule } from './holiday/holiday.module';
 
 function withRetryableWritesDisabled(uri: string): string {
   if (/[?&]retryWrites=/.test(uri)) {
@@ -56,6 +57,7 @@ function withRetryableWritesDisabled(uri: string): string {
     ManagerModule,
     FixedTaskModule,
     SupervisorModule,
+    HolidayModule,
   ],
   controllers: [AppController],
   providers: [AppService],
