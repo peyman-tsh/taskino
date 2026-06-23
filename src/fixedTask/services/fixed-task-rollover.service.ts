@@ -28,8 +28,10 @@ export class FixedTaskRolloverService {
 
   @Cron('1 0 * * *', { timeZone: 'Asia/Tehran' })
   async handleDailyRollover(): Promise<void> {
-    if (await this.holidayService.isOfficialHoliday(new Date())) {
-      this.logger.log('Daily fixed task rollover skipped on official holiday');
+    if (await this.holidayService.isNonWorkingDay(new Date())) {
+      this.logger.log(
+        'Daily fixed task rollover skipped on official holiday or Friday',
+      );
       return;
     }
 

@@ -25,7 +25,7 @@ describe('FixedTaskRolloverService', () => {
     publish: jest.fn(),
   };
   const holidayService = {
-    isOfficialHoliday: jest.fn(),
+    isNonWorkingDay: jest.fn(),
   };
   const service = new FixedTaskRolloverService(
     repository as unknown as FixedTaskRepository,
@@ -37,7 +37,7 @@ describe('FixedTaskRolloverService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    holidayService.isOfficialHoliday.mockResolvedValue(false);
+    holidayService.isNonWorkingDay.mockResolvedValue(false);
   });
 
   it('runs daily rollover through the daily scheduled handler', async () => {
@@ -50,8 +50,8 @@ describe('FixedTaskRolloverService', () => {
     );
   });
 
-  it('skips daily rollover on official holidays', async () => {
-    holidayService.isOfficialHoliday.mockResolvedValue(true);
+  it('skips daily rollover on non-working days', async () => {
+    holidayService.isNonWorkingDay.mockResolvedValue(true);
 
     await service.handleDailyRollover();
 

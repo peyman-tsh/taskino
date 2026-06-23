@@ -31,6 +31,10 @@ export class HolidayService {
     );
   }
 
+  async isNonWorkingDay(date: Date): Promise<boolean> {
+    return this.isFridayInTehran(date) || this.isOfficialHoliday(date);
+  }
+
   private toUtcDate(value: string): Date {
     return new Date(`${value}T00:00:00.000Z`);
   }
@@ -48,5 +52,14 @@ export class HolidayService {
     const day = parts.find((part) => part.type === 'day')?.value;
 
     return `${year}-${month}-${day}`;
+  }
+
+  private isFridayInTehran(date: Date): boolean {
+    const weekday = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Tehran',
+      weekday: 'short',
+    }).format(date);
+
+    return weekday === 'Fri';
   }
 }
