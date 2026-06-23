@@ -12,6 +12,7 @@ import {
   UserProgressEvents,
   UserProgressRefreshRequestedEvent,
 } from '../../common/events/user-progress.events';
+import { HolidayService } from '../../holiday/services/holiday.service';
 
 @Injectable()
 export class FixedTaskRolloverService {
@@ -22,10 +23,16 @@ export class FixedTaskRolloverService {
     private readonly repository: FixedTaskRepository,
     private readonly scoreService: FixedTaskScoreService,
     private readonly eventBus: InternalEventBus,
+    private readonly holidayService: HolidayService,
   ) {}
 
   @Cron('1 0 * * *', { timeZone: 'Asia/Tehran' })
   async handleDailyRollover(): Promise<void> {
+    if (await this.holidayService.isOfficialHoliday(new Date())) {
+      this.logger.log('Daily fixed task rollover skipped on official holiday');
+      return;
+    }
+
     await this.runForRecurrence(FixedTaskRecurrence.DAILY);
   }
 

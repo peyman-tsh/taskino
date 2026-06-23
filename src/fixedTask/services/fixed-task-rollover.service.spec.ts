@@ -9,6 +9,7 @@ import { FixedTaskRolloverService } from './fixed-task-rollover.service';
 import { FixedTaskScoreService } from './fixed-task-score.service';
 import { InternalEventBus } from '../../common/events/internal-event-bus.service';
 import { UserProgressEvents } from '../../common/events/user-progress.events';
+import { HolidayService } from '../../holiday/services/holiday.service';
 
 describe('FixedTaskRolloverService', () => {
   const repository = {
@@ -23,15 +24,20 @@ describe('FixedTaskRolloverService', () => {
   const eventBus = {
     publish: jest.fn(),
   };
+  const holidayService = {
+    isOfficialHoliday: jest.fn(),
+  };
   const service = new FixedTaskRolloverService(
     repository as unknown as FixedTaskRepository,
     scoreService as unknown as FixedTaskScoreService,
     eventBus as unknown as InternalEventBus,
+    holidayService as unknown as HolidayService,
   );
   const now = new Date('2026-06-19T11:05:00.000Z');
 
   beforeEach(() => {
     jest.clearAllMocks();
+    holidayService.isOfficialHoliday.mockResolvedValue(false);
   });
 
   it('runs daily rollover through the daily scheduled handler', async () => {
@@ -42,6 +48,14 @@ describe('FixedTaskRolloverService', () => {
     expect(repository.findActiveRolloverCandidates).toHaveBeenCalledWith(
       FixedTaskRecurrence.DAILY,
     );
+  });
+
+  it('skips daily rollover on official holidays', async () => {
+    holidayService.isOfficialHoliday.mockResolvedValue(true);
+
+    await service.handleDailyRollover();
+
+    expect(repository.findActiveRolloverCandidates).not.toHaveBeenCalled();
   });
 
   it('runs weekly rollover through the weekly scheduled handler', async () => {

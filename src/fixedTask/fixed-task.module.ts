@@ -21,10 +21,12 @@ import { FixedTaskDeleteService } from './services/fixed-task-delete.service';
 import { FixedTaskDeadlineService } from './services/fixed-task-deadline.service';
 import { FixedTaskRolloverService } from './services/fixed-task-rollover.service';
 import { FixedTaskTimingService } from './services/fixed-task-timing.service';
+import { HolidayModule } from '../holiday/holiday.module';
 
 @Module({
   imports: [
     UserModule,
+    HolidayModule,
     MongooseModule.forFeature([
       { name: FixedTaskTemplate.name, schema: FixedTaskTemplateSchema },
     ]),
