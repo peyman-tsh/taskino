@@ -17,6 +17,11 @@ export class LeaveRequestCreationService {
     const startDate = this.policy.parseDate(rest.startDate, 'date');
     const endDate = this.policy.parseDate(rest.endDate, 'date');
     this.policy.assertValidDateRange(startDate, endDate);
+    this.policy.assertHourlyLeaveTimes(
+      rest.recurrence,
+      rest.startTime,
+      rest.endTime,
+    );
     this.policy.assertValidTimeRange(rest.startTime, rest.endTime);
 
     return this.repository.create({

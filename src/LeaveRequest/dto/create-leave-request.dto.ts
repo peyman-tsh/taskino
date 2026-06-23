@@ -21,19 +21,26 @@ export class CreateLeaveRequestDto {
   endDate: string;
 
   @ApiProperty({
-    description: 'Daily or weekly leave recurrence',
+    description:
+      'Leave recurrence/type. Use hourly when startTime and endTime are required.',
     enum: LeaveRecurrence,
     example: LeaveRecurrence.DAILY,
   })
   @IsEnum(LeaveRecurrence)
   recurrence: LeaveRecurrence;
 
-  @ApiPropertyOptional({ example: '09:00' })
+  @ApiPropertyOptional({
+    description: 'Required when recurrence is hourly',
+    example: '09:00',
+  })
   @IsOptional()
   @Matches(TIME_PATTERN, { message: `startTime ${TIME_MESSAGE}` })
   startTime?: string;
 
-  @ApiPropertyOptional({ example: '17:00' })
+  @ApiPropertyOptional({
+    description: 'Required when recurrence is hourly',
+    example: '17:00',
+  })
   @IsOptional()
   @Matches(TIME_PATTERN, { message: `endTime ${TIME_MESSAGE}` })
   endTime?: string;

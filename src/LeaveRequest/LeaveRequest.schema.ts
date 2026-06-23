@@ -14,6 +14,7 @@ export enum LeaveStatus {
 export enum LeaveRecurrence {
   DAILY = 'daily',
   WEEKLY = 'weekly',
+  HOURLY = 'hourly',
 }
 
 @Schema({

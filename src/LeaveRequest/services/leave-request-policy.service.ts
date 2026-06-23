@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { isValidTimeRange } from '../../common/constants/time.constants';
+import { LeaveRecurrence } from '../LeaveRequest.schema';
 
 @Injectable()
 export class LeaveRequestPolicyService {
@@ -32,6 +33,19 @@ export class LeaveRequestPolicyService {
   assertValidTimeRange(startTime?: string, endTime?: string): void {
     if (!isValidTimeRange(startTime, endTime)) {
       throw new BadRequestException('End time must be after start time');
+    }
+  }
+
+  assertHourlyLeaveTimes(
+    recurrence?: LeaveRecurrence,
+    startTime?: string,
+    endTime?: string,
+  ): void {
+    if (recurrence !== LeaveRecurrence.HOURLY) return;
+    if (!startTime || !endTime) {
+      throw new BadRequestException(
+        'Start time and end time are required for hourly leave',
+      );
     }
   }
 }

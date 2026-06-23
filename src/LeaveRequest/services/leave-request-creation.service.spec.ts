@@ -11,6 +11,7 @@ describe('LeaveRequestCreationService', () => {
     toObjectId: jest.fn(() => userId),
     parseDate: jest.fn((value: string) => new Date(value)),
     assertValidDateRange: jest.fn(),
+    assertHourlyLeaveTimes: jest.fn(),
     assertValidTimeRange: jest.fn(),
   };
   const service = new LeaveRequestCreationService(
@@ -41,6 +42,27 @@ describe('LeaveRequestCreationService', () => {
         startTime: '09:00',
         endTime: '17:00',
       }),
+    );
+  });
+
+  it('validates hourly leave time fields before creation', async () => {
+    const startDate = '2026-06-14T09:00:00.000Z';
+    const endDate = '2026-06-14T17:00:00.000Z';
+    repository.create.mockResolvedValue({});
+
+    await service.create({
+      user: userId.toString(),
+      startDate,
+      endDate,
+      recurrence: LeaveRecurrence.HOURLY,
+      startTime: '09:00',
+      endTime: '11:00',
+    });
+
+    expect(policy.assertHourlyLeaveTimes).toHaveBeenCalledWith(
+      LeaveRecurrence.HOURLY,
+      '09:00',
+      '11:00',
     );
   });
 });

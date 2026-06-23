@@ -98,7 +98,7 @@ export class LeaveRequestController {
   @ApiOperation({
     summary: 'Filter leave requests by recurrence, date, and time range',
     description:
-      'Returns leave requests overlapping the requested date and time range. Recurrence can be daily or weekly.',
+      'Returns leave requests overlapping the requested date and time range. Recurrence can be daily, weekly, or hourly.',
   })
   @ApiResponse({
     status: 200,

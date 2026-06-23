@@ -37,11 +37,12 @@ export class LeaveRequestUpdateDataBuilder {
       dto.endDate !== undefined
         ? this.policy.parseDate(dto.endDate, 'end date')
         : leave.endDate;
+    const recurrence = dto.recurrence ?? leave.recurrence;
+    const startTime = dto.startTime ?? leave.startTime;
+    const endTime = dto.endTime ?? leave.endTime;
     this.policy.assertValidDateRange(startDate, endDate);
-    this.policy.assertValidTimeRange(
-      dto.startTime ?? leave.startTime,
-      dto.endTime ?? leave.endTime,
-    );
+    this.policy.assertHourlyLeaveTimes(recurrence, startTime, endTime);
+    this.policy.assertValidTimeRange(startTime, endTime);
 
     if (dto.startDate !== undefined) updateData.startDate = startDate;
     if (dto.endDate !== undefined) updateData.endDate = endDate;
