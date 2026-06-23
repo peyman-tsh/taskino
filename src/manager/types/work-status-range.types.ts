@@ -6,6 +6,18 @@ export interface WorkStatusItem {
   dueDate?: Date;
   endDate?: Date;
   endTime?: string;
+  isActive?: boolean;
+}
+
+export interface WorkStatusUser {
+  userId: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+}
+
+export interface WorkStatusUserItem extends WorkStatusItem {
+  user?: WorkStatusUser;
 }
 
 export interface WorkStatusCounts {
@@ -14,4 +26,13 @@ export interface WorkStatusCounts {
   inProgress: number;
   todo: number;
   overdueUnfinished: number;
+}
+
+export interface UserWorkStatusCounts {
+  userId: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  tasks: WorkStatusCounts;
+  fixedTasks: WorkStatusCounts;
 }

@@ -173,6 +173,40 @@ export class WorkStatusRangeResponseDto extends WorkStatusCountsResponseDto {
   fixedTasks: WorkStatusCountsResponseDto;
 }
 
+export class UserWorkStatusSummaryItemDto {
+  @ApiProperty()
+  userId: string;
+
+  @ApiProperty({ required: false })
+  firstName?: string;
+
+  @ApiProperty({ required: false })
+  lastName?: string;
+
+  @ApiProperty({ required: false })
+  email?: string;
+
+  @ApiProperty({ type: WorkStatusCountsResponseDto })
+  tasks: WorkStatusCountsResponseDto;
+
+  @ApiProperty({ type: WorkStatusCountsResponseDto })
+  fixedTasks: WorkStatusCountsResponseDto;
+}
+
+export class UserWorkStatusSummaryResponseDto {
+  @ApiProperty()
+  from: Date;
+
+  @ApiProperty()
+  to: Date;
+
+  @ApiProperty()
+  evaluatedAt: Date;
+
+  @ApiProperty({ type: [UserWorkStatusSummaryItemDto] })
+  users: UserWorkStatusSummaryItemDto[];
+}
+
 export {
   PaginatedUsersResponseDto,
   TaskCountsByUserResponseDto,

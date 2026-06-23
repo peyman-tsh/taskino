@@ -31,6 +31,7 @@ import {
   TaskStatusOverviewResponseDto,
   UserResponseDto,
   WorkStatusRangeResponseDto,
+  UserWorkStatusSummaryResponseDto,
 } from './dto/manager-response.dto';
 import { MongoIdParamDto } from './dto/mongo-id-param.dto';
 import { MonthlyPerformanceQueryDto } from './dto/monthly-performance-query.dto';
@@ -164,6 +165,29 @@ export class ManagerController {
       managerId,
       query.from,
       query.to,
+    );
+  }
+
+  @Get('users/work-status-summary')
+  @ApiOperation({
+    summary: 'Get per-user task and fixed-task status counts for a date range',
+    description:
+      'Groups regular Task and FixedTask counts by assigned user, or returns one user when userId is provided. FixedTask done, todo, and in-progress counts only include isActive=true records; expired unfinished FixedTasks only include isActive=false records.',
+  })
+  @ApiOkResponse({
+    description: 'Per-user work status summary retrieved successfully',
+    type: UserWorkStatusSummaryResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Invalid date range' })
+  getUserWorkStatusCounts(
+    @CurrentUserId() managerId: string,
+    @Query() query: WorkStatusRangeQueryDto,
+  ) {
+    return this.managerService.getUserWorkStatusCounts(
+      managerId,
+      query.from,
+      query.to,
+      query.userId,
     );
   }
 

@@ -72,6 +72,22 @@ export class ManagerService extends BaseManagerService {
     return this.managerWorkStatusService.getStatusCounts(managerId, from, to);
   }
 
+  getUserWorkStatusCounts(
+    managerId: string,
+    from: string,
+    to: string,
+    userId?: string,
+  ) {
+    this.toObjectId(managerId, 'manager ID');
+    if (userId) this.toObjectId(userId, 'user ID');
+    return this.managerWorkStatusService.getUserStatusCounts(
+      managerId,
+      from,
+      to,
+      userId,
+    );
+  }
+
   reviewFixedTaskTiming(
     fixedTaskId: string,
     managerId: string,
