@@ -112,6 +112,10 @@ export class TaskRepository {
       .populate(
         'excelFile',
         'fileName originalName mimeType fileSize type status',
+      )
+      .populate(
+        'completionExcelFile',
+        'fileName originalName mimeType fileSize type status',
       );
   }
 }

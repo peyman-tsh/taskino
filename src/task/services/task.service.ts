@@ -1,10 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { Types } from 'mongoose';
 import { CreateExtraTaskDto } from '../dto/create-extra-task.dto';
 import { CreateTaskDto } from '../dto/create-task.dto';
 import { UpdateTaskDto } from '../dto/update-task.dto';
 import { TaskCompletionStatsDto } from '../dto/task-count.dto';
 import { TaskDocument, TaskStatus } from '../task.schema';
 import { ExcelService } from '../../excel/services/excel.service';
+import { ExcelType } from '../../excel/excel.schema';
 import { DateCountDto } from '../dto/dateCount.dto';
 import { TaskPolicyService } from './task-policy.service';
 import { TaskReportService } from './task-report.service';
@@ -104,6 +111,48 @@ export class TaskService {
     return this.taskUpdateService.update(id, updateTaskDto);
   }
 
+  async uploadCompletionFile(
+    id: string,
+    requesterId: string,
+    file?: Express.Multer.File,
+  ): Promise<TaskDocument> {
+    if (!file) {
+      throw new BadRequestException('Completion Excel file is required');
+    }
+
+    this.taskPolicy.validateObjectId(id);
+    this.taskPolicy.validateObjectId(requesterId);
+
+    const task = await this.repository.findRawById(id);
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+
+    const isAssignee = task.assignedTo.some(
+      (userId) => userId.toString() === requesterId,
+    );
+    if (!isAssignee) {
+      throw new ForbiddenException(
+        'Only the assigned specialist or supervisor can upload completion file',
+      );
+    }
+
+    const excelUpload = await this.excelService.uploadFile(
+      file,
+      requesterId,
+      ExcelType.EXPORT,
+    );
+    const updatedTask = await this.repository.updateById(id, {
+      completionFile: excelUpload.fileName,
+      completionExcelFile: new Types.ObjectId(excelUpload._id.toString()),
+    });
+    if (!updatedTask) {
+      throw new NotFoundException('Task not found');
+    }
+
+    return updatedTask;
+  }
+
   /**
    * Delete a task by ID
    * @throws NotFoundException if task not found
@@ -119,6 +168,10 @@ export class TaskService {
 
     if (task.excelFile) {
       await this.excelService.delete(task.excelFile.toString());
+    }
+
+    if (task.completionExcelFile) {
+      await this.excelService.delete(task.completionExcelFile.toString());
     }
 
     await this.repository.deleteById(id);

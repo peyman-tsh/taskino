@@ -52,6 +52,16 @@ export class Task {
   })
   excelFile?: Types.ObjectId;
 
+  @Prop({ default: null, type: String })
+  completionFile?: string;
+
+  @Prop({
+    type: Types.ObjectId,
+    ref: ExcelFile.name,
+    sparse: true,
+  })
+  completionExcelFile?: Types.ObjectId;
+
   @Prop({ type: String, default: null })
   taskComment?: string;
 

@@ -299,6 +299,30 @@ export class TaskController {
     return this.taskService.getMyStatusCounts(userId);
   }
 
+  @Patch(':id/completion-file')
+  @Roles(UserRole.SPECIALIST, UserRole.SUPERVISOR)
+  @ApiOperation({
+    summary: 'Upload task completion Excel file',
+    description:
+      'Allows the assigned specialist or supervisor to optionally upload an Excel file as their completed work output.',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiParam({ name: 'id', description: 'Task ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Task completion file uploaded successfully',
+    type: TaskResponseDto,
+  })
+  @ApiResponse({ status: 403, description: 'Only the assignee can upload completion file' })
+  @UseInterceptors(FileInterceptor('file'))
+  uploadCompletionFile(
+    @Param('id') id: string,
+    @CurrentUserId() requesterId: string,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    return this.taskService.uploadCompletionFile(id, requesterId, file);
+  }
+
   @Get(':id')
   @ApiOperation({
     summary: 'Get task by ID',

@@ -24,6 +24,12 @@ export class TaskResponseDto {
   excelFile?: object;
 
   @ApiPropertyOptional()
+  completionFile?: string;
+
+  @ApiPropertyOptional({ type: Object })
+  completionExcelFile?: object;
+
+  @ApiPropertyOptional()
   taskComment?: string;
 
   @ApiPropertyOptional()
