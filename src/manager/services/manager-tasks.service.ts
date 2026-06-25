@@ -47,8 +47,10 @@ export class ManagerTasksService extends BaseManagerService {
       userId,
       expectedDailyMinutes: this.expectedDailyMinutes,
       totalActualDurationMinutes,
-      remainingMinutes:
+      remainingMinutes: Math.max(
+        0,
         this.expectedDailyMinutes - totalActualDurationMinutes,
+      ),
     };
   }
 

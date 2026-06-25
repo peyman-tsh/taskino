@@ -48,4 +48,15 @@ describe('ManagerTasksService', () => {
     expect(result.totalActualDurationMinutes).toBe(360);
     expect(result.remainingMinutes).toBe(120);
   });
+
+  it('does not return negative remaining daily duration', async () => {
+    repository.sumDailyDoneFixedTaskDuration.mockResolvedValue(600);
+
+    const result = await service.getDailyFixedTaskDurationBalance(
+      '2026-06-01',
+      '2026-06-30',
+    );
+
+    expect(result.remainingMinutes).toBe(0);
+  });
 });
