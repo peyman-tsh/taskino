@@ -32,6 +32,7 @@ import {
   UserResponseDto,
   WorkStatusRangeResponseDto,
   UserWorkStatusSummaryResponseDto,
+  FixedTaskDurationBalanceResponseDto,
 } from './dto/manager-response.dto';
 import { MongoIdParamDto } from './dto/mongo-id-param.dto';
 import { MonthlyPerformanceQueryDto } from './dto/monthly-performance-query.dto';
@@ -45,6 +46,7 @@ import { AdjustSpecialistScoreDto } from './dto/adjust-specialist-score.dto';
 import { ManagerUserScoreService } from './services/manager-user-score.service';
 import { WorkStatusRangeQueryDto } from './dto/work-status-range-query.dto';
 import { FixedTaskTimingApprovalDto } from './dto/fixed-task-timing-approval.dto';
+import { FixedTaskDurationBalanceQueryDto } from './dto/fixed-task-duration-balance-query.dto';
 
 @ApiTags('Manager')
 @ApiBearerAuth()
@@ -207,6 +209,27 @@ export class ManagerController {
   @ApiOkResponse({ type: ManagerAllTasksResponseDto })
   getAllTasks(@Query() query: ManagerTasksQueryDto) {
     return this.managerService.findAllTasks(query);
+  }
+
+  @Get('fixed-tasks/daily-duration-balance')
+  @ApiOperation({
+    summary: 'Get daily fixed-task duration balance',
+    description:
+      'Sums actualDurationMinutes for done daily FixedTasks in a date range and subtracts the total from 8 hours.',
+  })
+  @ApiOkResponse({
+    description: 'Daily fixed-task duration balance retrieved successfully',
+    type: FixedTaskDurationBalanceResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Invalid date range or user ID' })
+  getDailyFixedTaskDurationBalance(
+    @Query() query: FixedTaskDurationBalanceQueryDto,
+  ) {
+    return this.managerService.getDailyFixedTaskDurationBalance(
+      query.from,
+      query.to,
+      query.userId,
+    );
   }
 
   @Get('leave-requests')

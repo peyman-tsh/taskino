@@ -207,6 +207,26 @@ export class UserWorkStatusSummaryResponseDto {
   users: UserWorkStatusSummaryItemDto[];
 }
 
+export class FixedTaskDurationBalanceResponseDto {
+  @ApiProperty()
+  from: Date;
+
+  @ApiProperty()
+  to: Date;
+
+  @ApiProperty({ required: false })
+  userId?: string;
+
+  @ApiProperty({ example: 480 })
+  expectedDailyMinutes: number;
+
+  @ApiProperty({ example: 360 })
+  totalActualDurationMinutes: number;
+
+  @ApiProperty({ example: 120 })
+  remainingMinutes: number;
+}
+
 export {
   PaginatedUsersResponseDto,
   TaskCountsByUserResponseDto,

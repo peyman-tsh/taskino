@@ -121,6 +121,18 @@ export class ManagerService extends BaseManagerService {
     return this.managerTasksService.findAll(query);
   }
 
+  getDailyFixedTaskDurationBalance(
+    from: string,
+    to: string,
+    userId?: string,
+  ) {
+    return this.managerTasksService.getDailyFixedTaskDurationBalance(
+      from,
+      to,
+      userId,
+    );
+  }
+
   findAllLeaveRequests(query: PaginationQueryDto) {
     return this.managerLeaveRequestService.findAll(query);
   }

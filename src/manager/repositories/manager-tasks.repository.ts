@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import {
   FixedTaskRecurrence,
+  FixedTaskStatus,
   FixedTaskTemplate,
   FixedTaskTemplateDocument,
 } from '../../fixedTask/fixed-task.schema';
@@ -38,5 +39,38 @@ export class ManagerTasksRepository {
     ]);
 
     return { tasks, fixedTasks };
+  }
+
+  async sumDailyDoneFixedTaskDuration(
+    from: Date,
+    to: Date,
+    userId?: string,
+  ): Promise<number> {
+    const filter: Record<string, unknown> = {
+      status: FixedTaskStatus.DONE,
+      recurrence: FixedTaskRecurrence.DAILY,
+      actualDurationMinutes: { $exists: true, $ne: null },
+      startDate: { $gte: from, $lte: to },
+    };
+
+    if (userId) {
+      filter.assignedTo = new Types.ObjectId(userId);
+    }
+
+    const [result] = await this.fixedTaskModel
+      .aggregate<{ totalActualDurationMinutes: number }>([
+        { $match: filter },
+        {
+          $group: {
+            _id: null,
+            totalActualDurationMinutes: {
+              $sum: '$actualDurationMinutes',
+            },
+          },
+        },
+      ])
+      .exec();
+
+    return result?.totalActualDurationMinutes ?? 0;
   }
 }
