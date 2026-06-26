@@ -131,6 +131,28 @@ export class UserService {
     return this.userRepository.findForManager(page, limit, filters);
   }
 
+  async findUsersByManagerWorkField(
+    managerId: string,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<{
+    data: Omit<UserDocument, 'password'>[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    if (!Types.ObjectId.isValid(managerId)) {
+      throw new NotFoundException('Invalid manager ID');
+    }
+
+    const manager = await this.userRepository.findRawById(managerId);
+    if (!manager) {
+      throw new NotFoundException('Manager not found');
+    }
+
+    return this.userRepository.findByWorkField(manager.workField, page, limit);
+  }
+
   /**
    * Find a user by ID
    */

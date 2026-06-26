@@ -121,6 +121,42 @@ export class UserController {
     return this.userService.getMyWorkSummary(userId);
   }
 
+  @Get('manager/work-field-users')
+  @Roles(UserRole.MANAGER)
+  @ApiOperation({
+    summary: 'Get users from current manager work field',
+    description:
+      'Returns a paginated list of users whose workField matches the authenticated manager workField.',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 10)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Users from manager work field retrieved successfully',
+    type: PaginatedUsersResponseDto,
+  })
+  getUsersByManagerWorkField(
+    @CurrentUserId() managerId: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
+    return this.userService.findUsersByManagerWorkField(
+      managerId,
+      Number(page),
+      Number(limit),
+    );
+  }
+
   @Get(':id')
   @ApiOperation({
     summary: 'Get user by ID',

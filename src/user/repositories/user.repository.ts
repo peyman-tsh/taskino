@@ -232,6 +232,22 @@ export class UserRepository {
     return { data, total, page, limit };
   }
 
+  async findByWorkField(workField: WorkField, page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+    const query = { workField };
+    const [data, total] = await Promise.all([
+      this.userModel
+        .find(query)
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 })
+        .exec(),
+      this.userModel.countDocuments(query).exec(),
+    ]);
+
+    return { data, total, page, limit };
+  }
+
   async findById(id: string): Promise<Omit<UserDocument, 'password'>> {
     const user = await this.userModel.findById(id).exec();
     if (!user) {

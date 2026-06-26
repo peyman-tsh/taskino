@@ -118,7 +118,7 @@ export class ManagerController {
       dto.score,
     );
   }
-
+  @Roles(UserRole.SUPERVISOR)
   @Patch('fixed-tasks/:id/timing-approval')
   @ApiOperation({
     summary: 'Approve or reject a completed fixed-task timing',
