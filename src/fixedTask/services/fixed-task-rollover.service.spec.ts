@@ -170,6 +170,55 @@ describe('FixedTaskRolloverService', () => {
     expect(repository.claimExpiredOccurrence).not.toHaveBeenCalled();
   });
 
+  it('uses the old weekly schedule when scheduleConfig is empty', async () => {
+    const task = createTask(FixedTaskRecurrence.WEEKLY, FixedTaskStatus.TODO);
+    repository.findActiveRolloverCandidates.mockResolvedValue([task]);
+
+    await expect(
+      service.runForRecurrence(FixedTaskRecurrence.WEEKLY, now),
+    ).resolves.toBe(0);
+
+    expect(repository.claimExpiredOccurrence).not.toHaveBeenCalled();
+  });
+
+  it('rolls over weekly work on Saturday when scheduleConfig is empty', async () => {
+    const saturday = new Date('2026-06-20T11:05:00.000Z');
+    const task = createTask(FixedTaskRecurrence.WEEKLY, FixedTaskStatus.TODO);
+    repository.findActiveRolloverCandidates.mockResolvedValue([task]);
+    repository.claimExpiredOccurrence.mockResolvedValue(task);
+    repository.createNextOccurrence.mockResolvedValue({
+      _id: new Types.ObjectId(),
+    });
+
+    await expect(
+      service.runForRecurrence(FixedTaskRecurrence.WEEKLY, saturday),
+    ).resolves.toBe(1);
+
+    expect(repository.claimExpiredOccurrence).toHaveBeenCalledWith(
+      task._id,
+      saturday,
+    );
+  });
+
+  it('uses the old monthly schedule when scheduleConfig is empty', async () => {
+    const firstDayOfMonth = new Date('2026-07-01T11:05:00.000Z');
+    const task = createTask(FixedTaskRecurrence.MONTHLY, FixedTaskStatus.TODO);
+    repository.findActiveRolloverCandidates.mockResolvedValue([task]);
+    repository.claimExpiredOccurrence.mockResolvedValue(task);
+    repository.createNextOccurrence.mockResolvedValue({
+      _id: new Types.ObjectId(),
+    });
+
+    await expect(
+      service.runForRecurrence(FixedTaskRecurrence.MONTHLY, firstDayOfMonth),
+    ).resolves.toBe(1);
+
+    expect(repository.claimExpiredOccurrence).toHaveBeenCalledWith(
+      task._id,
+      firstDayOfMonth,
+    );
+  });
+
   it('reactivates the old occurrence when creating the next one fails', async () => {
     const task = createTask(
       FixedTaskRecurrence.MONTHLY,

@@ -27,7 +27,7 @@ export class FixedTaskRolloverService {
     private readonly holidayService: HolidayService,
   ) {}
 
-  @Cron('11 0 * * *', { timeZone: 'Asia/Tehran' })
+  @Cron('53 1 * * *', { timeZone: 'Asia/Tehran' })
   async handleDailyRollover(): Promise<void> {
     this.logger.log('Daily fixed task rollover started');
 
@@ -44,12 +44,12 @@ export class FixedTaskRolloverService {
     );
   }
 
-  @Cron('11 0 * * *', { timeZone: 'Asia/Tehran' })
+  @Cron('53 1 * * *', { timeZone: 'Asia/Tehran' })
   async handleWeeklyRollover(): Promise<void> {
     await this.runForRecurrence(FixedTaskRecurrence.WEEKLY);
   }
 
-  @Cron('11 0 * * *', { timeZone: 'Asia/Tehran' })
+  @Cron('53 1 * * *', { timeZone: 'Asia/Tehran' })
   async handleMonthlyRollover(): Promise<void> {
     await this.runForRecurrence(FixedTaskRecurrence.MONTHLY);
   }
@@ -125,23 +125,45 @@ export class FixedTaskRolloverService {
     now: Date,
   ): boolean {
     const today = this.getTehranCalendar(now);
+
+    if (!this.hasScheduleConfig(candidate)) {
+      return this.shouldRunDefaultSchedule(candidate.recurrence, today);
+    }
+
+    return this.shouldRunConfiguredSchedule(candidate, today);
+  }
+
+  private hasScheduleConfig(candidate: FixedTaskTemplateDocument): boolean {
+    const config = candidate.scheduleConfig;
+    return Boolean(config?.weekdays?.length || config?.monthDays?.length);
+  }
+
+  private shouldRunDefaultSchedule(
+    recurrence: FixedTaskRecurrence,
+    today: { day: number; weekday: number },
+  ): boolean {
+    if (recurrence === FixedTaskRecurrence.DAILY) {
+      return true;
+    }
+
+    if (recurrence === FixedTaskRecurrence.WEEKLY) {
+      return today.weekday === 6;
+    }
+
+    return today.day === 1;
+  }
+
+  private shouldRunConfiguredSchedule(
+    candidate: FixedTaskTemplateDocument,
+    today: { day: number; weekday: number },
+  ): boolean {
     const config = candidate.scheduleConfig;
 
     if (candidate.recurrence === FixedTaskRecurrence.MONTHLY) {
-      return config?.monthDays?.length
-        ? config.monthDays.includes(today.day)
-        : today.day === 1;
+      return Boolean(config?.monthDays?.includes(today.day));
     }
 
-    if (candidate.recurrence === FixedTaskRecurrence.WEEKLY) {
-      return config?.weekdays?.length
-        ? config.weekdays.includes(today.weekday)
-        : today.weekday === 6;
-    }
-
-    return config?.weekdays?.length
-      ? config.weekdays.includes(today.weekday)
-      : true;
+    return Boolean(config?.weekdays?.includes(today.weekday));
   }
 
   private startedToday(
