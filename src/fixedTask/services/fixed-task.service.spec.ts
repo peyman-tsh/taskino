@@ -3,7 +3,6 @@ import { FixedTaskDeleteService } from './fixed-task-delete.service';
 import { FixedTaskQueryService } from './fixed-task-query.service';
 import { FixedTaskService } from './fixed-task.service';
 import { FixedTaskUpdateService } from './fixed-task-update.service';
-import { FixedTaskScoreService } from './fixed-task-score.service';
 import { FixedTaskTimingService } from './fixed-task-timing.service';
 
 describe('FixedTaskService', () => {
@@ -16,7 +15,6 @@ describe('FixedTaskService', () => {
   };
   const updateService = { update: jest.fn() };
   const deleteService = { delete: jest.fn() };
-  const scoreService = { adjustOverdueTasks: jest.fn() };
   const timingService = {
     startTimer: jest.fn(),
     reviewTiming: jest.fn(),
@@ -26,7 +24,6 @@ describe('FixedTaskService', () => {
     queryService as unknown as FixedTaskQueryService,
     updateService as unknown as FixedTaskUpdateService,
     deleteService as unknown as FixedTaskDeleteService,
-    scoreService as unknown as FixedTaskScoreService,
     timingService as unknown as FixedTaskTimingService,
   );
 
@@ -48,7 +45,6 @@ describe('FixedTaskService', () => {
 
     expect(creationService.create).toHaveBeenCalled();
     expect(queryService.findAll).toHaveBeenCalled();
-    expect(scoreService.adjustOverdueTasks).toHaveBeenCalled();
     expect(queryService.findById).toHaveBeenCalled();
     expect(queryService.getStatusCounts).toHaveBeenCalled();
     expect(updateService.update).toHaveBeenCalled();

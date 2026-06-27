@@ -6,7 +6,6 @@ import { FixedTaskCreationService } from './fixed-task-creation.service';
 import { FixedTaskDeleteService } from './fixed-task-delete.service';
 import { FixedTaskQueryService } from './fixed-task-query.service';
 import { FixedTaskUpdateService } from './fixed-task-update.service';
-import { FixedTaskScoreService } from './fixed-task-score.service';
 import { FixedTaskTimingService } from './fixed-task-timing.service';
 import { FixedTaskTimingApprovalStatus } from '../fixed-task.schema';
 
@@ -17,7 +16,6 @@ export class FixedTaskService {
     private readonly queryService: FixedTaskQueryService,
     private readonly updateService: FixedTaskUpdateService,
     private readonly deleteService: FixedTaskDeleteService,
-    private readonly scoreService: FixedTaskScoreService,
     private readonly timingService: FixedTaskTimingService,
   ) {}
 
@@ -26,7 +24,6 @@ export class FixedTaskService {
   }
 
   async findAll(queryDto: QueryFixedTaskDto) {
-    await this.scoreService.adjustOverdueTasks();
     return this.queryService.findAll(queryDto);
   }
 

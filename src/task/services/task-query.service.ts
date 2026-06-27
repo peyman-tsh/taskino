@@ -3,7 +3,6 @@ import { Types } from 'mongoose';
 import { TaskRepository } from '../repositories/task.repository';
 import { TaskDocument, TaskRecurrence, TaskStatus } from '../task.schema';
 import { TaskPolicyService } from './task-policy.service';
-import { TaskScoreService } from './task-score.service';
 
 export interface TaskListFilters {
   createdBy?: string;
@@ -19,11 +18,9 @@ export class TaskQueryService {
   constructor(
     private readonly repository: TaskRepository,
     private readonly policy: TaskPolicyService,
-    private readonly scoreService: TaskScoreService,
   ) {}
 
   async findAll(page: number, limit: number, filters?: TaskListFilters) {
-    await this.scoreService.adjustOverdueTasks();
     const query = this.buildFilter(filters);
     const { data, total } = await this.repository.findPaginated(
       query,

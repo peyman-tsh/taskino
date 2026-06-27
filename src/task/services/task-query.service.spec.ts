@@ -6,7 +6,6 @@ import { TaskRepository } from '../repositories/task.repository';
 import { TaskRecurrence } from '../task.schema';
 import { TaskPolicyService } from './task-policy.service';
 import { TaskQueryService } from './task-query.service';
-import { TaskScoreService } from './task-score.service';
 
 describe('TaskQueryService', () => {
   const repository = {
@@ -18,13 +17,9 @@ describe('TaskQueryService', () => {
     findUserById: jest.fn(),
     findUserIdsByWorkField: jest.fn(),
   };
-  const scoreService = {
-    adjustOverdueTasks: jest.fn(),
-  };
   const service = new TaskQueryService(
     repository as unknown as TaskRepository,
     policy as unknown as TaskPolicyService,
-    scoreService as unknown as TaskScoreService,
   );
 
   beforeEach(() => {
@@ -42,7 +37,6 @@ describe('TaskQueryService', () => {
       endDate,
     });
 
-    expect(scoreService.adjustOverdueTasks).toHaveBeenCalled();
     expect(repository.findPaginated).toHaveBeenCalledWith(
       {
         recurrence: TaskRecurrence.MONTHLY,

@@ -14,6 +14,7 @@ import { TaskQueryService } from './services/task-query.service';
 import { TaskUpdateService } from './services/task-update.service';
 import { SpecialistTaskQueryService } from './services/specialist-task-query.service';
 import { TaskCreationService } from './services/task-creation.service';
+import { TaskOverdueScoreCronService } from './services/task-overdue-score-cron.service';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { TaskCreationService } from './services/task-creation.service';
     TaskUpdateService,
     SpecialistTaskQueryService,
     TaskCreationService,
+    TaskOverdueScoreCronService,
   ],
   exports: [TaskService, TaskReportService],
 })
