@@ -1,5 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { UnauthorizedException } from '@nestjs/common';
+import * as bcrypt from 'bcryptjs';
 import { Types } from 'mongoose';
 import { InternalEventBus } from '../../common/events/internal-event-bus.service';
 import { WorkField } from '../../common/enums/work-field.enum';
@@ -11,6 +13,7 @@ import { AuthService } from './auth.service';
 describe('AuthService', () => {
   const userService = {
     create: jest.fn(),
+    findByMobile: jest.fn(),
   };
   const jwtService = {
     sign: jest.fn(() => 'token'),
@@ -58,5 +61,25 @@ describe('AuthService', () => {
         workField: WorkField.IT,
       }),
     );
+  });
+
+  it('blocks inactive users from logging in', async () => {
+    const user = {
+      _id: new Types.ObjectId(),
+      firstName: 'Ali',
+      lastName: 'Ahmadi',
+      email: 'ali@example.com',
+      mobile: '09120000000',
+      password: await bcrypt.hash('123456', 10),
+      roles: UserRole.SPECIALIST,
+      isActive: false,
+    } as UserDocument;
+    userService.findByMobile.mockResolvedValue(user);
+
+    await expect(
+      service.login({ mobile: user.mobile!, password: '123456' }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+
+    expect(jwtService.sign).not.toHaveBeenCalled();
   });
 });
