@@ -350,7 +350,7 @@ export class TaskController {
   }
 
   @Get('extra/user/:userId')
-  @Roles(UserRole.MANAGER, UserRole.SUPERVISOR)
+  @Roles(UserRole.MANAGER, UserRole.SUPERVISOR,UserRole.SPECIALIST)
   @ApiOperation({
     summary: 'Get extra tasks for a user',
     description:
