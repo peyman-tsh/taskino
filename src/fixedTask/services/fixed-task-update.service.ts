@@ -64,18 +64,14 @@ export class FixedTaskUpdateService {
     dto: UpdateFixedTaskDto,
     isAssignee: boolean,
   ): Promise<void> {
-    if (isAssignee) {
-      this.assertAssigneeStatusOnlyUpdate(dto);
-      return;
-    }
     if (dto.status !== undefined) {
-      throw new ForbiddenException(
-        'Only the fixed task assignee can update the status',
-      );
+      this.assertStatusUpdateAllowed(isAssignee);
     }
 
     const assignedTo = dto.assignedTo ?? template.assignedTo.toString();
-    await this.policy.validateParticipants(requesterId, assignedTo);
+    if (!isAssignee) {
+      await this.policy.validateParticipants(requesterId, assignedTo);
+    }
     const startDate = this.resolveDate(dto.startDate, template.startDate, 'startDate');
     const endDate = this.resolveDate(dto.endDate, template.endDate, 'endDate');
     this.policy.assertValidDateRange(startDate, endDate);
@@ -153,20 +149,10 @@ export class FixedTaskUpdateService {
     return value !== undefined ? this.policy.parseDate(value, label) : currentValue;
   }
 
-  private assertAssigneeStatusOnlyUpdate(dto: UpdateFixedTaskDto): void {
-    const fields = Object.keys(dto);
-    const allowedFields = ['status', 'actualDurationMinutes'];
-    const hasOnlyAllowedFields = fields.every((field) =>
-      allowedFields.includes(field),
-    );
-
-    if (
-      dto.status === undefined ||
-      !fields.includes('status') ||
-      !hasOnlyAllowedFields
-    ) {
+  private assertStatusUpdateAllowed(isAssignee: boolean): void {
+    if (!isAssignee) {
       throw new ForbiddenException(
-        'Fixed task assignee can only update the status and actual duration',
+        'Only the fixed task assignee can update the status',
       );
     }
   }

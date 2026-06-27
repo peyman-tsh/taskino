@@ -107,14 +107,51 @@ describe('FixedTaskUpdateService', () => {
     );
   });
 
-  it('prevents the assignee from editing fixed task fields', async () => {
-    repository.findRawById.mockResolvedValue(createTemplate());
+  it('allows the assignee to update only actual duration', async () => {
+    const template = createTemplate();
+    const updatedTemplate = {
+      ...template,
+      actualDurationMinutes: 120,
+    } as FixedTaskTemplateDocument;
+    repository.findRawById.mockResolvedValue(template);
+    repository.updateById.mockResolvedValue(updatedTemplate);
+    queryService.findById.mockResolvedValue(updatedTemplate);
 
-    await expect(
-      service.update(templateId.toString(), assigneeId.toString(), {
-        title: 'Changed title',
+    await service.update(templateId.toString(), assigneeId.toString(), {
+      actualDurationMinutes: 120,
+    });
+
+    expect(repository.updateById).toHaveBeenCalledWith(
+      templateId,
+      expect.objectContaining({
+        actualDurationMinutes: 120,
       }),
-    ).rejects.toBeInstanceOf(ForbiddenException);
+    );
+  });
+
+  it('allows the assignee to update fixed task DTO fields', async () => {
+    const template = createTemplate();
+    const updatedTemplate = {
+      ...template,
+      title: 'Changed title',
+      isActive: true,
+    } as FixedTaskTemplateDocument;
+    repository.findRawById.mockResolvedValue(template);
+    repository.updateById.mockResolvedValue(updatedTemplate);
+    queryService.findById.mockResolvedValue(updatedTemplate);
+
+    await service.update(templateId.toString(), assigneeId.toString(), {
+      title: 'Changed title',
+      isActive: true,
+    });
+
+    expect(repository.updateById).toHaveBeenCalledWith(
+      templateId,
+      expect.objectContaining({
+        title: 'Changed title',
+        isActive: true,
+      }),
+    );
   });
 
   it('prevents non-assignees from updating status', async () => {
