@@ -5,7 +5,6 @@ import {
   FixedTaskRecurrence,
   FixedTaskStatus,
   FixedTaskTemplateDocument,
-  FixedTaskTimingApprovalStatus,
 } from '../fixed-task.schema';
 import { FixedTaskNotificationService } from './fixed-task-notification.service';
 import { FixedTaskPolicyService } from './fixed-task-policy.service';
@@ -67,7 +66,15 @@ describe('FixedTaskUpdateService', () => {
       templateId,
       expect.objectContaining({
         actualDurationMinutes: expect.any(Number),
-        timingApprovalStatus: FixedTaskTimingApprovalStatus.PENDING,
+      }),
+    );
+    expect(repository.updateById).toHaveBeenCalledWith(
+      templateId,
+      expect.not.objectContaining({
+        approvedDurationMinutes: expect.anything(),
+        timingApprovalStatus: expect.anything(),
+        timingApprovedBy: expect.anything(),
+        timingApprovedAt: expect.anything(),
       }),
     );
     expect(notificationService.notifyCreatorWhenCompleted).toHaveBeenCalled();
@@ -102,7 +109,6 @@ describe('FixedTaskUpdateService', () => {
       templateId,
       expect.objectContaining({
         actualDurationMinutes: 180,
-        timingApprovalStatus: FixedTaskTimingApprovalStatus.PENDING,
       }),
     );
   });

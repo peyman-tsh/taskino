@@ -5,7 +5,6 @@ import { FixedTaskRepository } from '../repositories/fixed-task.repository';
 import {
   FixedTaskStatus,
   FixedTaskTemplateDocument,
-  FixedTaskTimingApprovalStatus,
 } from '../fixed-task.schema';
 import { FixedTaskNotificationService } from './fixed-task-notification.service';
 import { FixedTaskPolicyService } from './fixed-task-policy.service';
@@ -95,11 +94,6 @@ export class FixedTaskUpdateService {
         updateData.actualDurationMinutes =
           dto.actualDurationMinutes ??
           this.calculateActualDurationMinutes(template, doneTime);
-        updateData.approvedDurationMinutes = null;
-        updateData.timingApprovalStatus =
-          FixedTaskTimingApprovalStatus.PENDING;
-        updateData.timingApprovedBy = null;
-        updateData.timingApprovedAt = null;
       } else {
         updateData.doneTime = null;
         updateData.actualDurationMinutes = null;
