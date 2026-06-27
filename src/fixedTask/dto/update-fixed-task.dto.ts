@@ -10,12 +10,14 @@ import {
   IsString,
   Matches,
   Min,
+  ValidateNested,
 } from 'class-validator';
 import { FixedTaskRecurrence, FixedTaskStatus } from '../fixed-task.schema';
 import {
   TIME_MESSAGE,
   TIME_PATTERN,
 } from '../../common/constants/time.constants';
+import { FixedTaskScheduleConfigDto } from './fixed-task-schedule-config.dto';
 
 export class UpdateFixedTaskDto {
   @ApiPropertyOptional()
@@ -49,6 +51,12 @@ export class UpdateFixedTaskDto {
   @IsOptional()
   @IsString()
   taskComment?: string;
+
+  @ApiPropertyOptional({ type: FixedTaskScheduleConfigDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => FixedTaskScheduleConfigDto)
+  scheduleConfig?: FixedTaskScheduleConfigDto;
 
   @ApiPropertyOptional({
     description: 'Actual duration spent on the fixed task in minutes',

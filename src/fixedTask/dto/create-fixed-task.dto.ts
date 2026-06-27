@@ -8,12 +8,15 @@ import {
   IsOptional,
   IsString,
   Matches,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { FixedTaskRecurrence, FixedTaskStatus } from '../fixed-task.schema';
 import {
   TIME_MESSAGE,
   TIME_PATTERN,
 } from '../../common/constants/time.constants';
+import { FixedTaskScheduleConfigDto } from './fixed-task-schedule-config.dto';
 
 export class CreateFixedTaskDto {
   @ApiProperty({ example: 'بررسی گزارش روزانه فروش' })
@@ -48,6 +51,12 @@ export class CreateFixedTaskDto {
   @IsOptional()
   @IsString()
   taskComment?: string;
+
+  @ApiPropertyOptional({ type: FixedTaskScheduleConfigDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => FixedTaskScheduleConfigDto)
+  scheduleConfig?: FixedTaskScheduleConfigDto;
 
   @ApiPropertyOptional({ default: true })
   @IsOptional()

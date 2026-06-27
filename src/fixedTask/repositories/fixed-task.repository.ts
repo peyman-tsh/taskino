@@ -148,6 +148,7 @@ export class FixedTaskRepository {
       createdBy: previous.createdBy,
       recurrence: previous.recurrence as FixedTaskRecurrence,
       description: previous.description,
+      scheduleConfig: previous.scheduleConfig,
       isActive: true,
       status: FixedTaskStatus.TODO,
       startedAt: null,

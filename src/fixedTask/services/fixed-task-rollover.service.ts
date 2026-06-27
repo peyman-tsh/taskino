@@ -13,6 +13,7 @@ import {
   UserProgressRefreshRequestedEvent,
 } from '../../common/events/user-progress.events';
 import { HolidayService } from '../../holiday/services/holiday.service';
+import { getTehranDateParts } from '../../common/utils/tehran-time.util';
 
 @Injectable()
 export class FixedTaskRolloverService {
@@ -43,12 +44,12 @@ export class FixedTaskRolloverService {
     );
   }
 
-  @Cron('11 0 * * 6', { timeZone: 'Asia/Tehran' })
+  @Cron('11 0 * * *', { timeZone: 'Asia/Tehran' })
   async handleWeeklyRollover(): Promise<void> {
     await this.runForRecurrence(FixedTaskRecurrence.WEEKLY);
   }
 
-  @Cron('1 0 1 * *', { timeZone: 'Asia/Tehran' })
+  @Cron('11 0 * * *', { timeZone: 'Asia/Tehran' })
   async handleMonthlyRollover(): Promise<void> {
     await this.runForRecurrence(FixedTaskRecurrence.MONTHLY);
   }
@@ -66,6 +67,8 @@ export class FixedTaskRolloverService {
       let createdCount = 0;
 
       for (const candidate of candidates) {
+        if (!this.shouldGenerateToday(candidate, now)) continue;
+        if (this.startedToday(candidate, now)) continue;
         if (!(await this.rolloverIfExpired(candidate, now))) continue;
         createdCount += 1;
       }
@@ -115,5 +118,58 @@ export class FixedTaskRolloverService {
       );
       return false;
     }
+  }
+
+  private shouldGenerateToday(
+    candidate: FixedTaskTemplateDocument,
+    now: Date,
+  ): boolean {
+    const today = this.getTehranCalendar(now);
+    const config = candidate.scheduleConfig;
+
+    if (candidate.recurrence === FixedTaskRecurrence.MONTHLY) {
+      return config?.monthDays?.length
+        ? config.monthDays.includes(today.day)
+        : today.day === 1;
+    }
+
+    if (candidate.recurrence === FixedTaskRecurrence.WEEKLY) {
+      return config?.weekdays?.length
+        ? config.weekdays.includes(today.weekday)
+        : today.weekday === 6;
+    }
+
+    return config?.weekdays?.length
+      ? config.weekdays.includes(today.weekday)
+      : true;
+  }
+
+  private startedToday(
+    candidate: FixedTaskTemplateDocument,
+    now: Date,
+  ): boolean {
+    if (!candidate.startDate) return false;
+
+    const start = this.getTehranCalendar(candidate.startDate);
+    const today = this.getTehranCalendar(now);
+    return (
+      start.year === today.year &&
+      start.month === today.month &&
+      start.day === today.day
+    );
+  }
+
+  private getTehranCalendar(date: Date) {
+    const parts = getTehranDateParts(date);
+    const calendarDate = new Date(
+      Date.UTC(parts.year, parts.month - 1, parts.day),
+    );
+
+    return {
+      year: parts.year,
+      month: parts.month,
+      day: parts.day,
+      weekday: calendarDate.getUTCDay(),
+    };
   }
 }

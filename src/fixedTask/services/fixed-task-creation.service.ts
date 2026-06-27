@@ -34,6 +34,7 @@ export class FixedTaskCreationService {
       status: FixedTaskStatus.TODO,
       description: dto.description ?? '',
       taskComment: dto.taskComment ?? null,
+      scheduleConfig: dto.scheduleConfig,
       isActive: dto.isActive ?? true,
       nextRunAt: dto.nextRunAt
         ? new Date(dto.nextRunAt)

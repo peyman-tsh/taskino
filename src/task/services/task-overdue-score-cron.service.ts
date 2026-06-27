@@ -9,7 +9,7 @@ export class TaskOverdueScoreCronService {
 
   constructor(private readonly scoreService: TaskScoreService) {}
 
-  @Cron('*/5 * * * *', { timeZone: 'Asia/Tehran' })
+  @Cron('*/30 * * * * *', { timeZone: 'Asia/Tehran' })
   async handleOverdueTaskScoring(): Promise<void> {
     if (this.isRunning) return;
     this.isRunning = true;

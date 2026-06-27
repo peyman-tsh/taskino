@@ -105,6 +105,9 @@ export class FixedTaskUpdateService {
     if (dto.taskComment !== undefined) {
       updateData.taskComment = dto.taskComment;
     }
+    if (dto.scheduleConfig !== undefined) {
+      updateData.scheduleConfig = dto.scheduleConfig;
+    }
     if (dto.actualDurationMinutes !== undefined && dto.status === undefined) {
       updateData.actualDurationMinutes = dto.actualDurationMinutes;
     }

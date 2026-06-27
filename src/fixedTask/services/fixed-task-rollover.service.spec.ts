@@ -139,6 +139,7 @@ describe('FixedTaskRolloverService', () => {
       FixedTaskRecurrence.WEEKLY,
       FixedTaskStatus.IN_PROGRESS,
     );
+    task.scheduleConfig = { weekdays: [5] };
     repository.findActiveRolloverCandidates.mockResolvedValue([task]);
     repository.claimExpiredOccurrence.mockResolvedValue(task);
     repository.createNextOccurrence.mockResolvedValue({
@@ -157,11 +158,24 @@ describe('FixedTaskRolloverService', () => {
     expect(repository.createNextOccurrence).toHaveBeenCalled();
   });
 
+  it('skips weekly work on unscheduled weekdays', async () => {
+    const task = createTask(FixedTaskRecurrence.WEEKLY, FixedTaskStatus.TODO);
+    task.scheduleConfig = { weekdays: [6] };
+    repository.findActiveRolloverCandidates.mockResolvedValue([task]);
+
+    await expect(
+      service.runForRecurrence(FixedTaskRecurrence.WEEKLY, now),
+    ).resolves.toBe(0);
+
+    expect(repository.claimExpiredOccurrence).not.toHaveBeenCalled();
+  });
+
   it('reactivates the old occurrence when creating the next one fails', async () => {
     const task = createTask(
       FixedTaskRecurrence.MONTHLY,
       FixedTaskStatus.DONE,
     );
+    task.scheduleConfig = { monthDays: [19] };
     repository.findActiveRolloverCandidates.mockResolvedValue([task]);
     repository.claimExpiredOccurrence.mockResolvedValue(task);
     repository.createNextOccurrence.mockRejectedValue(new Error('create failed'));

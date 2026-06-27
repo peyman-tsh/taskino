@@ -21,6 +21,11 @@ export enum FixedTaskTimingApprovalStatus {
   REJECTED = 'rejected',
 }
 
+export interface FixedTaskScheduleConfig {
+  weekdays?: number[];
+  monthDays?: number[];
+}
+
 @Schema({ timestamps: true })
 export class FixedTaskTemplate {
   @Prop({ required: true, trim: true })
@@ -109,6 +114,16 @@ export class FixedTaskTemplate {
 
   @Prop({ type: String })
   sourceSheet?: string;
+
+  @Prop({
+    type: {
+      weekdays: [{ type: Number, min: 0, max: 6 }],
+      monthDays: [{ type: Number, min: 1, max: 31 }],
+    },
+    default: undefined,
+    _id: false,
+  })
+  scheduleConfig?: FixedTaskScheduleConfig;
 
   @Prop({ type: Number })
   sourceRow?: number;
