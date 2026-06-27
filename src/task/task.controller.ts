@@ -323,6 +323,59 @@ export class TaskController {
     return this.taskService.uploadCompletionFile(id, requesterId, file);
   }
 
+  @Get('extra/work-field')
+  @Roles(UserRole.MANAGER, UserRole.SUPERVISOR)
+  @ApiOperation({
+    summary: 'Get extra tasks in current user work field',
+    description:
+      'Returns paginated extra tasks assigned to users whose workField matches the authenticated manager or supervisor workField.',
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({
+    status: 200,
+    description: 'Extra tasks by work field retrieved successfully',
+    type: PaginatedTasksResponseDto,
+  })
+  getExtraTasksByWorkField(
+    @CurrentUserId() requesterId: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
+    return this.taskService.findExtraTasksByWorkField(
+      requesterId,
+      Number(page),
+      Number(limit),
+    );
+  }
+
+  @Get('extra/user/:userId')
+  @Roles(UserRole.MANAGER, UserRole.SUPERVISOR)
+  @ApiOperation({
+    summary: 'Get extra tasks for a user',
+    description:
+      'Returns paginated extra tasks assigned to the provided user ID.',
+  })
+  @ApiParam({ name: 'userId', description: 'User ID' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({
+    status: 200,
+    description: 'Extra tasks by user retrieved successfully',
+    type: PaginatedTasksResponseDto,
+  })
+  getExtraTasksByUser(
+    @Param('userId') userId: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
+    return this.taskService.findExtraTasksByUser(
+      userId,
+      Number(page),
+      Number(limit),
+    );
+  }
+
   @Get(':id')
   @ApiOperation({
     summary: 'Get task by ID',

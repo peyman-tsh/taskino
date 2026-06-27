@@ -78,6 +78,31 @@ describe('TaskUpdateService', () => {
     );
   });
 
+  it('sets end date and end time when an extra task is completed', async () => {
+    const task = {
+      ...createTask(TaskStatus.IN_PROGRESS),
+      isExtraTask: true,
+    } as TaskDocument;
+    const updatedTask = {
+      ...task,
+      status: TaskStatus.DONE,
+    } as TaskDocument;
+    repository.findRawById.mockResolvedValue(task);
+    repository.updateById.mockResolvedValue(updatedTask);
+
+    await service.update(taskId.toString(), { status: TaskStatus.DONE });
+
+    expect(repository.updateById).toHaveBeenCalledWith(
+      taskId.toString(),
+      expect.objectContaining({
+        status: TaskStatus.DONE,
+        doneTime: expect.any(Date),
+        endDate: expect.any(Date),
+        endTime: expect.stringMatching(/^\d{2}:\d{2}$/),
+      }),
+    );
+  });
+
   function createTask(status: TaskStatus): TaskDocument {
     return {
       _id: taskId,
@@ -85,6 +110,7 @@ describe('TaskUpdateService', () => {
       createdBy: creatorId,
       assignedTo: [assigneeId],
       status,
+      isExtraTask: false,
     } as TaskDocument;
   }
 });

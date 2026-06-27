@@ -84,6 +84,18 @@ export class TaskService {
     return this.taskQueryService.findActivePublicTasks(page, limit);
   }
 
+  findExtraTasksByWorkField(requesterId: string, page = 1, limit = 10) {
+    return this.taskQueryService.findExtraTasksByRequesterWorkField(
+      requesterId,
+      page,
+      limit,
+    );
+  }
+
+  findExtraTasksByUser(userId: string, page = 1, limit = 10) {
+    return this.taskQueryService.findExtraTasksByUser(userId, page, limit);
+  }
+
   /**
    * Find a task by ID with populated user fields
    * @throws NotFoundException if task not found

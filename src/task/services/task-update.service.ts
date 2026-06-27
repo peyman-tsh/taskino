@@ -11,6 +11,7 @@ import {
   UserProgressEvents,
   UserProgressRefreshRequestedEvent,
 } from '../../common/events/user-progress.events';
+import { formatTehranTime } from '../../common/utils/tehran-time.util';
 
 interface UpdateContext {
   updateData: Record<string, unknown>;
@@ -142,7 +143,12 @@ export class TaskUpdateService {
       dto.status === TaskStatus.DONE && task.status !== TaskStatus.DONE;
 
     if (changedToDone) {
-      updateData.doneTime = new Date();
+      const completedAt = new Date();
+      updateData.doneTime = completedAt;
+      if (task.isExtraTask) {
+        updateData.endDate = completedAt;
+        updateData.endTime = formatTehranTime(completedAt);
+      }
     } else if (dto.status !== undefined && dto.status !== TaskStatus.DONE) {
       updateData.doneTime = null;
     }

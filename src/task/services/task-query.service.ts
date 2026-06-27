@@ -47,6 +47,45 @@ export class TaskQueryService {
     return { data, total, page, limit };
   }
 
+  async findExtraTasksByRequesterWorkField(
+    requesterId: string,
+    page: number,
+    limit: number,
+  ) {
+    this.policy.validateObjectId(requesterId);
+    const requester = await this.policy.findUserById(requesterId);
+    const userIds = await this.policy.findUserIdsByWorkField(
+      requester.workField,
+    );
+
+    const { data, total } = await this.repository.findPaginated(
+      {
+        isExtraTask: true,
+        assignedTo: {
+          $in: userIds.map((userId) => new Types.ObjectId(userId)),
+        },
+      },
+      page,
+      limit,
+    );
+
+    return { data, total, page, limit };
+  }
+
+  async findExtraTasksByUser(userId: string, page: number, limit: number) {
+    this.policy.validateObjectId(userId);
+    const { data, total } = await this.repository.findPaginated(
+      {
+        isExtraTask: true,
+        assignedTo: new Types.ObjectId(userId),
+      },
+      page,
+      limit,
+    );
+
+    return { data, total, page, limit };
+  }
+
   private buildFilter(filters?: TaskListFilters): Record<string, unknown> {
     const query: Record<string, unknown> = {};
     this.addParticipantFilters(query, filters);

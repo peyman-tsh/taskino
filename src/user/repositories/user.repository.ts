@@ -248,6 +248,16 @@ export class UserRepository {
     return { data, total, page, limit };
   }
 
+  async findIdsByWorkField(workField: WorkField): Promise<string[]> {
+    const users = await this.userModel
+      .find({ workField })
+      .select('_id')
+      .lean()
+      .exec();
+
+    return users.map((user) => user._id.toString());
+  }
+
   async findById(id: string): Promise<Omit<UserDocument, 'password'>> {
     const user = await this.userModel.findById(id).exec();
     if (!user) {

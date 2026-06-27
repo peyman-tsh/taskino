@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { isValidTimeRange } from '../../common/constants/time.constants';
+import { WorkField } from '../../common/enums/work-field.enum';
 import { UserRole } from '../../user/schemas/user.schema';
 import { UserService } from '../../user/services/user.service';
 
@@ -114,5 +115,13 @@ export class TaskPolicyService {
 
   findUserByName(firstName: string, lastName: string) {
     return this.userService.findByName(firstName, lastName);
+  }
+
+  findUserById(userId: string) {
+    return this.userService.findById(userId);
+  }
+
+  findUserIdsByWorkField(workField: WorkField): Promise<string[]> {
+    return this.userService.findIdsByWorkField(workField);
   }
 }

@@ -1,5 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { Types } from 'mongoose';
+import { WorkField } from '../../common/enums/work-field.enum';
 import { TaskRepository } from '../repositories/task.repository';
 import { TaskRecurrence } from '../task.schema';
 import { TaskPolicyService } from './task-policy.service';
@@ -12,6 +14,9 @@ describe('TaskQueryService', () => {
   };
   const policy = {
     parseDateTime: jest.fn((value: string) => new Date(value)),
+    validateObjectId: jest.fn(),
+    findUserById: jest.fn(),
+    findUserIdsByWorkField: jest.fn(),
   };
   const scoreService = {
     adjustOverdueTasks: jest.fn(),
@@ -68,6 +73,45 @@ describe('TaskQueryService', () => {
       },
       1,
       10,
+    );
+  });
+
+  it('returns extra tasks for the requester work field', async () => {
+    const requesterId = new Types.ObjectId().toString();
+    const userId = new Types.ObjectId().toString();
+    policy.findUserById.mockResolvedValue({ workField: WorkField.OPERATIONS });
+    policy.findUserIdsByWorkField.mockResolvedValue([userId]);
+
+    await service.findExtraTasksByRequesterWorkField(requesterId, 1, 10);
+
+    expect(policy.validateObjectId).toHaveBeenCalledWith(requesterId);
+    expect(policy.findUserById).toHaveBeenCalledWith(requesterId);
+    expect(policy.findUserIdsByWorkField).toHaveBeenCalledWith(
+      WorkField.OPERATIONS,
+    );
+    expect(repository.findPaginated).toHaveBeenCalledWith(
+      {
+        isExtraTask: true,
+        assignedTo: { $in: [new Types.ObjectId(userId)] },
+      },
+      1,
+      10,
+    );
+  });
+
+  it('returns extra tasks for a user', async () => {
+    const userId = new Types.ObjectId().toString();
+
+    await service.findExtraTasksByUser(userId, 2, 5);
+
+    expect(policy.validateObjectId).toHaveBeenCalledWith(userId);
+    expect(repository.findPaginated).toHaveBeenCalledWith(
+      {
+        isExtraTask: true,
+        assignedTo: new Types.ObjectId(userId),
+      },
+      2,
+      5,
     );
   });
 });

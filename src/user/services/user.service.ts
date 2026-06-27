@@ -153,6 +153,10 @@ export class UserService {
     return this.userRepository.findByWorkField(manager.workField, page, limit);
   }
 
+  findIdsByWorkField(workField: WorkField): Promise<string[]> {
+    return this.userRepository.findIdsByWorkField(workField);
+  }
+
   /**
    * Find a user by ID
    */
