@@ -61,6 +61,18 @@ export class UpdateFixedTaskDto {
   @Min(0)
   actualDurationMinutes?: number;
 
+  @ApiPropertyOptional({
+    description:
+      'Approved duration for the fixed task in minutes. Updating this field automatically approves timing.',
+    example: 225,
+    minimum: 0,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  approvedDurationMinutes?: number;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsBoolean()

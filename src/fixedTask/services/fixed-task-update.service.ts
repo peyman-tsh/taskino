@@ -5,6 +5,7 @@ import { FixedTaskRepository } from '../repositories/fixed-task.repository';
 import {
   FixedTaskStatus,
   FixedTaskTemplateDocument,
+  FixedTaskTimingApprovalStatus,
 } from '../fixed-task.schema';
 import { FixedTaskNotificationService } from './fixed-task-notification.service';
 import { FixedTaskPolicyService } from './fixed-task-policy.service';
@@ -46,7 +47,7 @@ export class FixedTaskUpdateService {
 
     const updatedTemplate = await this.repository.updateById(
       template._id,
-      this.buildUpdateData(template, dto),
+      this.buildUpdateData(template, dto, requesterObjectId),
     );
     if (!updatedTemplate) {
       throw new NotFoundException('Fixed task template not found');
@@ -79,6 +80,7 @@ export class FixedTaskUpdateService {
   private buildUpdateData(
     template: FixedTaskTemplateDocument,
     dto: UpdateFixedTaskDto,
+    requesterObjectId: Types.ObjectId,
   ): Record<string, unknown> {
     const updateData: Record<string, unknown> = {};
     if (dto.title !== undefined) updateData.title = dto.title;
@@ -105,6 +107,13 @@ export class FixedTaskUpdateService {
     }
     if (dto.actualDurationMinutes !== undefined && dto.status === undefined) {
       updateData.actualDurationMinutes = dto.actualDurationMinutes;
+    }
+    if (dto.approvedDurationMinutes !== undefined) {
+      updateData.approvedDurationMinutes = dto.approvedDurationMinutes;
+      updateData.timingApprovalStatus =
+        FixedTaskTimingApprovalStatus.APPROVED;
+      updateData.timingApprovedBy = requesterObjectId;
+      updateData.timingApprovedAt = new Date();
     }
     if (dto.isActive !== undefined) updateData.isActive = dto.isActive;
     if (dto.nextRunAt !== undefined) updateData.nextRunAt = new Date(dto.nextRunAt);

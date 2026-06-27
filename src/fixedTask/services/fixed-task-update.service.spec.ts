@@ -5,6 +5,7 @@ import {
   FixedTaskRecurrence,
   FixedTaskStatus,
   FixedTaskTemplateDocument,
+  FixedTaskTimingApprovalStatus,
 } from '../fixed-task.schema';
 import { FixedTaskNotificationService } from './fixed-task-notification.service';
 import { FixedTaskPolicyService } from './fixed-task-policy.service';
@@ -131,6 +132,32 @@ describe('FixedTaskUpdateService', () => {
       templateId,
       expect.objectContaining({
         actualDurationMinutes: 120,
+      }),
+    );
+  });
+
+  it('approves timing when approved duration is updated', async () => {
+    const template = createTemplate();
+    const updatedTemplate = {
+      ...template,
+      approvedDurationMinutes: 90,
+      timingApprovalStatus: FixedTaskTimingApprovalStatus.APPROVED,
+    } as FixedTaskTemplateDocument;
+    repository.findRawById.mockResolvedValue(template);
+    repository.updateById.mockResolvedValue(updatedTemplate);
+    queryService.findById.mockResolvedValue(updatedTemplate);
+
+    await service.update(templateId.toString(), creatorId.toString(), {
+      approvedDurationMinutes: 90,
+    });
+
+    expect(repository.updateById).toHaveBeenCalledWith(
+      templateId,
+      expect.objectContaining({
+        approvedDurationMinutes: 90,
+        timingApprovalStatus: FixedTaskTimingApprovalStatus.APPROVED,
+        timingApprovedBy: creatorId,
+        timingApprovedAt: expect.any(Date),
       }),
     );
   });
