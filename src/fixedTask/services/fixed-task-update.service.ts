@@ -96,14 +96,9 @@ export class FixedTaskUpdateService {
       if (dto.status === FixedTaskStatus.DONE) {
         const doneTime = template.doneTime ?? new Date();
         updateData.doneTime = doneTime;
-        updateData.actualDurationMinutes = template.startedAt
-          ? Math.max(
-              1,
-              Math.ceil(
-                (doneTime.getTime() - template.startedAt.getTime()) / 60_000,
-              ),
-            )
-          : null;
+        updateData.actualDurationMinutes =
+          dto.actualDurationMinutes ??
+          this.calculateActualDurationMinutes(template, doneTime);
         updateData.approvedDurationMinutes = null;
         updateData.timingApprovalStatus =
           FixedTaskTimingApprovalStatus.PENDING;
@@ -117,6 +112,9 @@ export class FixedTaskUpdateService {
     if (dto.description !== undefined) updateData.description = dto.description;
     if (dto.taskComment !== undefined) {
       updateData.taskComment = dto.taskComment;
+    }
+    if (dto.actualDurationMinutes !== undefined && dto.status === undefined) {
+      updateData.actualDurationMinutes = dto.actualDurationMinutes;
     }
     if (dto.isActive !== undefined) updateData.isActive = dto.isActive;
     if (dto.nextRunAt !== undefined) updateData.nextRunAt = new Date(dto.nextRunAt);
@@ -157,11 +155,34 @@ export class FixedTaskUpdateService {
 
   private assertAssigneeStatusOnlyUpdate(dto: UpdateFixedTaskDto): void {
     const fields = Object.keys(dto);
-    if (dto.status === undefined || !fields.includes("status" )) {
+    const allowedFields = ['status', 'actualDurationMinutes'];
+    const hasOnlyAllowedFields = fields.every((field) =>
+      allowedFields.includes(field),
+    );
+
+    if (
+      dto.status === undefined ||
+      !fields.includes('status') ||
+      !hasOnlyAllowedFields
+    ) {
       throw new ForbiddenException(
-        'Fixed task assignee can only update the status',
+        'Fixed task assignee can only update the status and actual duration',
       );
     }
+  }
+
+  private calculateActualDurationMinutes(
+    template: FixedTaskTemplateDocument,
+    doneTime: Date,
+  ): number | null {
+    if (!template.startedAt) return null;
+
+    return Math.max(
+      1,
+      Math.ceil(
+        (doneTime.getTime() - template.startedAt.getTime()) / 60_000,
+      ),
+    );
   }
 
   private publishProgressRefresh(

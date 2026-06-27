@@ -79,6 +79,34 @@ describe('FixedTaskUpdateService', () => {
     );
   });
 
+  it('uses provided actual duration when assignee completes a fixed task', async () => {
+    const template = {
+      ...createTemplate(),
+      startedAt: new Date(Date.now() - 225 * 60_000),
+    } as FixedTaskTemplateDocument;
+    const updatedTemplate = {
+      ...template,
+      status: FixedTaskStatus.DONE,
+      actualDurationMinutes: 180,
+    } as FixedTaskTemplateDocument;
+    repository.findRawById.mockResolvedValue(template);
+    repository.updateById.mockResolvedValue(updatedTemplate);
+    queryService.findById.mockResolvedValue(updatedTemplate);
+
+    await service.update(templateId.toString(), assigneeId.toString(), {
+      status: FixedTaskStatus.DONE,
+      actualDurationMinutes: 180,
+    });
+
+    expect(repository.updateById).toHaveBeenCalledWith(
+      templateId,
+      expect.objectContaining({
+        actualDurationMinutes: 180,
+        timingApprovalStatus: FixedTaskTimingApprovalStatus.PENDING,
+      }),
+    );
+  });
+
   it('prevents the assignee from editing fixed task fields', async () => {
     repository.findRawById.mockResolvedValue(createTemplate());
 

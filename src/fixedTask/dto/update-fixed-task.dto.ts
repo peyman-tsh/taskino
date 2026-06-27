@@ -1,12 +1,15 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
   IsBoolean,
   IsDateString,
   IsEnum,
+  IsInt,
   IsMongoId,
   IsOptional,
   IsString,
   Matches,
+  Min,
 } from 'class-validator';
 import { FixedTaskRecurrence, FixedTaskStatus } from '../fixed-task.schema';
 import {
@@ -46,6 +49,17 @@ export class UpdateFixedTaskDto {
   @IsOptional()
   @IsString()
   taskComment?: string;
+
+  @ApiPropertyOptional({
+    description: 'Actual duration spent on the fixed task in minutes',
+    example: 225,
+    minimum: 0,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  actualDurationMinutes?: number;
 
   @ApiPropertyOptional()
   @IsOptional()
