@@ -12,6 +12,7 @@ import { ManagerLeaveRequestService } from './manager-leave-request.service';
 import { ManagerWorkStatusService } from './manager-work-status.service';
 import { FixedTaskService } from '../../fixedTask/services/fixed-task.service';
 import { FixedTaskTimingApprovalStatus } from '../../fixedTask/fixed-task.schema';
+import { TaskService } from '../../task/services/task.service';
 
 @Injectable()
 export class ManagerService extends BaseManagerService {
@@ -23,6 +24,7 @@ export class ManagerService extends BaseManagerService {
     private readonly managerLeaveRequestService: ManagerLeaveRequestService,
     private readonly managerWorkStatusService: ManagerWorkStatusService,
     private readonly fixedTaskService: FixedTaskService,
+    private readonly taskService: TaskService,
   ) {
     super();
   }
@@ -119,6 +121,11 @@ export class ManagerService extends BaseManagerService {
 
   findAllTasks(query: ManagerTasksQueryDto) {
     return this.managerTasksService.findAll(query);
+  }
+
+  findAllExtraTasks(query: PaginationQueryDto) {
+    const { page, limit } = this.getPagination(query);
+    return this.taskService.findAllExtraTasks(page, limit);
   }
 
   getDailyFixedTaskDurationBalance(

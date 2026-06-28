@@ -18,10 +18,12 @@ import { TaskReportService } from './task-report.service';
 import { TaskRepository } from '../repositories/task.repository';
 import { TaskListFilters, TaskQueryService } from './task-query.service';
 import { TaskUpdateService } from './task-update.service';
+import { UserRole } from '../../user/schemas/user.schema';
 import {
   TaskCreationResult,
   TaskCreationService,
 } from './task-creation.service';
+import { ExtraTaskApprovalStatus } from '../task.schema';
 
 /**
  * Task Service
@@ -92,8 +94,61 @@ export class TaskService {
     );
   }
 
+  findAllExtraTasks(page = 1, limit = 10) {
+    return this.taskQueryService.findAllExtraTasks(page, limit);
+  }
+
   findExtraTasksByUser(userId: string, page = 1, limit = 10) {
     return this.taskQueryService.findExtraTasksByUser(userId, page, limit);
+  }
+
+  async reviewExtraTaskApproval(
+    taskId: string,
+    supervisorId: string,
+    status: ExtraTaskApprovalStatus.APPROVED | ExtraTaskApprovalStatus.REJECTED,
+  ): Promise<TaskDocument> {
+    this.taskPolicy.validateObjectId(taskId);
+    this.taskPolicy.validateObjectId(supervisorId);
+
+    const [task, supervisor] = await Promise.all([
+      this.repository.findRawById(taskId),
+      this.taskPolicy.findUserById(supervisorId),
+    ]);
+
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+
+    if (!task.isExtraTask) {
+      throw new BadRequestException('Only extra tasks can be reviewed');
+    }
+
+    if (supervisor.roles !== UserRole.SUPERVISOR) {
+      throw new ForbiddenException('Only supervisors can review extra tasks');
+    }
+
+    const assigneeId = task.assignedTo[0]?.toString();
+    if (!assigneeId) {
+      throw new BadRequestException('Extra task must have one assignee');
+    }
+
+    const assignee = await this.taskPolicy.findUserById(assigneeId);
+    if (assignee.workField !== supervisor.workField) {
+      throw new ForbiddenException(
+        'Supervisor can only review extra tasks in their work field',
+      );
+    }
+
+    const updatedTask = await this.repository.updateById(taskId, {
+      extraTaskApprovalStatus: status,
+      extraTaskApprovedBy: new Types.ObjectId(supervisorId),
+      extraTaskApprovedAt: new Date(),
+    });
+    if (!updatedTask) {
+      throw new NotFoundException('Task not found');
+    }
+
+    return updatedTask;
   }
 
   /**

@@ -16,6 +16,12 @@ export enum TaskRecurrence {
   MONTHLY = 'monthly',
 }
 
+export enum ExtraTaskApprovalStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+}
+
 @Schema({ timestamps: true })
 export class Task {
   @Prop({ required: true })
@@ -73,6 +79,20 @@ export class Task {
 
   @Prop({ type: Boolean, default: false, index: true })
   isExtraTask: boolean;
+
+  @Prop({
+    type: String,
+    enum: ExtraTaskApprovalStatus,
+    default: null,
+    index: true,
+  })
+  extraTaskApprovalStatus?: ExtraTaskApprovalStatus | null;
+
+  @Prop({ type: Types.ObjectId, ref: User.name, default: null })
+  extraTaskApprovedBy?: Types.ObjectId | null;
+
+  @Prop({ type: Date, default: null })
+  extraTaskApprovedAt?: Date | null;
 
   @Prop({ type: Date })
   startDate?: Date;

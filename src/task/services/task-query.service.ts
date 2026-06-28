@@ -69,6 +69,16 @@ export class TaskQueryService {
     return { data, total, page, limit };
   }
 
+  async findAllExtraTasks(page: number, limit: number) {
+    const { data, total } = await this.repository.findPaginated(
+      { isExtraTask: true },
+      page,
+      limit,
+    );
+
+    return { data, total, page, limit };
+  }
+
   async findExtraTasksByUser(userId: string, page: number, limit: number) {
     this.policy.validateObjectId(userId);
     const { data, total } = await this.repository.findPaginated(

@@ -109,6 +109,7 @@ export class TaskRepository {
     return query
       .populate('createdBy', 'firstName lastName email')
       .populate('assignedTo', 'firstName lastName email')
+      .populate('extraTaskApprovedBy', 'firstName lastName email roles')
       .populate(
         'excelFile',
         'fileName originalName mimeType fileSize type status',

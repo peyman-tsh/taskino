@@ -1,5 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TaskRecurrence, TaskStatus } from '../task.schema';
+import {
+  ExtraTaskApprovalStatus,
+  TaskRecurrence,
+  TaskStatus,
+} from '../task.schema';
 
 export class TaskResponseDto {
   @ApiProperty()
@@ -40,6 +44,15 @@ export class TaskResponseDto {
 
   @ApiProperty()
   isExtraTask: boolean;
+
+  @ApiPropertyOptional({ enum: ExtraTaskApprovalStatus })
+  extraTaskApprovalStatus?: ExtraTaskApprovalStatus | null;
+
+  @ApiPropertyOptional({ type: Object })
+  extraTaskApprovedBy?: object | null;
+
+  @ApiPropertyOptional()
+  extraTaskApprovedAt?: Date | null;
 
   @ApiPropertyOptional({
     type: String,

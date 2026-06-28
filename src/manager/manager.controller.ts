@@ -47,6 +47,7 @@ import { ManagerUserScoreService } from './services/manager-user-score.service';
 import { WorkStatusRangeQueryDto } from './dto/work-status-range-query.dto';
 import { FixedTaskTimingApprovalDto } from './dto/fixed-task-timing-approval.dto';
 import { FixedTaskDurationBalanceQueryDto } from './dto/fixed-task-duration-balance-query.dto';
+import { PaginatedTasksResponseDto } from '../task/dto/task-response.dto';
 
 @ApiTags('Manager')
 @ApiBearerAuth()
@@ -209,6 +210,20 @@ export class ManagerController {
   @ApiOkResponse({ type: ManagerAllTasksResponseDto })
   getAllTasks(@Query() query: ManagerTasksQueryDto) {
     return this.managerService.findAllTasks(query);
+  }
+
+  @Get('extra-tasks')
+  @ApiOperation({
+    summary: 'Get all extra tasks',
+    description:
+      'Returns a paginated list of all extra tasks created by specialists.',
+  })
+  @ApiOkResponse({
+    description: 'Extra tasks retrieved successfully',
+    type: PaginatedTasksResponseDto,
+  })
+  findAllExtraTasks(@Query() query: PaginationQueryDto) {
+    return this.managerService.findAllExtraTasks(query);
   }
 
   @Get('fixed-tasks/daily-duration-balance')

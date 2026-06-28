@@ -134,6 +134,8 @@ For each active fixed task:
 1. Backend checks the task `recurrence`.
 2. Backend checks `scheduleConfig`.
 3. If today is not included in `scheduleConfig`, nothing is generated.
+   - For configured `daily` tasks, the active occurrence is also deactivated so it no longer appears in active-task lists.
+   - On the next configured day, backend can create the next occurrence from the latest previous occurrence, even if that previous occurrence is inactive.
 4. If the current occurrence was already generated today, backend skips it.
 5. If today is valid, backend deactivates the old occurrence:
 

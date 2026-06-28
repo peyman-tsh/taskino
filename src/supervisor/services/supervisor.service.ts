@@ -8,6 +8,8 @@ import {
 import { SupervisorStatisticsService } from './supervisor-statistics.service';
 import { SupervisorMemberService } from './supervisor-member.service';
 import { SupervisorWorkService } from './supervisor-work.service';
+import { TaskService } from '../../task/services/task.service';
+import { ExtraTaskApprovalStatus } from '../../task/task.schema';
 
 @Injectable()
 export class SupervisorService {
@@ -15,6 +17,7 @@ export class SupervisorService {
     private readonly statisticsService: SupervisorStatisticsService,
     private readonly memberService: SupervisorMemberService,
     private readonly workService: SupervisorWorkService,
+    private readonly taskService: TaskService,
   ) {}
 
   getStatistics(supervisorId: string, query: SupervisorRecurrenceQueryDto) {
@@ -41,5 +44,17 @@ export class SupervisorService {
     query: SupervisorPaginationQueryDto,
   ) {
     return this.memberService.findWorkFieldSpecialists(supervisorId, query);
+  }
+
+  reviewExtraTaskApproval(
+    taskId: string,
+    supervisorId: string,
+    status: ExtraTaskApprovalStatus.APPROVED | ExtraTaskApprovalStatus.REJECTED,
+  ) {
+    return this.taskService.reviewExtraTaskApproval(
+      taskId,
+      supervisorId,
+      status,
+    );
   }
 }

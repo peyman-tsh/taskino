@@ -16,9 +16,11 @@ import { SupervisorMemberService } from './services/supervisor-member.service';
 import { SupervisorStatisticsRepository } from './repositories/supervisor-statistics.repository';
 import { SupervisorWorkService } from './services/supervisor-work.service';
 import { SupervisorMemberWorkRepository } from './repositories/supervisor-member-work.repository';
+import { TaskModule } from '../task/task.module';
 
 @Module({
   imports: [
+    TaskModule,
     MongooseModule.forFeature([
       { name: Task.name, schema: TaskSchema },
       { name: FixedTaskTemplate.name, schema: FixedTaskTemplateSchema },

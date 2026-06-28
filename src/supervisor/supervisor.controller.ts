@@ -1,14 +1,17 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Query, UseGuards } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
 import { CurrentUserId } from '../auth/decorators/current-user-id.decorator';
 import { JwtAuthGuard } from '../auth/guard/jwt.guard';
 import { PaginatedFixedTasksResponseDto } from '../fixedTask/dto/fixed-task-response.dto';
-import { PaginatedTasksResponseDto } from '../task/dto/task-response.dto';
+import { PaginatedTasksResponseDto, TaskResponseDto } from '../task/dto/task-response.dto';
 import { Roles } from '../user/roles.decorator';
 import { RolesGuard } from '../user/roles.guard';
 import { UserRole } from '../user/schemas/user.schema';
@@ -24,6 +27,8 @@ import {
   SupervisorStatisticsResponseDto,
 } from './dto/supervisor-response.dto';
 import { SupervisorService } from './services/supervisor.service';
+import { MongoIdParamDto } from '../manager/dto/mongo-id-param.dto';
+import { ExtraTaskApprovalDto } from '../manager/dto/extra-task-approval.dto';
 
 @ApiTags('Supervisor')
 @ApiBearerAuth()
@@ -104,5 +109,30 @@ export class SupervisorController {
     @Query() query: SupervisorFixedTasksQueryDto,
   ) {
     return this.supervisorService.findSupervisedFixedTasks(supervisorId, query);
+  }
+
+  @Patch('extra-tasks/:id/approval')
+  @ApiOperation({
+    summary: 'Approve or reject a specialist extra task',
+    description:
+      'Supervisor reviews an extra task created by a specialist in the same work field.',
+  })
+  @ApiParam({ name: 'id', description: 'Extra task ID' })
+  @ApiOkResponse({
+    description: 'Extra task reviewed successfully',
+    type: TaskResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Invalid extra task or approval body' })
+  @ApiNotFoundResponse({ description: 'Task not found' })
+  reviewExtraTaskApproval(
+    @Param() params: MongoIdParamDto,
+    @CurrentUserId() supervisorId: string,
+    @Body() dto: ExtraTaskApprovalDto,
+  ) {
+    return this.supervisorService.reviewExtraTaskApproval(
+      params.id,
+      supervisorId,
+      dto.status,
+    );
   }
 }

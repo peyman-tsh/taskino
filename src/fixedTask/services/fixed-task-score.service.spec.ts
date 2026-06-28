@@ -103,6 +103,24 @@ describe('FixedTaskScoreService', () => {
     );
   });
 
+  it('subtracts 10 when actual duration exceeds approved duration', async () => {
+    const task = createTask(FixedTaskStatus.DONE, {
+      endDate: new Date(2026, 5, 12),
+      endTime: '12:00',
+      doneTime: new Date(2026, 5, 12, 11, 0),
+      actualDurationMinutes: 4,
+      approvedDurationMinutes: 2,
+    });
+    repository.claimScoreAdjustment.mockResolvedValue(task);
+
+    await service.adjustTaskScore(task);
+
+    expect(userService.adjustSpecialistScore).toHaveBeenCalledWith(
+      userId.toString(),
+      -10,
+    );
+  });
+
   it('does not apply fixed task score twice', async () => {
     const task = createTask(FixedTaskStatus.DONE, {
       endDate: new Date(2026, 5, 12),
@@ -123,6 +141,8 @@ describe('FixedTaskScoreService', () => {
       endDate?: Date;
       doneTime?: Date;
       endTime?: string;
+      actualDurationMinutes?: number;
+      approvedDurationMinutes?: number;
     },
   ): FixedTaskTemplateDocument {
     return {

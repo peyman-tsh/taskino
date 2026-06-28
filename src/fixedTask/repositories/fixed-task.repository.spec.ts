@@ -62,6 +62,7 @@ describe('FixedTaskRepository rollover', () => {
         sourceExcel: 'source.xlsx',
         sourceSheet: 'Sheet',
         sourceRow: expect.any(Number),
+        originalSourceRow: 2,
       }),
     );
     expect(model.mock.calls[0][0].sourceRow).toBeLessThan(0);

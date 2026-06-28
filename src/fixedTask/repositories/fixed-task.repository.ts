@@ -101,6 +101,19 @@ export class FixedTaskRepository {
       .exec();
   }
 
+  findDailyRolloverCandidates() {
+    return this.model
+      .find({
+        recurrence: FixedTaskRecurrence.DAILY,
+        $or: [
+          { isActive: true },
+          { 'scheduleConfig.weekdays.0': { $exists: true } },
+        ],
+      })
+      .sort({ createdAt: -1, _id: -1 })
+      .exec();
+  }
+
   claimExpiredOccurrence(id: Types.ObjectId, generatedAt: Date) {
     return this.model
       .findOneAndUpdate(
@@ -170,6 +183,7 @@ export class FixedTaskRepository {
       sourceExcel: previous.sourceExcel,
       sourceSheet: previous.sourceSheet,
       sourceRow: occurrenceSourceRow,
+      originalSourceRow: previous.originalSourceRow ?? previous.sourceRow,
     }).save();
   }
 

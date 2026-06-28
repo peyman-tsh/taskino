@@ -14,6 +14,7 @@ import { HolidayService } from '../../holiday/services/holiday.service';
 describe('FixedTaskRolloverService', () => {
   const repository = {
     findActiveRolloverCandidates: jest.fn(),
+    findDailyRolloverCandidates: jest.fn(),
     claimExpiredOccurrence: jest.fn(),
     createNextOccurrence: jest.fn(),
     reactivateOccurrence: jest.fn(),
@@ -41,13 +42,11 @@ describe('FixedTaskRolloverService', () => {
   });
 
   it('runs daily rollover through the daily scheduled handler', async () => {
-    repository.findActiveRolloverCandidates.mockResolvedValue([]);
+    repository.findDailyRolloverCandidates.mockResolvedValue([]);
 
     await service.handleDailyRollover();
 
-    expect(repository.findActiveRolloverCandidates).toHaveBeenCalledWith(
-      FixedTaskRecurrence.DAILY,
-    );
+    expect(repository.findDailyRolloverCandidates).toHaveBeenCalled();
   });
 
   it('skips daily rollover on non-working days', async () => {
@@ -83,7 +82,7 @@ describe('FixedTaskRolloverService', () => {
       FixedTaskRecurrence.DAILY,
       FixedTaskStatus.IN_PROGRESS,
     );
-    repository.findActiveRolloverCandidates.mockResolvedValue([task]);
+    repository.findDailyRolloverCandidates.mockResolvedValue([task]);
     repository.claimExpiredOccurrence.mockResolvedValue(task);
     repository.createNextOccurrence.mockResolvedValue({ _id: new Types.ObjectId() });
 
@@ -91,9 +90,7 @@ describe('FixedTaskRolloverService', () => {
       service.runForRecurrence(FixedTaskRecurrence.DAILY, now),
     ).resolves.toBe(1);
 
-    expect(repository.findActiveRolloverCandidates).toHaveBeenCalledWith(
-      FixedTaskRecurrence.DAILY,
-    );
+    expect(repository.findDailyRolloverCandidates).toHaveBeenCalled();
 
     expect(repository.claimExpiredOccurrence).toHaveBeenCalledWith(
       task._id,
@@ -116,7 +113,7 @@ describe('FixedTaskRolloverService', () => {
 
   it('rolls over a completed occurrence regardless of its deadline', async () => {
     const task = createTask(FixedTaskRecurrence.DAILY, FixedTaskStatus.DONE);
-    repository.findActiveRolloverCandidates.mockResolvedValue([task]);
+    repository.findDailyRolloverCandidates.mockResolvedValue([task]);
     repository.claimExpiredOccurrence.mockResolvedValue(task);
     repository.createNextOccurrence.mockResolvedValue({
       _id: new Types.ObjectId(),
@@ -132,6 +129,47 @@ describe('FixedTaskRolloverService', () => {
       now,
     );
     expect(repository.createNextOccurrence).toHaveBeenCalled();
+  });
+
+  it('deactivates scheduled daily work on unscheduled weekdays without creating a new occurrence', async () => {
+    const task = createTask(FixedTaskRecurrence.DAILY, FixedTaskStatus.TODO);
+    task.scheduleConfig = { weekdays: [6, 0, 1] };
+    repository.findDailyRolloverCandidates.mockResolvedValue([task]);
+    repository.claimExpiredOccurrence.mockResolvedValue(task);
+
+    await expect(
+      service.runForRecurrence(FixedTaskRecurrence.DAILY, now),
+    ).resolves.toBe(0);
+
+    expect(scoreService.adjustTaskScore).toHaveBeenCalledWith(task);
+    expect(repository.claimExpiredOccurrence).toHaveBeenCalledWith(
+      task._id,
+      now,
+    );
+    expect(repository.createNextOccurrence).not.toHaveBeenCalled();
+  });
+
+  it('creates scheduled daily work from the latest inactive occurrence', async () => {
+    const sunday = new Date('2026-06-21T11:05:00.000Z');
+    const task = createTask(FixedTaskRecurrence.DAILY, FixedTaskStatus.TODO);
+    task.isActive = false;
+    task.scheduleConfig = { weekdays: [0] };
+    repository.findDailyRolloverCandidates.mockResolvedValue([task]);
+    repository.createNextOccurrence.mockResolvedValue({
+      _id: new Types.ObjectId(),
+    });
+
+    await expect(
+      service.runForRecurrence(FixedTaskRecurrence.DAILY, sunday),
+    ).resolves.toBe(1);
+
+    expect(repository.claimExpiredOccurrence).not.toHaveBeenCalled();
+    expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
+      startDate: sunday,
+      startTime: '14:35',
+      endDate: new Date('2026-06-21T20:30:00.000Z'),
+      endTime: '00:01',
+    });
   });
 
   it('rolls over unfinished work regardless of its deadline', async () => {

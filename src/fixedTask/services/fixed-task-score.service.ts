@@ -48,12 +48,26 @@ export class FixedTaskScoreService {
     }
 
     if (task.status === FixedTaskStatus.DONE) {
+      if (this.exceededApprovedDuration(task)) {
+        return -10;
+      }
+
       return task.doneTime && task.doneTime.getTime() <= deadline.getTime()
         ? 10
         : -10;
     }
 
     return deadline.getTime() < Date.now() ? -10 : null;
+  }
+
+  private exceededApprovedDuration(task: FixedTaskTemplateDocument): boolean {
+    return (
+      task.approvedDurationMinutes !== null &&
+      task.approvedDurationMinutes !== undefined &&
+      task.actualDurationMinutes !== null &&
+      task.actualDurationMinutes !== undefined &&
+      task.actualDurationMinutes > task.approvedDurationMinutes
+    );
   }
 
 }

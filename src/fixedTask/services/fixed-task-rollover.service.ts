@@ -62,14 +62,19 @@ export class FixedTaskRolloverService {
     this.runningRecurrences.add(recurrence);
 
     try {
-      const candidates =
-        await this.repository.findActiveRolloverCandidates(recurrence);
+      const candidates = await this.findRolloverCandidates(recurrence);
       let createdCount = 0;
 
       for (const candidate of candidates) {
-        if (!this.shouldGenerateToday(candidate, now)) continue;
+        if (!this.shouldGenerateToday(candidate, now)) {
+          await this.deactivateUnscheduledDailyTask(candidate, now);
+          continue;
+        }
         if (this.startedToday(candidate, now)) continue;
-        if (!(await this.rolloverIfExpired(candidate, now))) continue;
+        const created = candidate.isActive
+          ? await this.rolloverIfExpired(candidate, now)
+          : await this.createNextOccurrenceFromPrevious(candidate, now);
+        if (!created) continue;
         createdCount += 1;
       }
 
@@ -88,6 +93,49 @@ export class FixedTaskRolloverService {
     return counts.reduce((total, count) => total + count, 0);
   }
 
+  private async findRolloverCandidates(
+    recurrence: FixedTaskRecurrence,
+  ): Promise<FixedTaskTemplateDocument[]> {
+    if (recurrence !== FixedTaskRecurrence.DAILY) {
+      return this.repository.findActiveRolloverCandidates(recurrence);
+    }
+
+    const candidates = await this.repository.findDailyRolloverCandidates();
+    const latestBySeries = new Map<string, FixedTaskTemplateDocument>();
+
+    for (const candidate of candidates) {
+      const seriesKey = this.getSeriesKey(candidate);
+      const existing = latestBySeries.get(seriesKey);
+      if (!existing || (candidate.isActive && !existing.isActive)) {
+        latestBySeries.set(seriesKey, candidate);
+      }
+    }
+
+    return Array.from(latestBySeries.values());
+  }
+
+  private async deactivateUnscheduledDailyTask(
+    candidate: FixedTaskTemplateDocument,
+    now: Date,
+  ): Promise<void> {
+    if (
+      candidate.recurrence !== FixedTaskRecurrence.DAILY ||
+      !candidate.isActive ||
+      !this.hasScheduleConfig(candidate)
+    ) {
+      return;
+    }
+
+    await this.scoreService.adjustTaskScore(candidate);
+    const claimed = await this.repository.claimExpiredOccurrence(
+      candidate._id,
+      now,
+    );
+    if (!claimed) return;
+
+    this.publishProgressRefresh(candidate);
+  }
+
   private async rolloverIfExpired(
     candidate: FixedTaskTemplateDocument,
     now: Date,
@@ -101,14 +149,7 @@ export class FixedTaskRolloverService {
     if (!claimed) return false;
 
     try {
-      const schedule = buildFixedTaskSeedSchedule(candidate.recurrence, now);
-      await this.repository.createNextOccurrence(candidate, schedule);
-      this.eventBus.publish(
-        UserProgressEvents.REFRESH_REQUESTED,
-        new UserProgressRefreshRequestedEvent([
-          candidate.assignedTo.toString(),
-        ]),
-      );
+      await this.createNextOccurrence(candidate, now);
       return true;
     } catch (error) {
       await this.repository.reactivateOccurrence(candidate._id);
@@ -118,6 +159,38 @@ export class FixedTaskRolloverService {
       );
       return false;
     }
+  }
+
+  private async createNextOccurrenceFromPrevious(
+    candidate: FixedTaskTemplateDocument,
+    now: Date,
+  ): Promise<boolean> {
+    try {
+      await this.createNextOccurrence(candidate, now);
+      return true;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        `Failed to create next fixed task occurrence from "${candidate._id.toString()}": ${message}`,
+      );
+      return false;
+    }
+  }
+
+  private async createNextOccurrence(
+    candidate: FixedTaskTemplateDocument,
+    now: Date,
+  ): Promise<void> {
+    const schedule = buildFixedTaskSeedSchedule(candidate.recurrence, now);
+    await this.repository.createNextOccurrence(candidate, schedule);
+    this.publishProgressRefresh(candidate);
+  }
+
+  private publishProgressRefresh(candidate: FixedTaskTemplateDocument): void {
+    this.eventBus.publish(
+      UserProgressEvents.REFRESH_REQUESTED,
+      new UserProgressRefreshRequestedEvent([candidate.assignedTo.toString()]),
+    );
   }
 
   private shouldGenerateToday(
@@ -193,5 +266,20 @@ export class FixedTaskRolloverService {
       day: parts.day,
       weekday: calendarDate.getUTCDay(),
     };
+  }
+
+  private getSeriesKey(candidate: FixedTaskTemplateDocument): string {
+    const sourceIdentity =
+      candidate.originalSourceRow ??
+      `${candidate.title}:${candidate.description}`;
+
+    return [
+      candidate.recurrence,
+      candidate.assignedTo.toString(),
+      candidate.createdBy.toString(),
+      candidate.sourceExcel ?? '',
+      candidate.sourceSheet ?? '',
+      sourceIdentity,
+    ].join('|');
   }
 }

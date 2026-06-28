@@ -8,7 +8,11 @@ import {
   TaskCreateData,
   TaskRepository,
 } from '../repositories/task.repository';
-import { TaskDocument, TaskStatus } from '../task.schema';
+import {
+  ExtraTaskApprovalStatus,
+  TaskDocument,
+  TaskStatus,
+} from '../task.schema';
 import { TaskNotificationService } from './task-notification.service';
 import { TaskPolicyService } from './task-policy.service';
 import { TaskScoreService } from './task-score.service';
@@ -66,6 +70,7 @@ export class TaskCreationService {
       assignedTo,
     );
     taskData.isExtraTask = true;
+    taskData.extraTaskApprovalStatus = ExtraTaskApprovalStatus.PENDING;
 
     const task = await this.repository.create(taskData);
     await this.runPostCreationActions(task, assignedTo);
