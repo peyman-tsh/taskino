@@ -90,6 +90,38 @@ export class ManagerService extends BaseManagerService {
     );
   }
 
+  getOverdueFixedTasks(
+    managerId: string,
+    from: string,
+    to: string,
+    userId?: string,
+  ) {
+    this.toObjectId(managerId, 'manager ID');
+    if (userId) this.toObjectId(userId, 'user ID');
+    return this.managerWorkStatusService.getOverdueFixedTasks(
+      managerId,
+      from,
+      to,
+      userId,
+    );
+  }
+
+  getDoneFixedTasks(
+    managerId: string,
+    from: string,
+    to: string,
+    userId?: string,
+  ) {
+    this.toObjectId(managerId, 'manager ID');
+    if (userId) this.toObjectId(userId, 'user ID');
+    return this.managerWorkStatusService.getDoneFixedTasks(
+      managerId,
+      from,
+      to,
+      userId,
+    );
+  }
+
   reviewFixedTaskTiming(
     fixedTaskId: string,
     managerId: string,

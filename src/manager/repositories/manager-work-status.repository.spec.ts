@@ -1,13 +1,14 @@
 import { Model } from 'mongoose';
 import {
   FixedTaskTemplateDocument,
+  FixedTaskStatus,
   FixedTaskTimingApprovalStatus,
 } from '../../fixedTask/fixed-task.schema';
-import { TaskDocument } from '../../task/task.schema';
+import { TaskDocument, TaskStatus } from '../../task/task.schema';
 import { ManagerWorkStatusRepository } from './manager-work-status.repository';
 
 describe('ManagerWorkStatusRepository', () => {
-  it('filters regular and fixed tasks by startDate with createdAt fallback', async () => {
+  it('filters regular and fixed tasks by date overlap with createdAt fallback', async () => {
     const taskExec = jest.fn().mockResolvedValue([]);
     const taskLean = jest.fn().mockReturnValue({ exec: taskExec });
     const taskSelect = jest.fn().mockReturnValue({ lean: taskLean });
@@ -23,9 +24,36 @@ describe('ManagerWorkStatusRepository', () => {
     const from = new Date('2026-06-01T00:00:00.000Z');
     const to = new Date('2026-06-30T23:59:59.999Z');
     const managerId = '6a39043bfc4f15b8c14eb3de';
-    const filter = {
+    const taskFilter = {
       $or: [
+        { status: TaskStatus.IN_PROGRESS },
+        {
+          startDate: { $lte: to },
+          endDate: { $gte: from },
+        },
+        {
+          startDate: { $lte: to },
+          dueDate: { $gte: from },
+        },
         { startDate: { $gte: from, $lte: to } },
+        { endDate: { $gte: from, $lte: to } },
+        { dueDate: { $gte: from, $lte: to } },
+        {
+          startDate: null,
+          createdAt: { $gte: from, $lte: to },
+        },
+      ],
+    };
+    const fixedFilter = {
+      $or: [
+        { status: FixedTaskStatus.IN_PROGRESS, isActive: true },
+        { status: FixedTaskStatus.TODO, isActive: true },
+        {
+          startDate: { $lte: to },
+          endDate: { $gte: from },
+        },
+        { startDate: { $gte: from, $lte: to } },
+        { endDate: { $gte: from, $lte: to } },
         {
           startDate: null,
           createdAt: { $gte: from, $lte: to },
@@ -34,21 +62,14 @@ describe('ManagerWorkStatusRepository', () => {
     };
     const fixedTaskFilter = {
       $and: [
-        filter,
-        {
-          $nor: [
-            {
-              timingApprovalStatus: FixedTaskTimingApprovalStatus.REJECTED,
-              timingApprovedBy: expect.anything(),
-            },
-          ],
-        },
+        fixedFilter,
+        { timingApprovalStatus: { $ne: FixedTaskTimingApprovalStatus.REJECTED } },
       ],
     };
 
     await repository.findByDateRange(from, to, managerId);
 
-    expect(taskFind).toHaveBeenCalledWith(filter);
+    expect(taskFind).toHaveBeenCalledWith(taskFilter);
     expect(fixedFind).toHaveBeenCalledWith(fixedTaskFilter);
   });
 });

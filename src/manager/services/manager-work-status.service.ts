@@ -33,8 +33,13 @@ export class ManagerWorkStatusService {
       managerId,
     );
     const evaluatedAt = new Date();
-    const taskCounts = this.countStatuses(tasks, evaluatedAt);
-    const fixedTaskCounts = this.countStatuses(fixedTasks, evaluatedAt);
+    const taskCounts = this.countStatuses(tasks, evaluatedAt, from, to);
+    const fixedTaskCounts = this.countStatuses(
+      fixedTasks,
+      evaluatedAt,
+      from,
+      to,
+    );
 
     return {
       from,
@@ -75,16 +80,49 @@ export class ManagerWorkStatusService {
       from,
       to,
       evaluatedAt,
-      users: this.groupByUser(tasks, fixedTasks, evaluatedAt),
+      users: this.groupByUser(tasks, fixedTasks, evaluatedAt, from, to),
     };
+  }
+
+  async getOverdueFixedTasks(
+    _managerId: string,
+    fromValue: string,
+    toValue: string,
+    userId?: string,
+  ) {
+    const { from, to } = this.parseDateRange(fromValue, toValue);
+    const evaluatedAt = new Date();
+    const data = await this.repository.findOverdueFixedTasks(
+      from,
+      to,
+      evaluatedAt,
+      userId,
+    );
+
+    return { from, to, evaluatedAt, total: data.length, userId, data };
+  }
+
+  async getDoneFixedTasks(
+    _managerId: string,
+    fromValue: string,
+    toValue: string,
+    userId?: string,
+  ) {
+    const { from, to } = this.parseDateRange(fromValue, toValue);
+    const evaluatedAt = new Date();
+    const data = await this.repository.findDoneFixedTasks(from, to, userId);
+
+    return { from, to, evaluatedAt, total: data.length, userId, data };
   }
 
   private countStatuses(
     items: WorkStatusItem[],
     now: Date,
+    from: Date,
+    to: Date,
   ): WorkStatusCounts {
     const counts: WorkStatusCounts = {
-      total: items.length,
+      total: 0,
       done: 0,
       inProgress: 0,
       todo: 0,
@@ -92,6 +130,16 @@ export class ManagerWorkStatusService {
     };
 
     for (const item of items) {
+      if (this.isInProgress(item)) {
+        counts.total += 1;
+        counts.inProgress += 1;
+        continue;
+      }
+
+      if (!this.isInSelectedRange(item, from, to)) continue;
+
+      counts.total += 1;
+
       if (
         item.status === TaskStatus.DONE ||
         item.status === FixedTaskStatus.DONE
@@ -100,7 +148,7 @@ export class ManagerWorkStatusService {
         continue;
       }
 
-      if (this.isOverdue(item, now)) {
+      if (this.isOverdueInRange(item, now, from, to)) {
         counts.overdueUnfinished += 1;
         continue;
       }
@@ -122,19 +170,27 @@ export class ManagerWorkStatusService {
     tasks: WorkStatusUserItem[],
     fixedTasks: WorkStatusUserItem[],
     now: Date,
+    from: Date,
+    to: Date,
   ): UserWorkStatusCounts[] {
     const users = new Map<string, UserWorkStatusCounts>();
 
     for (const task of tasks) {
       const userCounts = this.getOrCreateUserCounts(users, task.user);
       if (!userCounts) continue;
-      this.incrementTaskCounts(userCounts.tasks, task, now);
+      this.incrementTaskCounts(userCounts.tasks, task, now, from, to);
     }
 
     for (const fixedTask of fixedTasks) {
       const userCounts = this.getOrCreateUserCounts(users, fixedTask.user);
       if (!userCounts) continue;
-      this.incrementFixedTaskCounts(userCounts.fixedTasks, fixedTask, now);
+      this.incrementFixedTaskCounts(
+        userCounts.fixedTasks,
+        fixedTask,
+        now,
+        from,
+        to,
+      );
     }
 
     return [...users.values()].sort((first, second) =>
@@ -169,7 +225,17 @@ export class ManagerWorkStatusService {
     counts: WorkStatusCounts,
     item: WorkStatusItem,
     now: Date,
+    from: Date,
+    to: Date,
   ): void {
+    if (item.status === TaskStatus.IN_PROGRESS) {
+      counts.total += 1;
+      counts.inProgress += 1;
+      return;
+    }
+
+    if (!this.isInSelectedRange(item, from, to)) return;
+
     counts.total += 1;
 
     if (item.status === TaskStatus.DONE) {
@@ -177,13 +243,8 @@ export class ManagerWorkStatusService {
       return;
     }
 
-    if (this.isOverdue(item, now)) {
+    if (this.isOverdueInRange(item, now, from, to)) {
       counts.overdueUnfinished += 1;
-      return;
-    }
-
-    if (item.status === TaskStatus.IN_PROGRESS) {
-      counts.inProgress += 1;
       return;
     }
 
@@ -194,31 +255,36 @@ export class ManagerWorkStatusService {
     counts: WorkStatusCounts,
     item: WorkStatusItem,
     now: Date,
+    from: Date,
+    to: Date,
   ): void {
-    if (item.isActive) {
-      if (item.status === FixedTaskStatus.DONE) {
-        counts.done += 1;
-        counts.total += 1;
-        return;
-      }
-
-      if (item.status === FixedTaskStatus.IN_PROGRESS) {
-        counts.inProgress += 1;
-        counts.total += 1;
-        return;
-      }
-
-      if (item.status === FixedTaskStatus.TODO) {
-        counts.todo += 1;
-        counts.total += 1;
-      }
+    if (item.isActive && item.status === FixedTaskStatus.IN_PROGRESS) {
+      counts.inProgress += 1;
+      counts.total += 1;
       return;
     }
 
-    if (item.status !== FixedTaskStatus.DONE && this.isOverdue(item, now)) {
+    if (item.isActive && item.status === FixedTaskStatus.TODO) {
+      counts.todo += 1;
+      counts.total += 1;
+      return;
+    }
+
+    if (!this.isInSelectedRange(item, from, to)) return;
+
+    if (item.status === FixedTaskStatus.DONE) {
+      counts.done += 1;
+      counts.total += 1;
+      return;
+    }
+
+    if (this.isInactiveUnfinishedFixedTask(item) && this.isOverdueInRange(item, now, from, to)) {
       counts.overdueUnfinished += 1;
       counts.total += 1;
+      return;
     }
+
+    if (item.isActive) return;
   }
 
   private createEmptyCounts(): WorkStatusCounts {
@@ -231,19 +297,65 @@ export class ManagerWorkStatusService {
     };
   }
 
-  private isOverdue(item: WorkStatusItem, now: Date): boolean {
+  private isInProgress(item: WorkStatusItem): boolean {
+    return (
+      item.status === TaskStatus.IN_PROGRESS ||
+      item.status === FixedTaskStatus.IN_PROGRESS
+    );
+  }
+
+  private isInactiveUnfinishedFixedTask(item: WorkStatusItem): boolean {
+    return (
+      item.isActive === false &&
+      (item.status === FixedTaskStatus.TODO ||
+        item.status === FixedTaskStatus.IN_PROGRESS)
+    );
+  }
+
+  private isOverdueInRange(
+    item: WorkStatusItem,
+    now: Date,
+    from: Date,
+    to: Date,
+  ): boolean {
+    if (!(item.startDate instanceof Date)) return false;
+
+    const deadline = this.getDeadline(item);
+    if (!deadline) return false;
+
+    return (
+      deadline.getTime() < now.getTime() &&
+      this.isInSelectedRange(item, from, to)
+    );
+  }
+
+  private isInSelectedRange(
+    item: WorkStatusItem,
+    from: Date,
+    to: Date,
+  ): boolean {
+    if (!(item.startDate instanceof Date)) return false;
+
+    const deadline = this.getDeadline(item);
+    if (!deadline) return false;
+
+    return (
+      item.startDate.getTime() >= from.getTime() &&
+      deadline.getTime() <= to.getTime()
+    );
+  }
+
+  private getDeadline(item: WorkStatusItem): Date | null {
     const date = item.endDate ?? item.dueDate;
-    if (!(date instanceof Date)) return false;
+    if (!(date instanceof Date)) return null;
 
     const deadline = new Date(date);
     if (item.endTime) {
       const [hours, minutes] = item.endTime.split(':').map(Number);
       deadline.setHours(hours, minutes, 0, 0);
-    } else {
-      deadline.setHours(23, 59, 59, 999);
     }
 
-    return deadline.getTime() < now.getTime();
+    return deadline;
   }
 
   private parseBoundary(value: string, endOfDay: boolean): Date {
@@ -257,5 +369,18 @@ export class ManagerWorkStatusService {
       else date.setHours(0, 0, 0, 0);
     }
     return date;
+  }
+
+  private parseDateRange(
+    fromValue: string,
+    toValue: string,
+  ): { from: Date; to: Date } {
+    const from = this.parseBoundary(fromValue, false);
+    const to = this.parseBoundary(toValue, true);
+    if (to.getTime() < from.getTime()) {
+      throw new BadRequestException('to must be on or after from');
+    }
+
+    return { from, to };
   }
 }

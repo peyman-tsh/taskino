@@ -207,6 +207,26 @@ export class UserWorkStatusSummaryResponseDto {
   users: UserWorkStatusSummaryItemDto[];
 }
 
+export class FixedTaskDocumentListResponseDto {
+  @ApiProperty()
+  from: Date;
+
+  @ApiProperty()
+  to: Date;
+
+  @ApiProperty()
+  evaluatedAt: Date;
+
+  @ApiProperty()
+  total: number;
+
+  @ApiProperty({ required: false })
+  userId?: string;
+
+  @ApiProperty({ type: [Object] })
+  data: object[];
+}
+
 export class FixedTaskDurationBalanceResponseDto {
   @ApiProperty()
   from: Date;

@@ -3,6 +3,7 @@ import { TaskStatus } from '../../task/task.schema';
 
 export interface WorkStatusItem {
   status: TaskStatus | FixedTaskStatus;
+  startDate?: Date;
   dueDate?: Date;
   endDate?: Date;
   endTime?: string;

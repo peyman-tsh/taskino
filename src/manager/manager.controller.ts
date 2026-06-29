@@ -32,6 +32,7 @@ import {
   UserResponseDto,
   WorkStatusRangeResponseDto,
   UserWorkStatusSummaryResponseDto,
+  FixedTaskDocumentListResponseDto,
   FixedTaskDurationBalanceResponseDto,
 } from './dto/manager-response.dto';
 import { MongoIdParamDto } from './dto/mongo-id-param.dto';
@@ -175,7 +176,7 @@ export class ManagerController {
   @ApiOperation({
     summary: 'Get per-user task and fixed-task status counts for a date range',
     description:
-      'Groups regular Task and FixedTask counts by assigned user, or returns one user when userId is provided. FixedTask done, todo, and in-progress counts only include isActive=true records; expired unfinished FixedTasks only include isActive=false records.',
+      'Groups regular Task and FixedTask counts by assigned user, or returns one user when userId is provided. Records are included when their start/end/due date overlaps the selected range. FixedTask done, todo, and in-progress counts only include isActive=true records; expired unfinished FixedTasks only include isActive=false records.',
   })
   @ApiOkResponse({
     description: 'Per-user work status summary retrieved successfully',
@@ -187,6 +188,52 @@ export class ManagerController {
     @Query() query: WorkStatusRangeQueryDto,
   ) {
     return this.managerService.getUserWorkStatusCounts(
+      managerId,
+      query.from,
+      query.to,
+      query.userId,
+    );
+  }
+
+  @Get('fixed-tasks/overdue')
+  @ApiOperation({
+    summary: 'Get overdue fixed-task documents',
+    description:
+      'Returns overdue FixedTask documents in the selected date range. When userId is provided, only that user is returned; otherwise all users are included.',
+  })
+  @ApiOkResponse({
+    description: 'Overdue fixed tasks retrieved successfully',
+    type: FixedTaskDocumentListResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Invalid date range or user ID' })
+  getOverdueFixedTasks(
+    @CurrentUserId() managerId: string,
+    @Query() query: WorkStatusRangeQueryDto,
+  ) {
+    return this.managerService.getOverdueFixedTasks(
+      managerId,
+      query.from,
+      query.to,
+      query.userId,
+    );
+  }
+
+  @Get('fixed-tasks/done')
+  @ApiOperation({
+    summary: 'Get done fixed-task documents',
+    description:
+      'Returns completed FixedTask documents in the selected date range. When userId is provided, only that user is returned; otherwise all users are included.',
+  })
+  @ApiOkResponse({
+    description: 'Done fixed tasks retrieved successfully',
+    type: FixedTaskDocumentListResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Invalid date range or user ID' })
+  getDoneFixedTasks(
+    @CurrentUserId() managerId: string,
+    @Query() query: WorkStatusRangeQueryDto,
+  ) {
+    return this.managerService.getDoneFixedTasks(
       managerId,
       query.from,
       query.to,
