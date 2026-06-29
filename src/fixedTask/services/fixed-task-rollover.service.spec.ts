@@ -172,6 +172,44 @@ describe('FixedTaskRolloverService', () => {
     });
   });
 
+  it('sets configured daily endDate to the end of the current continuous weekday block', async () => {
+    const saturday = new Date('2026-06-20T11:05:00.000Z');
+    const task = createTask(FixedTaskRecurrence.DAILY, FixedTaskStatus.TODO);
+    task.scheduleConfig = { weekdays: [6, 0, 1, 3, 4, 5] };
+    repository.findDailyRolloverCandidates.mockResolvedValue([task]);
+    repository.claimExpiredOccurrence.mockResolvedValue(task);
+    repository.createNextOccurrence.mockResolvedValue({
+      _id: new Types.ObjectId(),
+    });
+
+    await expect(
+      service.runForRecurrence(FixedTaskRecurrence.DAILY, saturday),
+    ).resolves.toBe(1);
+
+    expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
+      startDate: saturday,
+      startTime: '14:35',
+      endDate: new Date('2026-06-22T20:30:00.000Z'),
+      endTime: '00:01',
+    });
+  });
+
+  it('does not recreate a configured daily task while its current weekday block is still open', async () => {
+    const sunday = new Date('2026-06-21T11:05:00.000Z');
+    const task = createTask(FixedTaskRecurrence.DAILY, FixedTaskStatus.TODO);
+    task.scheduleConfig = { weekdays: [6, 0, 1, 3, 4, 5] };
+    task.startDate = new Date('2026-06-20T11:05:00.000Z');
+    task.endDate = new Date('2026-06-22T20:30:00.000Z');
+    repository.findDailyRolloverCandidates.mockResolvedValue([task]);
+
+    await expect(
+      service.runForRecurrence(FixedTaskRecurrence.DAILY, sunday),
+    ).resolves.toBe(0);
+
+    expect(repository.claimExpiredOccurrence).not.toHaveBeenCalled();
+    expect(repository.createNextOccurrence).not.toHaveBeenCalled();
+  });
+
   it('does not let one unscheduled daily row block other daily rows without scheduleConfig', async () => {
     const monday = new Date('2026-06-22T11:05:00.000Z');
     const scheduledTask = createTask(
@@ -278,6 +316,50 @@ describe('FixedTaskRolloverService', () => {
     );
   });
 
+  it('sets configured weekly endDate to the next configured weekday', async () => {
+    const saturday = new Date('2026-06-20T11:05:00.000Z');
+    const task = createTask(FixedTaskRecurrence.WEEKLY, FixedTaskStatus.TODO);
+    task.scheduleConfig = { weekdays: [6, 1, 3] };
+    repository.findActiveRolloverCandidates.mockResolvedValue([task]);
+    repository.claimExpiredOccurrence.mockResolvedValue(task);
+    repository.createNextOccurrence.mockResolvedValue({
+      _id: new Types.ObjectId(),
+    });
+
+    await expect(
+      service.runForRecurrence(FixedTaskRecurrence.WEEKLY, saturday),
+    ).resolves.toBe(1);
+
+    expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
+      startDate: saturday,
+      startTime: '14:35',
+      endDate: new Date('2026-06-21T20:30:00.000Z'),
+      endTime: '00:01',
+    });
+  });
+
+  it('uses the following configured weekday for weekly windows', async () => {
+    const monday = new Date('2026-06-22T11:05:00.000Z');
+    const task = createTask(FixedTaskRecurrence.WEEKLY, FixedTaskStatus.TODO);
+    task.scheduleConfig = { weekdays: [6, 1, 3] };
+    repository.findActiveRolloverCandidates.mockResolvedValue([task]);
+    repository.claimExpiredOccurrence.mockResolvedValue(task);
+    repository.createNextOccurrence.mockResolvedValue({
+      _id: new Types.ObjectId(),
+    });
+
+    await expect(
+      service.runForRecurrence(FixedTaskRecurrence.WEEKLY, monday),
+    ).resolves.toBe(1);
+
+    expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
+      startDate: monday,
+      startTime: '14:35',
+      endDate: new Date('2026-06-23T20:30:00.000Z'),
+      endTime: '00:01',
+    });
+  });
+
   it('uses the old monthly schedule when scheduleConfig is empty', async () => {
     const firstDayOfMonth = new Date('2026-07-01T11:05:00.000Z');
     const task = createTask(FixedTaskRecurrence.MONTHLY, FixedTaskStatus.TODO);
@@ -295,6 +377,50 @@ describe('FixedTaskRolloverService', () => {
       task._id,
       firstDayOfMonth,
     );
+  });
+
+  it('sets configured monthly endDate to the next configured month day', async () => {
+    const firstDayOfMonth = new Date('2026-07-01T11:05:00.000Z');
+    const task = createTask(FixedTaskRecurrence.MONTHLY, FixedTaskStatus.TODO);
+    task.scheduleConfig = { monthDays: [1, 5, 27, 28] };
+    repository.findActiveRolloverCandidates.mockResolvedValue([task]);
+    repository.claimExpiredOccurrence.mockResolvedValue(task);
+    repository.createNextOccurrence.mockResolvedValue({
+      _id: new Types.ObjectId(),
+    });
+
+    await expect(
+      service.runForRecurrence(FixedTaskRecurrence.MONTHLY, firstDayOfMonth),
+    ).resolves.toBe(1);
+
+    expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
+      startDate: firstDayOfMonth,
+      startTime: '14:35',
+      endDate: new Date('2026-07-04T20:30:00.000Z'),
+      endTime: '00:01',
+    });
+  });
+
+  it('uses the following configured month day for monthly windows', async () => {
+    const dayTwentySeven = new Date('2026-07-27T11:05:00.000Z');
+    const task = createTask(FixedTaskRecurrence.MONTHLY, FixedTaskStatus.TODO);
+    task.scheduleConfig = { monthDays: [1, 5, 27, 28] };
+    repository.findActiveRolloverCandidates.mockResolvedValue([task]);
+    repository.claimExpiredOccurrence.mockResolvedValue(task);
+    repository.createNextOccurrence.mockResolvedValue({
+      _id: new Types.ObjectId(),
+    });
+
+    await expect(
+      service.runForRecurrence(FixedTaskRecurrence.MONTHLY, dayTwentySeven),
+    ).resolves.toBe(1);
+
+    expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
+      startDate: dayTwentySeven,
+      startTime: '14:35',
+      endDate: new Date('2026-07-27T20:30:00.000Z'),
+      endTime: '00:01',
+    });
   });
 
   it('reactivates the old occurrence when creating the next one fails', async () => {

@@ -13,7 +13,11 @@ import {
   UserProgressRefreshRequestedEvent,
 } from '../../common/events/user-progress.events';
 import { HolidayService } from '../../holiday/services/holiday.service';
-import { getTehranDateParts } from '../../common/utils/tehran-time.util';
+import {
+  addTehranCalendarPeriod,
+  getTehranDateParts,
+  tehranDateTimeToUtc,
+} from '../../common/utils/tehran-time.util';
 
 @Injectable()
 export class FixedTaskRolloverService {
@@ -71,6 +75,7 @@ export class FixedTaskRolloverService {
           continue;
         }
         if (this.startedToday(candidate, now)) continue;
+        if (this.isConfiguredDailyBlockStillOpen(candidate, now)) continue;
         const created = candidate.isActive
           ? await this.rolloverIfExpired(candidate, now)
           : await this.createNextOccurrenceFromPrevious(candidate, now);
@@ -181,9 +186,48 @@ export class FixedTaskRolloverService {
     candidate: FixedTaskTemplateDocument,
     now: Date,
   ): Promise<void> {
-    const schedule = buildFixedTaskSeedSchedule(candidate.recurrence, now);
+    const schedule = this.buildRolloverSchedule(candidate, now);
     await this.repository.createNextOccurrence(candidate, schedule);
     this.publishProgressRefresh(candidate);
+  }
+
+  private buildRolloverSchedule(
+    candidate: FixedTaskTemplateDocument,
+    now: Date,
+  ) {
+    const schedule = buildFixedTaskSeedSchedule(candidate.recurrence, now);
+
+    if (
+      candidate.recurrence === FixedTaskRecurrence.DAILY &&
+      this.hasDailyScheduleGap(candidate)
+    ) {
+      schedule.endDate = this.calculateConfiguredDailyBlockEndDate(
+        candidate,
+        now,
+      );
+    }
+
+    if (
+      candidate.recurrence === FixedTaskRecurrence.WEEKLY &&
+      this.hasConfiguredWeekdays(candidate)
+    ) {
+      schedule.endDate = this.calculateNextConfiguredWeekdayEndDate(
+        candidate,
+        now,
+      );
+    }
+
+    if (
+      candidate.recurrence === FixedTaskRecurrence.MONTHLY &&
+      this.hasConfiguredMonthDays(candidate)
+    ) {
+      schedule.endDate = this.calculateNextConfiguredMonthDayEndDate(
+        candidate,
+        now,
+      );
+    }
+
+    return schedule;
   }
 
   private publishProgressRefresh(candidate: FixedTaskTemplateDocument): void {
@@ -209,6 +253,28 @@ export class FixedTaskRolloverService {
   private hasScheduleConfig(candidate: FixedTaskTemplateDocument): boolean {
     const config = candidate.scheduleConfig;
     return Boolean(config?.weekdays?.length || config?.monthDays?.length);
+  }
+
+  private hasDailyScheduleGap(candidate: FixedTaskTemplateDocument): boolean {
+    const weekdays = candidate.scheduleConfig?.weekdays;
+    return (
+      candidate.recurrence === FixedTaskRecurrence.DAILY &&
+      Array.isArray(weekdays) &&
+      weekdays.length > 0 &&
+      new Set(weekdays).size < 7
+    );
+  }
+
+  private hasConfiguredWeekdays(
+    candidate: FixedTaskTemplateDocument,
+  ): boolean {
+    return Boolean(candidate.scheduleConfig?.weekdays?.length);
+  }
+
+  private hasConfiguredMonthDays(
+    candidate: FixedTaskTemplateDocument,
+  ): boolean {
+    return Boolean(candidate.scheduleConfig?.monthDays?.length);
   }
 
   private shouldRunDefaultSchedule(
@@ -252,6 +318,90 @@ export class FixedTaskRolloverService {
       start.month === today.month &&
       start.day === today.day
     );
+  }
+
+  private isConfiguredDailyBlockStillOpen(
+    candidate: FixedTaskTemplateDocument,
+    now: Date,
+  ): boolean {
+    if (
+      !candidate.isActive ||
+      !this.hasDailyScheduleGap(candidate) ||
+      !(candidate.endDate instanceof Date)
+    ) {
+      return false;
+    }
+
+    return candidate.endDate.getTime() > now.getTime();
+  }
+
+  private calculateConfiguredDailyBlockEndDate(
+    candidate: FixedTaskTemplateDocument,
+    now: Date,
+  ): Date {
+    const weekdays = new Set(candidate.scheduleConfig?.weekdays ?? []);
+    const today = this.getTehranCalendar(now);
+    let blockDays = 1;
+
+    for (let offset = 1; offset < 7; offset += 1) {
+      const nextWeekday = (today.weekday + offset) % 7;
+      if (!weekdays.has(nextWeekday)) break;
+      blockDays += 1;
+    }
+
+    const target = addTehranCalendarPeriod(now, blockDays, 0);
+    return tehranDateTimeToUtc(target.year, target.month, target.day);
+  }
+
+  private calculateNextConfiguredWeekdayEndDate(
+    candidate: FixedTaskTemplateDocument,
+    now: Date,
+  ): Date {
+    const weekdays = new Set(candidate.scheduleConfig?.weekdays ?? []);
+    const today = this.getTehranCalendar(now);
+
+    for (let offset = 1; offset <= 7; offset += 1) {
+      const nextWeekday = (today.weekday + offset) % 7;
+      if (!weekdays.has(nextWeekday)) continue;
+
+      const target = addTehranCalendarPeriod(now, offset, 0);
+      return tehranDateTimeToUtc(target.year, target.month, target.day);
+    }
+
+    const fallback = addTehranCalendarPeriod(now, 7, 0);
+    return tehranDateTimeToUtc(fallback.year, fallback.month, fallback.day);
+  }
+
+  private calculateNextConfiguredMonthDayEndDate(
+    candidate: FixedTaskTemplateDocument,
+    now: Date,
+  ): Date {
+    const today = this.getTehranCalendar(now);
+    const monthDays = [...new Set(candidate.scheduleConfig?.monthDays ?? [])]
+      .filter((day) => day >= 1 && day <= 31)
+      .sort((first, second) => first - second);
+
+    const nextDay = monthDays.find((day) => day > today.day);
+    if (nextDay) {
+      const safeDay = this.clampDayToMonth(today.year, today.month, nextDay);
+      return tehranDateTimeToUtc(today.year, today.month, safeDay);
+    }
+
+    const nextMonth = today.month === 12 ? 1 : today.month + 1;
+    const nextYear = today.month === 12 ? today.year + 1 : today.year;
+    const firstConfiguredDay = monthDays[0] ?? today.day;
+    const safeDay = this.clampDayToMonth(
+      nextYear,
+      nextMonth,
+      firstConfiguredDay,
+    );
+
+    return tehranDateTimeToUtc(nextYear, nextMonth, safeDay);
+  }
+
+  private clampDayToMonth(year: number, month: number, day: number): number {
+    const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    return Math.min(day, lastDay);
   }
 
   private getTehranCalendar(date: Date) {
