@@ -132,6 +132,26 @@ export class ManagerService extends BaseManagerService {
     return this.managerWorkStatusService.getTodoFixedTasks(userId);
   }
 
+  getOverdueTasks(from: string, to: string, userId?: string) {
+    if (userId) this.toObjectId(userId, 'user ID');
+    return this.managerWorkStatusService.getOverdueTasks(from, to, userId);
+  }
+
+  getDoneTasks(from: string, to: string, userId?: string) {
+    if (userId) this.toObjectId(userId, 'user ID');
+    return this.managerWorkStatusService.getDoneTasks(from, to, userId);
+  }
+
+  getInProgressTasks(from: string, to: string, userId?: string) {
+    if (userId) this.toObjectId(userId, 'user ID');
+    return this.managerWorkStatusService.getInProgressTasks(from, to, userId);
+  }
+
+  getTodoTasks(from: string, to: string, userId?: string) {
+    if (userId) this.toObjectId(userId, 'user ID');
+    return this.managerWorkStatusService.getTodoTasks(from, to, userId);
+  }
+
   reviewFixedTaskTiming(
     fixedTaskId: string,
     managerId: string,

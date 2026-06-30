@@ -32,6 +32,7 @@ import {
   UserResponseDto,
   WorkStatusRangeResponseDto,
   UserWorkStatusSummaryResponseDto,
+  TaskDocumentListResponseDto,
   FixedTaskDocumentListResponseDto,
   FixedTaskStatusDocumentListResponseDto,
   FixedTaskDurationBalanceResponseDto,
@@ -278,6 +279,82 @@ export class ManagerController {
   @ApiOkResponse({ type: [TaskCountsByUserResponseDto] })
   getTaskCountsByUsers() {
     return this.managerService.getTaskCountsByUsers();
+  }
+
+  @Get('tasks/overdue')
+  @ApiOperation({
+    summary: 'Get overdue regular task documents',
+    description:
+      'Returns overdue non-fixed Task documents in the selected date range. When userId is provided, only that assigned user is returned; otherwise all users are included.',
+  })
+  @ApiOkResponse({
+    description: 'Overdue regular tasks retrieved successfully',
+    type: TaskDocumentListResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Invalid date range or user ID' })
+  getOverdueTasks(@Query() query: WorkStatusRangeQueryDto) {
+    return this.managerService.getOverdueTasks(
+      query.from,
+      query.to,
+      query.userId,
+    );
+  }
+
+  @Get('tasks/done')
+  @ApiOperation({
+    summary: 'Get done regular task documents',
+    description:
+      'Returns completed non-fixed Task documents in the selected date range. When userId is provided, only that assigned user is returned; otherwise all users are included.',
+  })
+  @ApiOkResponse({
+    description: 'Done regular tasks retrieved successfully',
+    type: TaskDocumentListResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Invalid date range or user ID' })
+  getDoneTasks(@Query() query: WorkStatusRangeQueryDto) {
+    return this.managerService.getDoneTasks(
+      query.from,
+      query.to,
+      query.userId,
+    );
+  }
+
+  @Get('tasks/in-progress')
+  @ApiOperation({
+    summary: 'Get in-progress regular task documents',
+    description:
+      'Returns non-fixed Task documents with status in_progress in the selected date range. When userId is provided, only that assigned user is returned; otherwise all users are included.',
+  })
+  @ApiOkResponse({
+    description: 'In-progress regular tasks retrieved successfully',
+    type: TaskDocumentListResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Invalid date range or user ID' })
+  getInProgressTasks(@Query() query: WorkStatusRangeQueryDto) {
+    return this.managerService.getInProgressTasks(
+      query.from,
+      query.to,
+      query.userId,
+    );
+  }
+
+  @Get('tasks/todo')
+  @ApiOperation({
+    summary: 'Get todo regular task documents',
+    description:
+      'Returns non-fixed Task documents with status todo in the selected date range. When userId is provided, only that assigned user is returned; otherwise all users are included.',
+  })
+  @ApiOkResponse({
+    description: 'Todo regular tasks retrieved successfully',
+    type: TaskDocumentListResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Invalid date range or user ID' })
+  getTodoTasks(@Query() query: WorkStatusRangeQueryDto) {
+    return this.managerService.getTodoTasks(
+      query.from,
+      query.to,
+      query.userId,
+    );
   }
 
   @Get('tasks')

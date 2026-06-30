@@ -129,6 +129,69 @@ export class ManagerWorkStatusService {
     return { evaluatedAt, total: data.length, userId, data };
   }
 
+  async getOverdueTasks(
+    fromValue: string,
+    toValue: string,
+    userId?: string,
+  ) {
+    const { from, to } = this.parseDateRange(fromValue, toValue);
+    const evaluatedAt = new Date();
+    const data = await this.repository.findOverdueTasks(
+      from,
+      to,
+      evaluatedAt,
+      userId,
+    );
+
+    return { from, to, evaluatedAt, total: data.length, userId, data };
+  }
+
+  async getDoneTasks(
+    fromValue: string,
+    toValue: string,
+    userId?: string,
+  ) {
+    const { from, to } = this.parseDateRange(fromValue, toValue);
+    const evaluatedAt = new Date();
+    const data = await this.repository.findDoneTasks(from, to, userId);
+
+    return { from, to, evaluatedAt, total: data.length, userId, data };
+  }
+
+  async getInProgressTasks(
+    fromValue: string,
+    toValue: string,
+    userId?: string,
+  ) {
+    const { from, to } = this.parseDateRange(fromValue, toValue);
+    const evaluatedAt = new Date();
+    const data = await this.repository.findInProgressTasks(
+      from,
+      to,
+      evaluatedAt,
+      userId,
+    );
+
+    return { from, to, evaluatedAt, total: data.length, userId, data };
+  }
+
+  async getTodoTasks(
+    fromValue: string,
+    toValue: string,
+    userId?: string,
+  ) {
+    const { from, to } = this.parseDateRange(fromValue, toValue);
+    const evaluatedAt = new Date();
+    const data = await this.repository.findTodoTasks(
+      from,
+      to,
+      evaluatedAt,
+      userId,
+    );
+
+    return { from, to, evaluatedAt, total: data.length, userId, data };
+  }
+
   private countStatuses(
     items: WorkStatusItem[],
     now: Date,

@@ -163,6 +163,105 @@ export class ManagerWorkStatusRepository {
     return this.findFixedTasksByActiveStatus(FixedTaskStatus.TODO, userId);
   }
 
+  async findOverdueTasks(
+    from: Date,
+    to: Date,
+    evaluatedAt: Date,
+    userId?: string,
+  ) {
+    const filter = this.buildTaskDocumentFilter(
+      {
+        status: { $ne: TaskStatus.DONE },
+        $or: [
+          {
+            startDate: { $gte: from },
+            endDate: { $lte: to, $lt: evaluatedAt },
+          },
+          {
+            startDate: { $gte: from },
+            dueDate: { $lte: to, $lt: evaluatedAt },
+          },
+        ],
+      },
+      userId,
+    );
+
+    return this.findTaskDocuments(filter);
+  }
+
+  async findDoneTasks(from: Date, to: Date, userId?: string) {
+    const filter = this.buildTaskDocumentFilter(
+      {
+        status: TaskStatus.DONE,
+        $or: [
+          {
+            startDate: { $gte: from },
+            endDate: { $lte: to },
+          },
+          {
+            startDate: { $gte: from },
+            dueDate: { $lte: to },
+          },
+        ],
+      },
+      userId,
+    );
+
+    return this.findTaskDocuments(filter);
+  }
+
+  async findInProgressTasks(
+    from: Date,
+    to: Date,
+    evaluatedAt: Date,
+    userId?: string,
+  ) {
+    const filter = this.buildTaskDocumentFilter(
+      {
+        status: TaskStatus.IN_PROGRESS,
+        $or: [
+          {
+            startDate: { $gte: from },
+            endDate: { $lte: to, $gte: evaluatedAt },
+          },
+          {
+            startDate: { $gte: from },
+            dueDate: { $lte: to, $gte: evaluatedAt },
+          },
+        ],
+      },
+      userId,
+    );
+
+    return this.findTaskDocuments(filter);
+  }
+
+  async findTodoTasks(
+    from: Date,
+    to: Date,
+    evaluatedAt: Date,
+    userId?: string,
+  ) {
+    const filter = this.buildTaskDocumentFilter(
+      {
+        status: TaskStatus.TODO,
+        $or: [
+          {
+            startDate: { $gte: from },
+            endDate: { $lte: to, $gte: evaluatedAt },
+          },
+          {
+            startDate: { $gte: from },
+            dueDate: { $lte: to, $gte: evaluatedAt },
+          },
+        ],
+      },
+      userId,
+    );
+
+    return this.findTaskDocuments(filter);
+  }
+
   private buildTaskDateFilter(from: Date, to: Date) {
     return {
       $or: [
@@ -217,6 +316,33 @@ export class ManagerWorkStatusRepository {
         { assignedTo: new Types.ObjectId(userId) },
       ],
     };
+  }
+
+  private buildTaskDocumentFilter(
+    filter: Record<string, unknown>,
+    userId?: string,
+  ) {
+    if (!userId) return filter;
+
+    return {
+      $and: [
+        filter,
+        { assignedTo: new Types.ObjectId(userId) },
+      ],
+    };
+  }
+
+  private findTaskDocuments(filter: Record<string, unknown>) {
+    return this.taskModel
+      .find(filter)
+      .populate('assignedTo', 'firstName lastName email mobile roles workField isActive')
+      .populate('createdBy', 'firstName lastName email roles workField')
+      .populate('excelFile')
+      .populate('completionExcelFile')
+      .populate('extraTaskApprovedBy', 'firstName lastName email roles')
+      .sort({ endDate: 1, dueDate: 1, startDate: 1, _id: 1 })
+      .lean()
+      .exec();
   }
 
   private buildFixedTaskFilter(
