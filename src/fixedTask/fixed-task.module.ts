@@ -22,6 +22,7 @@ import { FixedTaskDeadlineService } from './services/fixed-task-deadline.service
 import { FixedTaskRolloverService } from './services/fixed-task-rollover.service';
 import { FixedTaskTimingService } from './services/fixed-task-timing.service';
 import { FixedTaskOverdueScoreCronService } from './services/fixed-task-overdue-score-cron.service';
+import { FixedTaskScheduleService } from './services/fixed-task-schedule.service';
 import { HolidayModule } from '../holiday/holiday.module';
 
 @Module({
@@ -50,6 +51,7 @@ import { HolidayModule } from '../holiday/holiday.module';
     FixedTaskRolloverService,
     FixedTaskTimingService,
     FixedTaskOverdueScoreCronService,
+    FixedTaskScheduleService,
   ],
   exports: [FixedTaskService],
 })

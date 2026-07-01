@@ -130,6 +130,22 @@ export class FixedTaskRepository {
       .exec();
   }
 
+  findConfiguredRolloverCandidates(
+    recurrence: FixedTaskRecurrence,
+  ) {
+    return this.model
+      .find({
+        recurrence,
+        $or: [
+          { isActive: true },
+          { 'scheduleConfig.weekdays.0': { $exists: true } },
+          { 'scheduleConfig.monthDays.0': { $exists: true } },
+        ],
+      })
+      .sort({ createdAt: -1, _id: -1 })
+      .exec();
+  }
+
   claimExpiredOccurrence(id: Types.ObjectId, generatedAt: Date) {
     return this.model
       .findOneAndUpdate(

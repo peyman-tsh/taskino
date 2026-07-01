@@ -13,8 +13,10 @@ import { UserRole } from '../../user/schemas/user.schema';
 import { FixedTaskDeadlineService } from './fixed-task-deadline.service';
 import {
   addTehranCalendarPeriod,
+  addTehranPersianCalendarMonths,
   formatTehranTime,
   tehranDateTimeToUtc,
+  tehranPersianDateTimeToUtc,
 } from '../../common/utils/tehran-time.util';
 
 type ExcelRow = Array<string | number | null>;
@@ -71,12 +73,19 @@ function calculateSeedEndDate(
   recurrence: FixedTaskRecurrence,
   now: Date,
 ): Date {
+  if (recurrence === FixedTaskRecurrence.MONTHLY) {
+    const target = addTehranPersianCalendarMonths(now, 1);
+    return tehranPersianDateTimeToUtc(
+      target.year,
+      target.month,
+      target.day,
+    );
+  }
+
   const target =
     recurrence === FixedTaskRecurrence.DAILY
       ? addTehranCalendarPeriod(now, 1, 0)
-      : recurrence === FixedTaskRecurrence.WEEKLY
-        ? addTehranCalendarPeriod(now, 7, 0)
-        : addTehranCalendarPeriod(now, 0, 1);
+      : addTehranCalendarPeriod(now, 7, 0);
 
   return tehranDateTimeToUtc(
     target.year,

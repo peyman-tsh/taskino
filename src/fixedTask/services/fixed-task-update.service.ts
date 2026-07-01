@@ -11,6 +11,7 @@ import { FixedTaskNotificationService } from './fixed-task-notification.service'
 import { FixedTaskPolicyService } from './fixed-task-policy.service';
 import { FixedTaskQueryService } from './fixed-task-query.service';
 import { FixedTaskScoreService } from './fixed-task-score.service';
+import { FixedTaskScheduleService } from './fixed-task-schedule.service';
 import { InternalEventBus } from '../../common/events/internal-event-bus.service';
 import {
   UserProgressEvents,
@@ -26,6 +27,7 @@ export class FixedTaskUpdateService {
     private readonly notificationService: FixedTaskNotificationService,
     private readonly queryService: FixedTaskQueryService,
     private readonly eventBus: InternalEventBus,
+    private readonly scheduleService: FixedTaskScheduleService,
   ) {}
 
   async update(id: string, requesterId: string, dto: UpdateFixedTaskDto) {
@@ -45,9 +47,12 @@ export class FixedTaskUpdateService {
     
     await this.validateUpdate(template, requesterObjectId.toString(), dto, isAssignee);
 
+    const updateData = this.buildUpdateData(template, dto, requesterObjectId);
+    Object.assign(updateData, this.buildScheduleConfigUpdateData(template, dto));
+
     const updatedTemplate = await this.repository.updateById(
       template._id,
-      this.buildUpdateData(template, dto, requesterObjectId),
+      updateData,
     );
     if (!updatedTemplate) {
       throw new NotFoundException('Fixed task template not found');
@@ -131,6 +136,45 @@ export class FixedTaskUpdateService {
     return updateData;
   }
 
+  private buildScheduleConfigUpdateData(
+    template: FixedTaskTemplateDocument,
+    dto: UpdateFixedTaskDto,
+  ): Record<string, unknown> {
+    if (dto.scheduleConfig === undefined) return {};
+
+    const shouldBeActive = dto.isActive ?? template.isActive;
+    if (!shouldBeActive) return {};
+
+    const candidate = {
+      ...this.toPlainFixedTask(template),
+      recurrence: dto.recurrence ?? template.recurrence,
+      scheduleConfig: dto.scheduleConfig,
+      isActive: shouldBeActive,
+    } as FixedTaskTemplateDocument;
+
+    if (!this.scheduleService.hasScheduleConfig(candidate)) return {};
+
+    const now = new Date();
+    if (!this.scheduleService.shouldGenerateToday(candidate, now)) {
+      return { isActive: false };
+    }
+
+    const schedule = this.scheduleService.buildRolloverSchedule(candidate, now);
+    const scheduleUpdate: Record<string, unknown> = {
+      isActive: true,
+    };
+
+    if (dto.startDate === undefined) {
+      scheduleUpdate.startDate = schedule.startDate;
+    }
+
+    if (dto.endDate === undefined) {
+      scheduleUpdate.endDate = schedule.endDate;
+    }
+
+    return scheduleUpdate;
+  }
+
   private async runCompletionActions(
     previousTemplate: FixedTaskTemplateDocument,
     updatedTemplate: FixedTaskTemplateDocument,
@@ -194,5 +238,13 @@ export class FixedTaskUpdateService {
       UserProgressEvents.REFRESH_REQUESTED,
       new UserProgressRefreshRequestedEvent(userIds),
     );
+  }
+
+  private toPlainFixedTask(
+    template: FixedTaskTemplateDocument,
+  ): Record<string, unknown> {
+    return typeof template.toObject === 'function'
+      ? (template.toObject() as unknown as Record<string, unknown>)
+      : (template as unknown as Record<string, unknown>);
   }
 }

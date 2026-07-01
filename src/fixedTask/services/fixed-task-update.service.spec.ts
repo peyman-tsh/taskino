@@ -11,6 +11,7 @@ import { FixedTaskNotificationService } from './fixed-task-notification.service'
 import { FixedTaskPolicyService } from './fixed-task-policy.service';
 import { FixedTaskQueryService } from './fixed-task-query.service';
 import { FixedTaskScoreService } from './fixed-task-score.service';
+import { FixedTaskScheduleService } from './fixed-task-schedule.service';
 import { FixedTaskUpdateService } from './fixed-task-update.service';
 import { InternalEventBus } from '../../common/events/internal-event-bus.service';
 import { UserProgressEvents } from '../../common/events/user-progress.events';
@@ -33,6 +34,11 @@ describe('FixedTaskUpdateService', () => {
   const notificationService = { notifyCreatorWhenCompleted: jest.fn() };
   const queryService = { findById: jest.fn() };
   const eventBus = { publish: jest.fn() };
+  const scheduleService = {
+    hasScheduleConfig: jest.fn(),
+    shouldGenerateToday: jest.fn(),
+    buildRolloverSchedule: jest.fn(),
+  };
   const service = new FixedTaskUpdateService(
     repository as unknown as FixedTaskRepository,
     policy as unknown as FixedTaskPolicyService,
@@ -40,9 +46,13 @@ describe('FixedTaskUpdateService', () => {
     notificationService as unknown as FixedTaskNotificationService,
     queryService as unknown as FixedTaskQueryService,
     eventBus as unknown as InternalEventBus,
+    scheduleService as unknown as FixedTaskScheduleService,
   );
 
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    scheduleService.hasScheduleConfig.mockReturnValue(false);
+  });
 
   it('scores when the assignee updates status to done', async () => {
     const template = {
@@ -187,6 +197,70 @@ describe('FixedTaskUpdateService', () => {
     );
   });
 
+  it('keeps an active task and recalculates dates when scheduleConfig includes today', async () => {
+    const template = createTemplate();
+    const startDate = new Date('2026-07-05T20:30:00.000Z');
+    const endDate = new Date('2026-07-10T20:30:00.000Z');
+    const updatedTemplate = {
+      ...template,
+      scheduleConfig: { monthDays: [14] },
+      startDate,
+      endDate,
+    } as FixedTaskTemplateDocument;
+    repository.findRawById.mockResolvedValue(template);
+    repository.updateById.mockResolvedValue(updatedTemplate);
+    queryService.findById.mockResolvedValue(updatedTemplate);
+    scheduleService.hasScheduleConfig.mockReturnValue(true);
+    scheduleService.shouldGenerateToday.mockReturnValue(true);
+    scheduleService.buildRolloverSchedule.mockReturnValue({
+      startDate,
+      startTime: null,
+      endDate,
+      endTime: null,
+    });
+
+    await service.update(templateId.toString(), creatorId.toString(), {
+      scheduleConfig: { monthDays: [14] },
+    });
+
+    expect(repository.updateById).toHaveBeenCalledWith(
+      templateId,
+      expect.objectContaining({
+        scheduleConfig: { monthDays: [14] },
+        isActive: true,
+        startDate,
+        endDate,
+      }),
+    );
+  });
+
+  it('deactivates an active task when scheduleConfig does not include today', async () => {
+    const template = createTemplate();
+    const updatedTemplate = {
+      ...template,
+      isActive: false,
+      scheduleConfig: { monthDays: [14] },
+    } as FixedTaskTemplateDocument;
+    repository.findRawById.mockResolvedValue(template);
+    repository.updateById.mockResolvedValue(updatedTemplate);
+    queryService.findById.mockResolvedValue(updatedTemplate);
+    scheduleService.hasScheduleConfig.mockReturnValue(true);
+    scheduleService.shouldGenerateToday.mockReturnValue(false);
+
+    await service.update(templateId.toString(), creatorId.toString(), {
+      scheduleConfig: { monthDays: [14] },
+    });
+
+    expect(repository.updateById).toHaveBeenCalledWith(
+      templateId,
+      expect.objectContaining({
+        scheduleConfig: { monthDays: [14] },
+        isActive: false,
+      }),
+    );
+    expect(scheduleService.buildRolloverSchedule).not.toHaveBeenCalled();
+  });
+
   it('prevents non-assignees from updating status', async () => {
     repository.findRawById.mockResolvedValue(createTemplate());
 
@@ -205,6 +279,7 @@ describe('FixedTaskUpdateService', () => {
       createdBy: creatorId,
       recurrence: FixedTaskRecurrence.DAILY,
       status: FixedTaskStatus.TODO,
+      isActive: true,
     } as FixedTaskTemplateDocument;
   }
 });

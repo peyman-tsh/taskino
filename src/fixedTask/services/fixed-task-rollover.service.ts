@@ -13,10 +13,14 @@ import {
   UserProgressRefreshRequestedEvent,
 } from '../../common/events/user-progress.events';
 import { HolidayService } from '../../holiday/services/holiday.service';
+import { FixedTaskScheduleService } from './fixed-task-schedule.service';
 import {
   addTehranCalendarPeriod,
   getTehranDateParts,
+  getTehranPersianDateParts,
+  getPersianMonthLength,
   tehranDateTimeToUtc,
+  tehranPersianDateTimeToUtc,
 } from '../../common/utils/tehran-time.util';
 
 @Injectable()
@@ -29,6 +33,7 @@ export class FixedTaskRolloverService {
     private readonly scoreService: FixedTaskScoreService,
     private readonly eventBus: InternalEventBus,
     private readonly holidayService: HolidayService,
+    private readonly scheduleService: FixedTaskScheduleService,
   ) {}
 
   @Cron('53 1 * * *', { timeZone: 'Asia/Tehran' })
@@ -50,12 +55,29 @@ export class FixedTaskRolloverService {
 
   @Cron('53 1 * * *', { timeZone: 'Asia/Tehran' })
   async handleWeeklyRollover(): Promise<void> {
-    await this.runForRecurrence(FixedTaskRecurrence.WEEKLY);
+    this.logger.log('Weekly fixed task rollover started');
+
+    if (await this.holidayService.isNonWorkingDay(new Date())) {
+      this.logger.log(
+        'Weekly fixed task rollover skipped on official holiday or Friday',
+      );
+      return;
+    }
+
+    const createdCount = await this.runForRecurrence(FixedTaskRecurrence.WEEKLY);
+    this.logger.log(
+      `Weekly fixed task rollover finished. Created ${createdCount} new occurrence(s)`,
+    );
   }
 
   @Cron('53 1 * * *', { timeZone: 'Asia/Tehran' })
   async handleMonthlyRollover(): Promise<void> {
-    await this.runForRecurrence(FixedTaskRecurrence.MONTHLY);
+    this.logger.log('Monthly fixed task rollover started');
+
+    const createdCount = await this.runForRecurrence(FixedTaskRecurrence.MONTHLY);
+    this.logger.log(
+      `Monthly fixed task rollover finished. Created ${createdCount} new occurrence(s)`,
+    );
   }
 
   async runForRecurrence(
@@ -70,7 +92,7 @@ export class FixedTaskRolloverService {
       let createdCount = 0;
 
       for (const candidate of candidates) {
-        if (!this.shouldGenerateToday(candidate, now)) {
+        if (!(await this.scheduleService.shouldGenerateTodayForCron(candidate, now))) {
           await this.deactivateUnscheduledDailyTask(candidate, now);
           continue;
         }
@@ -101,15 +123,14 @@ export class FixedTaskRolloverService {
   private async findRolloverCandidates(
     recurrence: FixedTaskRecurrence,
   ): Promise<FixedTaskTemplateDocument[]> {
-    if (recurrence !== FixedTaskRecurrence.DAILY) {
-      return this.repository.findActiveRolloverCandidates(recurrence);
-    }
-
-    const candidates = await this.repository.findDailyRolloverCandidates();
+    const candidates =
+      recurrence === FixedTaskRecurrence.DAILY
+        ? await this.repository.findDailyRolloverCandidates()
+        : await this.repository.findConfiguredRolloverCandidates(recurrence);
     const latestBySeries = new Map<string, FixedTaskTemplateDocument>();
 
     for (const candidate of candidates) {
-      const seriesKey = this.getSeriesKey(candidate);
+      const seriesKey = this.scheduleService.getSeriesKey(candidate);
       const existing = latestBySeries.get(seriesKey);
       if (!existing || (candidate.isActive && !existing.isActive)) {
         latestBySeries.set(seriesKey, candidate);
@@ -279,7 +300,7 @@ export class FixedTaskRolloverService {
 
   private shouldRunDefaultSchedule(
     recurrence: FixedTaskRecurrence,
-    today: { day: number; weekday: number },
+    today: { day: number; weekday: number; persianDay: number },
   ): boolean {
     if (recurrence === FixedTaskRecurrence.DAILY) {
       return true;
@@ -289,17 +310,17 @@ export class FixedTaskRolloverService {
       return today.weekday === 6;
     }
 
-    return today.day === 1;
+    return today.persianDay === 1;
   }
 
   private shouldRunConfiguredSchedule(
     candidate: FixedTaskTemplateDocument,
-    today: { day: number; weekday: number },
+    today: { day: number; weekday: number; persianDay: number },
   ): boolean {
     const config = candidate.scheduleConfig;
 
     if (candidate.recurrence === FixedTaskRecurrence.MONTHLY) {
-      return Boolean(config?.monthDays?.includes(today.day));
+      return Boolean(config?.monthDays?.includes(today.persianDay));
     }
 
     return Boolean(config?.weekdays?.includes(today.weekday));
@@ -381,31 +402,47 @@ export class FixedTaskRolloverService {
       .filter((day) => day >= 1 && day <= 31)
       .sort((first, second) => first - second);
 
-    const nextDay = monthDays.find((day) => day > today.day);
+    const nextDay = monthDays.find((day) => day > today.persianDay);
     if (nextDay) {
-      const safeDay = this.clampDayToMonth(today.year, today.month, nextDay);
-      return tehranDateTimeToUtc(today.year, today.month, safeDay);
+      const safeDay = this.clampPersianDayToMonth(
+        today.persianYear,
+        today.persianMonth,
+        nextDay,
+      );
+      return tehranPersianDateTimeToUtc(
+        today.persianYear,
+        today.persianMonth,
+        safeDay,
+      );
     }
 
-    const nextMonth = today.month === 12 ? 1 : today.month + 1;
-    const nextYear = today.month === 12 ? today.year + 1 : today.year;
-    const firstConfiguredDay = monthDays[0] ?? today.day;
-    const safeDay = this.clampDayToMonth(
+    const nextMonth =
+      today.persianMonth === 12 ? 1 : today.persianMonth + 1;
+    const nextYear =
+      today.persianMonth === 12
+        ? today.persianYear + 1
+        : today.persianYear;
+    const firstConfiguredDay = monthDays[0] ?? today.persianDay;
+    const safeDay = this.clampPersianDayToMonth(
       nextYear,
       nextMonth,
       firstConfiguredDay,
     );
 
-    return tehranDateTimeToUtc(nextYear, nextMonth, safeDay);
+    return tehranPersianDateTimeToUtc(nextYear, nextMonth, safeDay);
   }
 
-  private clampDayToMonth(year: number, month: number, day: number): number {
-    const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
-    return Math.min(day, lastDay);
+  private clampPersianDayToMonth(
+    year: number,
+    month: number,
+    day: number,
+  ): number {
+    return Math.min(day, getPersianMonthLength(year, month));
   }
 
   private getTehranCalendar(date: Date) {
     const parts = getTehranDateParts(date);
+    const persianParts = getTehranPersianDateParts(date);
     const calendarDate = new Date(
       Date.UTC(parts.year, parts.month - 1, parts.day),
     );
@@ -415,6 +452,9 @@ export class FixedTaskRolloverService {
       month: parts.month,
       day: parts.day,
       weekday: calendarDate.getUTCDay(),
+      persianYear: persianParts.year,
+      persianMonth: persianParts.month,
+      persianDay: persianParts.day,
     };
   }
 
