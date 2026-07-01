@@ -53,6 +53,22 @@ export class FixedTaskRepository {
     return { data, total };
   }
 
+  findDoneByUserInDateRange(
+    userId: Types.ObjectId,
+    from: Date,
+    to: Date,
+  ) {
+    return this.populate(
+      this.model
+        .find({
+          assignedTo: userId,
+          status: FixedTaskStatus.DONE,
+          doneTime: { $gte: from, $lte: to },
+        })
+        .sort({ doneTime: -1, _id: -1 }),
+    ).exec();
+  }
+
   updateById(id: Types.ObjectId, update: Record<string, unknown>) {
     return this.model
       .findByIdAndUpdate(id, update, {

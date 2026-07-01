@@ -41,6 +41,7 @@ import { FixedTaskSeedService } from './services/fixed-task-seed.service';
 import { Public } from '../auth/decorators/public.decorator';
 import { SpecialistFixedTaskQueryService } from './services/specialist-fixed-task-query.service';
 import { QueryActiveFixedTaskDto } from './dto/query-active-fixed-task.dto';
+import { DoneFixedTaskRangeQueryDto } from './dto/done-fixed-task-range-query.dto';
 
 @ApiTags('Fixed Tasks')
 @ApiBearerAuth()
@@ -136,6 +137,31 @@ export class FixedTaskController {
       userId,
       Number(page),
       Number(limit),
+    );
+  }
+
+  @Get('user/:userId/done/range')
+  @Roles(UserRole.SUPERVISOR, UserRole.SPECIALIST)
+  @ApiOperation({
+    summary: 'Get completed fixed tasks for a user in a date range',
+    description:
+      'Returns fixed tasks assigned to userId whose status is done and doneTime is between from and to.',
+  })
+  @ApiParam({
+    name: 'userId',
+    description: 'Specialist or supervisor user ID',
+  })
+  @ApiQuery({ name: 'from', required: true, type: String })
+  @ApiQuery({ name: 'to', required: true, type: String })
+  @ApiOkResponse({ type: FixedTaskResponseDto, isArray: true })
+  getCompletedFixedTasksByUserInDateRange(
+    @Param('userId') userId: string,
+    @Query() query: DoneFixedTaskRangeQueryDto,
+  ) {
+    return this.specialistFixedTaskQueryService.findCompletedByUserInDateRange(
+      userId,
+      query.from,
+      query.to,
     );
   }
 
