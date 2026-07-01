@@ -1,0 +1,3062 @@
+[
+  {
+    "_id": "6a3fea2306bba22833387cf5",
+    "title": "گردش انبار (دریافت کالا از تامین کنندگان)",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387cf6",
+    "title": "کسری شبکه",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "weekly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387cf7",
+    "title": "موجودی تعداد کارتن و تناژ شعب",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "weekly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387cf8",
+    "title": "نرخ شاخص ها",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "weekly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387cf9",
+    "title": "رتبه بندی توزیع کنندگان اوشانک",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387cfa",
+    "title": "رتبه بندی توزیع کنندگان گلستان",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387cfb",
+    "title": "گزارش گردش انبار اوشانک (ماهانه)",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387cfc",
+    "title": "گزارش گردش انبار اوشانک (سالانه)",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387cfd",
+    "title": "گزارش رتبه بندی کالکتوران اوشانک",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387cfe",
+    "title": "گزارش بهره وری کارتن کالکتوران",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "weekly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387cff",
+    "title": "کارکرد موزعین اوشانک تهران",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d00",
+    "title": "کارکرد موزع استیجاری اوشانک مشهد",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d01",
+    "title": "گزارش مقایسه تناژ دریافت  اوشانک",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d02",
+    "title": "گزارش تحلیل توزیع شعب اوشانک",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d03",
+    "title": "ظرفیت سنجی",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d04",
+    "title": "ظرفیت سنجی",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d05",
+    "title": "ظرفیت سنجی",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d06",
+    "title": "ظرفیت سنجی",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d07",
+    "title": "گزارش دوره تامین اوشانک",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d08",
+    "title": "گزارش کالاهای راکد انبار اوشانک",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d09",
+    "title": "گزارش پراکندگی فروشگاه های اوشانک",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d0a",
+    "title": "فیش بهره وری",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d0b",
+    "title": "فیش بهره وری",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d0c",
+    "title": "فیش بهره وری",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d0d",
+    "title": "ایاب ذهاب",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d0e",
+    "title": "گزارش جامع اوشانک",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d0f",
+    "title": "گزارش جامع گلستان",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d10",
+    "title": "گزارش تحلیل توزیع شعب گلستان",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d11",
+    "title": "طبقه بندی سفارشات گلستان",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d12",
+    "title": "گزارش نرخ برگشت از توزیع",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d13",
+    "title": "گزارش نرخ برگشت از فروش",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d14",
+    "title": "گزارش جامع گلستان",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d15",
+    "title": "گزارش وضعیت 50و60و70",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "weekly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d16",
+    "title": "گزارش itr اوشانک",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d17",
+    "title": "ایجاد تغییرات در اطلاعات خودرو",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "weekly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d18",
+    "title": "گزارشات لحظه ایی مدیریت",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "done",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d19",
+    "title": "گزارش متوسط زمان بارگیری",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d1a",
+    "title": "گزارش خطای کالکتوران اوشانک",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d1b",
+    "title": "تخصیص و ثبت سند پایان ماه",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d1c",
+    "title": "گزارش حجم بار فروشگاه",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d1d",
+    "title": "گزارش  موجودی قیمت قدیم",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d1e",
+    "title": "گزارش اصل پارتو (80% فروش)",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d1f",
+    "title": "گزارش اصل پارتو (80% فروش)",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d20",
+    "title": "گزارش پراکنگی سفارشات براساس بازه کیلومتر",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d21",
+    "title": "گزارش نرخ هزینه مناطق",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d22",
+    "title": "گزارش نرخ هزینه مناطق",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d23",
+    "title": "گزارش دوره تامین",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "weekly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d24",
+    "title": "گزارش کالاهای راکد",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d25",
+    "title": "گزارش هزینه تعمیرات خودرو",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "weekly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d26",
+    "title": "گزارش هزینه تعمیرات خودرو",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "weekly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d27",
+    "title": "گزارش ITR",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d28",
+    "title": "گزارش مقایسه تناژ دریافت انبار مرکز",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "weekly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d29",
+    "title": "گزارش مقایسه تناژ خروجی انبار مرکز",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "weekly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d2a",
+    "title": "گزارش اقلام تبلیغاتی",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d2b",
+    "title": "گزارش موجودی",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "weekly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d2c",
+    "title": "گزارش موجودی",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "weekly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d2d",
+    "title": "کسری سفارشات",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d2e",
+    "title": "هزینه ارسال کالا",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d2f",
+    "title": "هزینه ارسال کالا",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d30",
+    "title": "هزینه ارسال کالا",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d31",
+    "title": "گزارش انحراف از موجودی انبار",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d32",
+    "title": "ظرفیت سنجی ناوگان توزیع",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d33",
+    "title": "هزینه سنجی",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d34",
+    "title": "گزارش تعداد پالت منطقه مسیر",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d35",
+    "title": "موجودی پالت",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d36",
+    "title": "مدت زمان توزیع راننده",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d37",
+    "title": "تخصیص و ثبت سند پایان ماه",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d38",
+    "title": "سند ضایعات",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d39",
+    "title": "استعلام قیمت قدیم",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d3a",
+    "title": "تبدیل مواد به فله",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d3b",
+    "title": "گردش کالا - موجودی",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d3c",
+    "title": "گزارشات لحظه ایی مدیریت",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d3d",
+    "title": "دریافت وضعیت سفارشات اولیه شعب",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d3e",
+    "title": "محاسبه کسری شعب",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d3f",
+    "title": "دریافت تعداد شیپمنت ارسالی به فروشگاه ها و گردش روزانه",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d40",
+    "title": "دریافت تعداد حواله انتقال داده شده به تبلت",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d41",
+    "title": "رصد روزانه خودروهای توزیع در سامانه مسفا",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d42",
+    "title": "بررسی انبارگردانی کالاهای ثبت شده",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d43",
+    "title": "تست و بررسی تبلت توزیع کنندگان گلستان",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d44",
+    "title": "دریافت اطلاعات کارایی توزیع شعب گلستان",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d45",
+    "title": "دریافت اطلاعات مورد نیاز برای تحلیل و بررسی",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d46",
+    "title": "دریافت سفارشات توزیع شده دارای مطالبات",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "weekly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d47",
+    "title": "مقایسه سفارشات به تفکیک مشتری",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "weekly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d48",
+    "title": "ثبت عملکرد فعلی انبار مرکز",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "weekly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d49",
+    "title": "ثبت عملکرد فعلی انبار شعب",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "weekly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d4a",
+    "title": "جمع آوری عملرد فعلی نگهداری و تعمیرات",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "weekly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d4b",
+    "title": "بررسی نیازمندی های عملکرد بالانس حواله ها",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "weekly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d4c",
+    "title": "تایید فاکتور کردن حواله ها از وضعیت 50 به 70",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d4d",
+    "title": "دریافت تمامی سفارشات فاکتور شده",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d4e",
+    "title": "مقایسه تمامی سفارشات فاکتور شده در وضعیت برگشت از فروش",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d4f",
+    "title": "دریافت سفارشات توزیع نشده پایان ماهی شعب",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d50",
+    "title": "دریافت سفارشات در تمامی وضعیت ها",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d51",
+    "title": "دریافت اطلاعات از واحد برنامه ریزی و فروش به تفکیک گروه کالایی",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d52",
+    "title": "دریافت اطلاعات عملکرد پرسنل در طی ماه",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d53",
+    "title": "دریافت پرسنل استخدام جدید ، قطع همکاری و جابجایی گلستان",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d54",
+    "title": "دریافت اطلاعات عملکرد پرسنل در طی ماه",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d55",
+    "title": "دریافت اطلاعات عملکرد پرسنل در طی ماه",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d56",
+    "title": "ویرایش و اصلاحات اولیه فایل بهره وری بصورت ماهانه",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d57",
+    "title": "ویرایش و اصلاحات اولیه فایل بهره وری بصورت ماهانه",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d58",
+    "title": "حضور در جلسات نیازمندی های پشتیبانی",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d59",
+    "title": "دریافت اطلاعات عملکرد پرسنل در طی ماه",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d5a",
+    "title": "دریافت پرسنل استخدام جدید ، قطع همکاری و جابجایی اوشانک",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d5b",
+    "title": "دریافت گردش انبار مرکز وشعب",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d5c",
+    "title": "دریافت کارکرد مناطق",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d5d",
+    "title": "دریافت کارکرد رانندگان شاتل",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d5e",
+    "title": "کسری و تخمین کالای شعب",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d5f",
+    "title": "تخصیص و تحلیل کالا",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d60",
+    "title": "گردش کالای انبار مرکز",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d61",
+    "title": "تخصیص و تحلیل کالا",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d62",
+    "title": "تخصیص و تحلیل کالا",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d63",
+    "title": "موجودی مبادی تولید",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d64",
+    "title": "گردش کالای شعب",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "weekly",
+    "isActive": true,
+    "status": "in_progress",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d65",
+    "title": "کسری و تخمین  -تخصیص و تحلیل کالا-وضعیت خودروهای ارسال بار",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "weekly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d66",
+    "title": "کسری و تخمین  -تخصیص و تحلیل کالا-وضعیت خودروهای ارسال بار",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "weekly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d67",
+    "title": "درخواست کالای شعب",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d68",
+    "title": "کسری و تخمین کالای شعب",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d69",
+    "title": "کسری شبکه",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d6a",
+    "title": "ورودی روزانه کالا به انبار",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "weekly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a3fea2306bba22833387d6b",
+    "title": "تخصیص و ثبت سند پایان ماه",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "monthly",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a3fea5cf7e95a6de2480322",
+    "title": "گردش انبار (دریافت کالا از تامین کنندگان)",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea5cf7e95a6de2480324",
+    "title": "گزارشات لحظه ایی مدیریت",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "done",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a3fea5cf7e95a6de2480326",
+    "title": "گزارش حجم بار فروشگاه",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea5cf7e95a6de2480328",
+    "title": "گزارش  موجودی قیمت قدیم",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea5cf7e95a6de248032a",
+    "title": "گزارش تعداد پالت منطقه مسیر",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea5cf7e95a6de248032c",
+    "title": "سند ضایعات",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea5cf7e95a6de248032e",
+    "title": "استعلام قیمت قدیم",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea5cf7e95a6de2480330",
+    "title": "گردش کالا - موجودی",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea5cf7e95a6de2480332",
+    "title": "گزارشات لحظه ایی مدیریت",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a3fea5cf7e95a6de2480334",
+    "title": "دریافت وضعیت سفارشات اولیه شعب",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea5cf7e95a6de2480336",
+    "title": "محاسبه کسری شعب",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea5cf7e95a6de2480338",
+    "title": "دریافت تعداد شیپمنت ارسالی به فروشگاه ها و گردش روزانه",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea5cf7e95a6de248033a",
+    "title": "دریافت تعداد حواله انتقال داده شده به تبلت",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea5cf7e95a6de248033c",
+    "title": "رصد روزانه خودروهای توزیع در سامانه مسفا",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea5cf7e95a6de248033e",
+    "title": "بررسی انبارگردانی کالاهای ثبت شده",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea5cf7e95a6de2480340",
+    "title": "تست و بررسی تبلت توزیع کنندگان گلستان",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea5cf7e95a6de2480342",
+    "title": "دریافت اطلاعات کارایی توزیع شعب گلستان",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea5cf7e95a6de2480344",
+    "title": "دریافت اطلاعات مورد نیاز برای تحلیل و بررسی",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a3fea5cf7e95a6de2480346",
+    "title": "کسری و تخمین کالای شعب",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a3fea5cf7e95a6de2480348",
+    "title": "تخصیص و تحلیل کالا",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a3fea5cf7e95a6de248034a",
+    "title": "گردش کالای انبار مرکز",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a3fea5cf7e95a6de248034c",
+    "title": "تخصیص و تحلیل کالا",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a3fea5cf7e95a6de248034e",
+    "title": "تخصیص و تحلیل کالا",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a3fea5cf7e95a6de2480350",
+    "title": "موجودی مبادی تولید",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a40433070a685b2c37343a4",
+    "title": "گردش انبار (دریافت کالا از تامین کنندگان)",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a40433070a685b2c37343a6",
+    "title": "گزارشات لحظه ایی مدیریت",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a40433070a685b2c37343a8",
+    "title": "گزارش حجم بار فروشگاه",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a40433070a685b2c37343aa",
+    "title": "گزارش  موجودی قیمت قدیم",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a40433070a685b2c37343ac",
+    "title": "گزارش تعداد پالت منطقه مسیر",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a40433070a685b2c37343ae",
+    "title": "سند ضایعات",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a40433070a685b2c37343b0",
+    "title": "استعلام قیمت قدیم",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a40433070a685b2c37343b2",
+    "title": "گردش کالا - موجودی",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a40433070a685b2c37343b4",
+    "title": "گزارشات لحظه ایی مدیریت",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a40433070a685b2c37343b6",
+    "title": "دریافت وضعیت سفارشات اولیه شعب",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a40433070a685b2c37343b8",
+    "title": "محاسبه کسری شعب",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a40433070a685b2c37343ba",
+    "title": "دریافت تعداد شیپمنت ارسالی به فروشگاه ها و گردش روزانه",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a40433070a685b2c37343bc",
+    "title": "دریافت تعداد حواله انتقال داده شده به تبلت",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a40433070a685b2c37343be",
+    "title": "رصد روزانه خودروهای توزیع در سامانه مسفا",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a40433070a685b2c37343c0",
+    "title": "بررسی انبارگردانی کالاهای ثبت شده",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a40433070a685b2c37343c2",
+    "title": "تست و بررسی تبلت توزیع کنندگان گلستان",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a40433070a685b2c37343c4",
+    "title": "دریافت اطلاعات کارایی توزیع شعب گلستان",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a40433070a685b2c37343c6",
+    "title": "دریافت اطلاعات مورد نیاز برای تحلیل و بررسی",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a40433070a685b2c37343c8",
+    "title": "کسری و تخمین کالای شعب",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a40433070a685b2c37343ca",
+    "title": "تخصیص و تحلیل کالا",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a40433070a685b2c37343cc",
+    "title": "گردش کالای انبار مرکز",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "done",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a40433070a685b2c37343ce",
+    "title": "تخصیص و تحلیل کالا",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a40433070a685b2c37343d0",
+    "title": "تخصیص و تحلیل کالا",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a40433070a685b2c37343d2",
+    "title": "موجودی مبادی تولید",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a40436c86dc05ea24e86ece",
+    "title": "گردش انبار (دریافت کالا از تامین کنندگان)",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "done",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a40436c86dc05ea24e86ed0",
+    "title": "گزارشات لحظه ایی مدیریت",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "done",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a40436c86dc05ea24e86ed2",
+    "title": "گزارش حجم بار فروشگاه",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a40436c86dc05ea24e86ed4",
+    "title": "گزارش  موجودی قیمت قدیم",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a40436c86dc05ea24e86ed6",
+    "title": "گزارش تعداد پالت منطقه مسیر",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a40436c86dc05ea24e86ed8",
+    "title": "سند ضایعات",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a40436c86dc05ea24e86eda",
+    "title": "استعلام قیمت قدیم",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a40436c86dc05ea24e86edc",
+    "title": "گردش کالا - موجودی",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a40436c86dc05ea24e86ede",
+    "title": "گزارشات لحظه ایی مدیریت",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a40436c86dc05ea24e86ee0",
+    "title": "دریافت وضعیت سفارشات اولیه شعب",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a40436c86dc05ea24e86ee2",
+    "title": "محاسبه کسری شعب",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a40436c86dc05ea24e86ee4",
+    "title": "دریافت تعداد شیپمنت ارسالی به فروشگاه ها و گردش روزانه",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a40436c86dc05ea24e86ee6",
+    "title": "دریافت تعداد حواله انتقال داده شده به تبلت",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a40436c86dc05ea24e86ee8",
+    "title": "رصد روزانه خودروهای توزیع در سامانه مسفا",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a40436c86dc05ea24e86eea",
+    "title": "بررسی انبارگردانی کالاهای ثبت شده",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a40436c86dc05ea24e86eec",
+    "title": "تست و بررسی تبلت توزیع کنندگان گلستان",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a40436c86dc05ea24e86eee",
+    "title": "دریافت اطلاعات کارایی توزیع شعب گلستان",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a40436c86dc05ea24e86ef0",
+    "title": "دریافت اطلاعات مورد نیاز برای تحلیل و بررسی",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a40436c86dc05ea24e86ef2",
+    "title": "کسری و تخمین کالای شعب",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "done",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a40436c86dc05ea24e86ef4",
+    "title": "تخصیص و تحلیل کالا",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a40436c86dc05ea24e86ef6",
+    "title": "گردش کالای انبار مرکز",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "done",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a40436c86dc05ea24e86ef8",
+    "title": "تخصیص و تحلیل کالا",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a40436c86dc05ea24e86efa",
+    "title": "تخصیص و تحلیل کالا",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a40436c86dc05ea24e86efc",
+    "title": "موجودی مبادی تولید",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "done",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a419ec4569e43e646f3d36e",
+    "title": "موجودی مبادی تولید",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a419ec4569e43e646f3d370",
+    "title": "تخصیص و تحلیل کالا",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a419ec4569e43e646f3d372",
+    "title": "تخصیص و تحلیل کالا",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a419ec4569e43e646f3d374",
+    "title": "گردش کالای انبار مرکز",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a419ec4569e43e646f3d376",
+    "title": "تخصیص و تحلیل کالا",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a419ec4569e43e646f3d378",
+    "title": "کسری و تخمین کالای شعب",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a419ec4569e43e646f3d37a",
+    "title": "دریافت اطلاعات مورد نیاز برای تحلیل و بررسی",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a419ec4569e43e646f3d37c",
+    "title": "دریافت اطلاعات کارایی توزیع شعب گلستان",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a419ec4569e43e646f3d37e",
+    "title": "تست و بررسی تبلت توزیع کنندگان گلستان",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a419ec4569e43e646f3d380",
+    "title": "بررسی انبارگردانی کالاهای ثبت شده",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a419ec4569e43e646f3d382",
+    "title": "رصد روزانه خودروهای توزیع در سامانه مسفا",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a419ec4569e43e646f3d384",
+    "title": "دریافت تعداد حواله انتقال داده شده به تبلت",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a419ec4569e43e646f3d386",
+    "title": "دریافت تعداد شیپمنت ارسالی به فروشگاه ها و گردش روزانه",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a419ec4569e43e646f3d388",
+    "title": "محاسبه کسری شعب",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a419ec4569e43e646f3d38a",
+    "title": "دریافت وضعیت سفارشات اولیه شعب",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a419ec4569e43e646f3d38c",
+    "title": "گزارشات لحظه ایی مدیریت",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a419ec4569e43e646f3d38e",
+    "title": "گردش کالا - موجودی",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a419ec4569e43e646f3d390",
+    "title": "استعلام قیمت قدیم",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a419ec4569e43e646f3d392",
+    "title": "سند ضایعات",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a419ec4569e43e646f3d394",
+    "title": "گزارش تعداد پالت منطقه مسیر",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a419ec4569e43e646f3d396",
+    "title": "گزارش  موجودی قیمت قدیم",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a419ec4569e43e646f3d398",
+    "title": "گزارش حجم بار فروشگاه",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a419ec4569e43e646f3d39a",
+    "title": "گزارشات لحظه ایی مدیریت",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان",
+    "scheduleConfig": {
+      "weekdays": [
+        0,
+        2,
+        4,
+        6
+      ],
+      "monthDays": []
+    }
+  },
+  {
+    "_id": "6a419ec4569e43e646f3d39c",
+    "title": "گردش انبار (دریافت کالا از تامین کنندگان)",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان",
+    "scheduleConfig": {
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "monthDays": []
+    }
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65719",
+    "title": "رتبه بندی توزیع کنندگان اوشانک",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b6571b",
+    "title": "رتبه بندی توزیع کنندگان گلستان",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b6571d",
+    "title": "گردش انبار (دریافت کالا از تامین کنندگان)",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "جلالیان",
+    "scheduleConfig": {
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "monthDays": []
+    }
+  },
+  {
+    "_id": "6a4441c4c43fe68424b6571f",
+    "title": "گزارش گردش انبار اوشانک (ماهانه)",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65721",
+    "title": "گزارش گردش انبار اوشانک (سالانه)",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65723",
+    "title": "گزارش حجم بار فروشگاه",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65725",
+    "title": "گزارش رتبه بندی کالکتوران اوشانک",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65727",
+    "title": "کارکرد موزعین اوشانک تهران",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65729",
+    "title": "گزارش  موجودی قیمت قدیم",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b6572b",
+    "title": "کارکرد موزع استیجاری اوشانک مشهد",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b6572d",
+    "title": "گزارش مقایسه تناژ دریافت  اوشانک",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b6572f",
+    "title": "گزارش تعداد پالت منطقه مسیر",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65731",
+    "title": "گزارش تحلیل توزیع شعب اوشانک",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65733",
+    "title": "ظرفیت سنجی",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65735",
+    "title": "سند ضایعات",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65737",
+    "title": "ظرفیت سنجی",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65739",
+    "title": "ظرفیت سنجی",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b6573b",
+    "title": "استعلام قیمت قدیم",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b6573d",
+    "title": "ظرفیت سنجی",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b6573f",
+    "title": "گزارش دوره تامین اوشانک",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65741",
+    "title": "گردش کالا - موجودی",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65743",
+    "title": "گزارش کالاهای راکد انبار اوشانک",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65745",
+    "title": "گزارش پراکندگی فروشگاه های اوشانک",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65747",
+    "title": "گزارشات لحظه ایی مدیریت",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65749",
+    "title": "فیش بهره وری",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b6574b",
+    "title": "دریافت وضعیت سفارشات اولیه شعب",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b6574d",
+    "title": "فیش بهره وری",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b6574f",
+    "title": "فیش بهره وری",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65751",
+    "title": "محاسبه کسری شعب",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65753",
+    "title": "ایاب ذهاب",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65755",
+    "title": "گزارش جامع اوشانک",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65757",
+    "title": "دریافت تعداد شیپمنت ارسالی به فروشگاه ها و گردش روزانه",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65759",
+    "title": "گزارش جامع گلستان",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b6575b",
+    "title": "گزارش تحلیل توزیع شعب گلستان",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b6575d",
+    "title": "دریافت تعداد حواله انتقال داده شده به تبلت",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b6575f",
+    "title": "طبقه بندی سفارشات گلستان",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65761",
+    "title": "گزارش نرخ برگشت از توزیع",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65763",
+    "title": "رصد روزانه خودروهای توزیع در سامانه مسفا",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65765",
+    "title": "گزارش نرخ برگشت از فروش",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65767",
+    "title": "گزارش جامع گلستان",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65769",
+    "title": "بررسی انبارگردانی کالاهای ثبت شده",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b6576b",
+    "title": "گزارش itr اوشانک",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b6576d",
+    "title": "گزارش متوسط زمان بارگیری",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b6576f",
+    "title": "تست و بررسی تبلت توزیع کنندگان گلستان",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65771",
+    "title": "گزارش خطای کالکتوران اوشانک",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65773",
+    "title": "تخصیص و ثبت سند پایان ماه",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65775",
+    "title": "دریافت اطلاعات کارایی توزیع شعب گلستان",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65777",
+    "title": "گزارش اصل پارتو (80% فروش)",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65779",
+    "title": "گزارش اصل پارتو (80% فروش)",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b6577b",
+    "title": "دریافت اطلاعات مورد نیاز برای تحلیل و بررسی",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b6577d",
+    "title": "گزارش پراکنگی سفارشات براساس بازه کیلومتر",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b6577f",
+    "title": "گزارش نرخ هزینه مناطق",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65781",
+    "title": "کسری و تخمین کالای شعب",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65783",
+    "title": "گزارش نرخ هزینه مناطق",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65785",
+    "title": "گزارش کالاهای راکد",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65787",
+    "title": "تخصیص و تحلیل کالا",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65789",
+    "title": "گزارش ITR",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b6578b",
+    "title": "گزارش اقلام تبلیغاتی",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b6578d",
+    "title": "گردش کالای انبار مرکز",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b6578f",
+    "title": "کسری سفارشات",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65791",
+    "title": "هزینه ارسال کالا",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65793",
+    "title": "تخصیص و تحلیل کالا",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65795",
+    "title": "هزینه ارسال کالا",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65797",
+    "title": "تخصیص و تحلیل کالا",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b65799",
+    "title": "هزینه ارسال کالا",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b6579b",
+    "title": "گزارش انحراف از موجودی انبار",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b6579d",
+    "title": "موجودی مبادی تولید",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": false,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b6579f",
+    "title": "ظرفیت سنجی ناوگان توزیع",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b657a1",
+    "title": "هزینه سنجی",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b657a3",
+    "title": "موجودی پالت",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b657a5",
+    "title": "مدت زمان توزیع راننده",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b657a7",
+    "title": "تخصیص و ثبت سند پایان ماه",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b657a9",
+    "title": "تبدیل مواد به فله",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b657ab",
+    "title": "تایید فاکتور کردن حواله ها از وضعیت 50 به 70",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b657ad",
+    "title": "دریافت تمامی سفارشات فاکتور شده",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b657af",
+    "title": "مقایسه تمامی سفارشات فاکتور شده در وضعیت برگشت از فروش",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b657b1",
+    "title": "دریافت سفارشات توزیع نشده پایان ماهی شعب",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b657b3",
+    "title": "دریافت سفارشات در تمامی وضعیت ها",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b657b5",
+    "title": "دریافت اطلاعات از واحد برنامه ریزی و فروش به تفکیک گروه کالایی",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b657b7",
+    "title": "دریافت اطلاعات عملکرد پرسنل در طی ماه",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b657b9",
+    "title": "دریافت پرسنل استخدام جدید ، قطع همکاری و جابجایی گلستان",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b657bb",
+    "title": "دریافت اطلاعات عملکرد پرسنل در طی ماه",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b657bd",
+    "title": "دریافت اطلاعات عملکرد پرسنل در طی ماه",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b657bf",
+    "title": "ویرایش و اصلاحات اولیه فایل بهره وری بصورت ماهانه",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b657c1",
+    "title": "ویرایش و اصلاحات اولیه فایل بهره وری بصورت ماهانه",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b657c3",
+    "title": "حضور در جلسات نیازمندی های پشتیبانی",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b657c5",
+    "title": "دریافت اطلاعات عملکرد پرسنل در طی ماه",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b657c7",
+    "title": "دریافت پرسنل استخدام جدید ، قطع همکاری و جابجایی اوشانک",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b657c9",
+    "title": "دریافت گردش انبار مرکز وشعب",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b657cb",
+    "title": "دریافت کارکرد مناطق",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b657cd",
+    "title": "دریافت کارکرد رانندگان شاتل",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b657cf",
+    "title": "درخواست کالای شعب",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b657d1",
+    "title": "کسری و تخمین کالای شعب",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b657d3",
+    "title": "کسری شبکه",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a4441c4c43fe68424b657d5",
+    "title": "تخصیص و ثبت سند پایان ماه",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "monthly",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a42f04422ce8b8d3555a18d",
+    "title": "موجودی مبادی تولید",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a42f04422ce8b8d3555a18f",
+    "title": "تخصیص و تحلیل کالا",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a42f04422ce8b8d3555a191",
+    "title": "تخصیص و تحلیل کالا",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a42f04422ce8b8d3555a193",
+    "title": "گردش کالای انبار مرکز",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a42f04422ce8b8d3555a195",
+    "title": "تخصیص و تحلیل کالا",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a42f04422ce8b8d3555a197",
+    "title": "کسری و تخمین کالای شعب",
+    "assignedTo": "6a39a17e408e416facf70e23",
+    "recurrence": "daily",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اکبر گنجی"
+  },
+  {
+    "_id": "6a42f04422ce8b8d3555a199",
+    "title": "دریافت اطلاعات مورد نیاز برای تحلیل و بررسی",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a42f04422ce8b8d3555a19b",
+    "title": "دریافت اطلاعات کارایی توزیع شعب گلستان",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a42f04422ce8b8d3555a19d",
+    "title": "تست و بررسی تبلت توزیع کنندگان گلستان",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a42f04422ce8b8d3555a19f",
+    "title": "بررسی انبارگردانی کالاهای ثبت شده",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a42f04422ce8b8d3555a1a1",
+    "title": "رصد روزانه خودروهای توزیع در سامانه مسفا",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a42f04422ce8b8d3555a1a3",
+    "title": "دریافت تعداد حواله انتقال داده شده به تبلت",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a42f04422ce8b8d3555a1a5",
+    "title": "دریافت تعداد شیپمنت ارسالی به فروشگاه ها و گردش روزانه",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a42f04422ce8b8d3555a1a7",
+    "title": "محاسبه کسری شعب",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a42f04422ce8b8d3555a1a9",
+    "title": "دریافت وضعیت سفارشات اولیه شعب",
+    "assignedTo": "6a39a17e408e416facf70e22",
+    "recurrence": "daily",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "اعلایی"
+  },
+  {
+    "_id": "6a42f04422ce8b8d3555a1ab",
+    "title": "گزارشات لحظه ایی مدیریت",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a42f04422ce8b8d3555a1ad",
+    "title": "گردش کالا - موجودی",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a42f04422ce8b8d3555a1af",
+    "title": "استعلام قیمت قدیم",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a42f04422ce8b8d3555a1b1",
+    "title": "سند ضایعات",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a42f04422ce8b8d3555a1b3",
+    "title": "گزارش تعداد پالت منطقه مسیر",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a42f04422ce8b8d3555a1b5",
+    "title": "گزارش  موجودی قیمت قدیم",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a42f04422ce8b8d3555a1b7",
+    "title": "گزارش حجم بار فروشگاه",
+    "assignedTo": "6a39a17e408e416facf70e21",
+    "recurrence": "daily",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "امیر گنجی"
+  },
+  {
+    "_id": "6a42f04422ce8b8d3555a1b9",
+    "title": "گردش انبار (دریافت کالا از تامین کنندگان)",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "daily",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان",
+    "scheduleConfig": {
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "monthDays": []
+    }
+  },
+  {
+    "_id": "6a42f04422ce8b8d3555a1bb",
+    "title": "گزارشات لحظه ایی مدیریت",
+    "assignedTo": "6a39a17e408e416facf70e20",
+    "recurrence": "daily",
+    "isActive": true,
+    "status": "todo",
+    "sourceSheet": "جلالیان",
+    "scheduleConfig": {
+      "weekdays": [
+        0,
+        2,
+        4,
+        6
+      ],
+      "monthDays": []
+    }
+  }
+]

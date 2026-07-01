@@ -227,6 +227,20 @@ export class FixedTaskDocumentListResponseDto {
   data: object[];
 }
 
+export class FixedTaskStatusDocumentListResponseDto {
+  @ApiProperty()
+  evaluatedAt: Date;
+
+  @ApiProperty()
+  total: number;
+
+  @ApiProperty({ required: false })
+  userId?: string;
+
+  @ApiProperty({ type: [Object] })
+  data: object[];
+}
+
 export class FixedTaskDurationBalanceResponseDto {
   @ApiProperty()
   from: Date;

@@ -271,6 +271,7 @@ export class FixedTaskRolloverService {
   private getSeriesKey(candidate: FixedTaskTemplateDocument): string {
     const sourceIdentity =
       candidate.originalSourceRow ??
+      candidate.sourceRow ??
       `${candidate.title}:${candidate.description}`;
 
     return [

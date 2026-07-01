@@ -115,6 +115,20 @@ export class ManagerWorkStatusService {
     return { from, to, evaluatedAt, total: data.length, userId, data };
   }
 
+  async getInProgressFixedTasks(userId?: string) {
+    const evaluatedAt = new Date();
+    const data = await this.repository.findInProgressFixedTasks(userId);
+
+    return { evaluatedAt, total: data.length, userId, data };
+  }
+
+  async getTodoFixedTasks(userId?: string) {
+    const evaluatedAt = new Date();
+    const data = await this.repository.findTodoFixedTasks(userId);
+
+    return { evaluatedAt, total: data.length, userId, data };
+  }
+
   private countStatuses(
     items: WorkStatusItem[],
     now: Date,

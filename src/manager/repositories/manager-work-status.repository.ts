@@ -152,6 +152,17 @@ export class ManagerWorkStatusRepository {
       .exec();
   }
 
+  async findInProgressFixedTasks(userId?: string) {
+    return this.findFixedTasksByActiveStatus(
+      FixedTaskStatus.IN_PROGRESS,
+      userId,
+    );
+  }
+
+  async findTodoFixedTasks(userId?: string) {
+    return this.findFixedTasksByActiveStatus(FixedTaskStatus.TODO, userId);
+  }
+
   private buildTaskDateFilter(from: Date, to: Date) {
     return {
       $or: [
@@ -243,6 +254,28 @@ export class ManagerWorkStatusRepository {
     }
 
     return { $and: filters };
+  }
+
+  private findFixedTasksByActiveStatus(
+    status: FixedTaskStatus.TODO | FixedTaskStatus.IN_PROGRESS,
+    userId?: string,
+  ) {
+    const filter = this.buildFixedTaskDocumentFilter(
+      {
+        status,
+        isActive: true,
+      },
+      userId,
+    );
+
+    return this.fixedTaskModel
+      .find(filter)
+      .populate('assignedTo', 'firstName lastName email mobile roles workField isActive')
+      .populate('createdBy', 'firstName lastName email roles workField')
+      .populate('timingApprovedBy', 'firstName lastName email roles')
+      .sort({ startDate: 1, endDate: 1, _id: 1 })
+      .lean()
+      .exec();
   }
 
   private mapTasksToUserItems(tasks: any[]): WorkStatusUserItem[] {

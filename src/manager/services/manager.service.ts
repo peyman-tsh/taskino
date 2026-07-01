@@ -122,6 +122,16 @@ export class ManagerService extends BaseManagerService {
     );
   }
 
+  getInProgressFixedTasks(userId?: string) {
+    if (userId) this.toObjectId(userId, 'user ID');
+    return this.managerWorkStatusService.getInProgressFixedTasks(userId);
+  }
+
+  getTodoFixedTasks(userId?: string) {
+    if (userId) this.toObjectId(userId, 'user ID');
+    return this.managerWorkStatusService.getTodoFixedTasks(userId);
+  }
+
   reviewFixedTaskTiming(
     fixedTaskId: string,
     managerId: string,

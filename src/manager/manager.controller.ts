@@ -33,6 +33,7 @@ import {
   WorkStatusRangeResponseDto,
   UserWorkStatusSummaryResponseDto,
   FixedTaskDocumentListResponseDto,
+  FixedTaskStatusDocumentListResponseDto,
   FixedTaskDurationBalanceResponseDto,
 } from './dto/manager-response.dto';
 import { MongoIdParamDto } from './dto/mongo-id-param.dto';
@@ -49,6 +50,7 @@ import { WorkStatusRangeQueryDto } from './dto/work-status-range-query.dto';
 import { FixedTaskTimingApprovalDto } from './dto/fixed-task-timing-approval.dto';
 import { FixedTaskDurationBalanceQueryDto } from './dto/fixed-task-duration-balance-query.dto';
 import { PaginatedTasksResponseDto } from '../task/dto/task-response.dto';
+import { FixedTaskUserFilterQueryDto } from './dto/fixed-task-user-filter-query.dto';
 
 @ApiTags('Manager')
 @ApiBearerAuth()
@@ -239,6 +241,36 @@ export class ManagerController {
       query.to,
       query.userId,
     );
+  }
+
+  @Get('fixed-tasks/in-progress')
+  @ApiOperation({
+    summary: 'Get active in-progress fixed-task documents',
+    description:
+      'Returns active FixedTask documents with status in_progress. When userId is provided, only that assigned user is returned; otherwise all users are included.',
+  })
+  @ApiOkResponse({
+    description: 'In-progress fixed tasks retrieved successfully',
+    type: FixedTaskStatusDocumentListResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Invalid user ID' })
+  getInProgressFixedTasks(@Query() query: FixedTaskUserFilterQueryDto) {
+    return this.managerService.getInProgressFixedTasks(query.userId);
+  }
+
+  @Get('fixed-tasks/todo')
+  @ApiOperation({
+    summary: 'Get active todo fixed-task documents',
+    description:
+      'Returns active FixedTask documents with status todo. When userId is provided, only that assigned user is returned; otherwise all users are included.',
+  })
+  @ApiOkResponse({
+    description: 'Todo fixed tasks retrieved successfully',
+    type: FixedTaskStatusDocumentListResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Invalid user ID' })
+  getTodoFixedTasks(@Query() query: FixedTaskUserFilterQueryDto) {
+    return this.managerService.getTodoFixedTasks(query.userId);
   }
 
   @Get('tasks/users/counts')

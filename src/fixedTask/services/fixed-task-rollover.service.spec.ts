@@ -172,6 +172,46 @@ describe('FixedTaskRolloverService', () => {
     });
   });
 
+  it('does not let one unscheduled daily row block other daily rows without scheduleConfig', async () => {
+    const monday = new Date('2026-06-22T11:05:00.000Z');
+    const scheduledTask = createTask(
+      FixedTaskRecurrence.DAILY,
+      FixedTaskStatus.TODO,
+    );
+    const defaultTask = createTask(
+      FixedTaskRecurrence.DAILY,
+      FixedTaskStatus.TODO,
+    );
+
+    scheduledTask.title = defaultTask.title;
+    scheduledTask.description = defaultTask.description;
+    scheduledTask.assignedTo = defaultTask.assignedTo;
+    scheduledTask.createdBy = defaultTask.createdBy;
+    scheduledTask.sourceExcel = defaultTask.sourceExcel = 'fixed.xlsx';
+    scheduledTask.sourceSheet = defaultTask.sourceSheet = 'Sheet 1';
+    scheduledTask.sourceRow = 10;
+    defaultTask.sourceRow = 11;
+    scheduledTask.scheduleConfig = { weekdays: [0, 2, 4, 6] };
+
+    repository.findDailyRolloverCandidates.mockResolvedValue([
+      scheduledTask,
+      defaultTask,
+    ]);
+    repository.claimExpiredOccurrence.mockResolvedValue(defaultTask);
+    repository.createNextOccurrence.mockResolvedValue({
+      _id: new Types.ObjectId(),
+    });
+
+    await expect(
+      service.runForRecurrence(FixedTaskRecurrence.DAILY, monday),
+    ).resolves.toBe(1);
+
+    expect(repository.createNextOccurrence).toHaveBeenCalledWith(
+      defaultTask,
+      expect.any(Object),
+    );
+  });
+
   it('rolls over unfinished work regardless of its deadline', async () => {
     const task = createTask(
       FixedTaskRecurrence.WEEKLY,
