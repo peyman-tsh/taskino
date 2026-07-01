@@ -72,7 +72,7 @@ export class UserRepository {
   ) {
     return this.userModel
       .findOneAndUpdate(
-        { _id: id, roles: UserRole.SPECIALIST },
+        { _id: id, roles: { $in: [UserRole.SPECIALIST, UserRole.SUPERVISOR] } },
         [
           {
             $set: {
@@ -85,6 +85,35 @@ export class UserRepository {
         { new: true, session, updatePipeline: true },
       )
       .exec();
+  }
+
+  async findSpecialistOrSupervisorScoreById(id: string): Promise<{
+    userId: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: string;
+    score: number;
+  } | null> {
+    const user = await this.userModel
+      .findOne({
+        _id: id,
+        roles: { $in: [UserRole.SPECIALIST, UserRole.SUPERVISOR] },
+      })
+      .select('firstName lastName email roles score')
+      .lean()
+      .exec();
+
+    if (!user) return null;
+
+    return {
+      userId: user._id.toString(),
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.roles,
+      score: user.score ?? 0,
+    };
   }
 
   deleteById(id: string) {

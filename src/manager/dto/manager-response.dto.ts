@@ -281,6 +281,26 @@ export class FixedTaskDurationBalanceResponseDto {
   remainingMinutes: number;
 }
 
+export class UserScoreResponseDto {
+  @ApiProperty()
+  userId: string;
+
+  @ApiProperty()
+  firstName: string;
+
+  @ApiProperty()
+  lastName: string;
+
+  @ApiProperty()
+  email: string;
+
+  @ApiProperty()
+  role: string;
+
+  @ApiProperty()
+  score: number;
+}
+
 export {
   PaginatedUsersResponseDto,
   TaskCountsByUserResponseDto,

@@ -55,6 +55,11 @@ export class ManagerService extends BaseManagerService {
     return this.userService.findByName(firstName, lastName);
   }
 
+  getUserScore(userId: string) {
+    this.toObjectId(userId, 'user ID');
+    return this.userService.getSpecialistOrSupervisorScore(userId);
+  }
+
   updateUserRole(userId: string, role: string) {
     this.toObjectId(userId, 'user ID');
 

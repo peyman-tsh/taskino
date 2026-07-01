@@ -55,7 +55,7 @@ export class User {
   })
   workField: WorkField;
 
-  @Prop({ type: Number, required: false })
+  @Prop({ type: Number, default: 0 })
   score: number;
 
   @Prop({ type: Boolean, default: false })

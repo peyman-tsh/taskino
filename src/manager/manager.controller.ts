@@ -36,6 +36,7 @@ import {
   FixedTaskDocumentListResponseDto,
   FixedTaskStatusDocumentListResponseDto,
   FixedTaskDurationBalanceResponseDto,
+  UserScoreResponseDto,
 } from './dto/manager-response.dto';
 import { MongoIdParamDto } from './dto/mongo-id-param.dto';
 import { MonthlyPerformanceQueryDto } from './dto/monthly-performance-query.dto';
@@ -106,14 +107,14 @@ export class ManagerController {
 
   @Patch('users/:id/score')
   @ApiOperation({
-    summary: 'Manually adjust a specialist score',
+    summary: 'Manually adjust a specialist or supervisor score',
     description:
       'Adds or subtracts a score selected by the manager. This operation is separate from automatic task scoring, and the final score cannot be less than zero.',
   })
-  @ApiParam({ name: 'id', description: 'Specialist user ID' })
+  @ApiParam({ name: 'id', description: 'Specialist or supervisor user ID' })
   @ApiOkResponse({ type: UserResponseDto })
   @ApiBadRequestResponse({ description: 'Score must be a non-zero integer' })
-  @ApiNotFoundResponse({ description: 'Specialist user not found' })
+  @ApiNotFoundResponse({ description: 'Specialist or supervisor user not found' })
   adjustSpecialistScore(
     @Param() params: MongoIdParamDto,
     @Body() dto: AdjustSpecialistScoreDto,
@@ -123,6 +124,20 @@ export class ManagerController {
       dto.score,
     );
   }
+
+  @Get('users/:id/score')
+  @ApiOperation({
+    summary: 'Get a specialist or supervisor score',
+    description:
+      'Returns the current score for one specialist or supervisor by user ID.',
+  })
+  @ApiParam({ name: 'id', description: 'Specialist or supervisor user ID' })
+  @ApiOkResponse({ type: UserScoreResponseDto })
+  @ApiNotFoundResponse({ description: 'Specialist or supervisor user not found' })
+  getUserScore(@Param() params: MongoIdParamDto) {
+    return this.managerService.getUserScore(params.id);
+  }
+
   @Roles(UserRole.SUPERVISOR)
   @Patch('fixed-tasks/:id/timing-approval')
   @ApiOperation({

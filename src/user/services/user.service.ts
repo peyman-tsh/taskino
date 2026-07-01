@@ -392,9 +392,30 @@ export class UserService {
     );
 
     if (!user) {
-      throw new NotFoundException('Specialist user not found');
+      throw new NotFoundException('Specialist or supervisor user not found');
     }
 
     return user;
+  }
+
+  async getSpecialistOrSupervisorScore(userId: string): Promise<{
+    userId: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: string;
+    score: number;
+  }> {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new NotFoundException('Invalid user ID');
+    }
+
+    const userScore =
+      await this.userRepository.findSpecialistOrSupervisorScoreById(userId);
+    if (!userScore) {
+      throw new NotFoundException('Specialist or supervisor user not found');
+    }
+
+    return userScore;
   }
 }
