@@ -167,20 +167,17 @@ export class FixedTaskScheduleService {
       );
     }
 
-    const nextMonth =
-      today.persianMonth === 12 ? 1 : today.persianMonth + 1;
-    const nextYear =
-      today.persianMonth === 12
-        ? today.persianYear + 1
-        : today.persianYear;
-    const firstConfiguredDay = monthDays[0] ?? today.persianDay;
     const safeDay = this.clampPersianDayToMonth(
-      nextYear,
-      nextMonth,
-      firstConfiguredDay,
+      today.persianYear,
+      today.persianMonth,
+      getPersianMonthLength(today.persianYear, today.persianMonth),
     );
 
-    return tehranPersianDateTimeToUtc(nextYear, nextMonth, safeDay);
+    return tehranPersianDateTimeToUtc(
+      today.persianYear,
+      today.persianMonth,
+      safeDay,
+    );
   }
 
   private clampPersianDayToMonth(

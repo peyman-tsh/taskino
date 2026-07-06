@@ -393,6 +393,12 @@ describe('FixedTaskRolloverService', () => {
       task._id,
       firstDayOfMonth,
     );
+    expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
+      startDate: firstDayOfMonth,
+      startTime: '14:35',
+      endDate: new Date('2026-07-22T20:30:00.000Z'),
+      endTime: '00:01',
+    });
   });
 
   it('sets configured monthly endDate to the next configured month day', async () => {
@@ -435,6 +441,50 @@ describe('FixedTaskRolloverService', () => {
       startDate: dayTwentySeven,
       startTime: '14:35',
       endDate: new Date('2026-07-18T20:30:00.000Z'),
+      endTime: '00:01',
+    });
+  });
+
+  it('ends configured monthly work at the current month end on the last configured day', async () => {
+    const dayFifteen = new Date('2026-07-06T11:05:00.000Z');
+    const task = createTask(FixedTaskRecurrence.MONTHLY, FixedTaskStatus.TODO);
+    task.scheduleConfig = { monthDays: [2, 15] };
+    repository.findConfiguredRolloverCandidates.mockResolvedValue([task]);
+    repository.claimExpiredOccurrence.mockResolvedValue(task);
+    repository.createNextOccurrence.mockResolvedValue({
+      _id: new Types.ObjectId(),
+    });
+
+    await expect(
+      service.runForRecurrence(FixedTaskRecurrence.MONTHLY, dayFifteen),
+    ).resolves.toBe(1);
+
+    expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
+      startDate: dayFifteen,
+      startTime: '14:35',
+      endDate: new Date('2026-07-21T20:30:00.000Z'),
+      endTime: '00:01',
+    });
+  });
+
+  it('ends single-day configured monthly work at the current month end', async () => {
+    const dayFifteen = new Date('2026-07-06T11:05:00.000Z');
+    const task = createTask(FixedTaskRecurrence.MONTHLY, FixedTaskStatus.TODO);
+    task.scheduleConfig = { monthDays: [15] };
+    repository.findConfiguredRolloverCandidates.mockResolvedValue([task]);
+    repository.claimExpiredOccurrence.mockResolvedValue(task);
+    repository.createNextOccurrence.mockResolvedValue({
+      _id: new Types.ObjectId(),
+    });
+
+    await expect(
+      service.runForRecurrence(FixedTaskRecurrence.MONTHLY, dayFifteen),
+    ).resolves.toBe(1);
+
+    expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
+      startDate: dayFifteen,
+      startTime: '14:35',
+      endDate: new Date('2026-07-21T20:30:00.000Z'),
       endTime: '00:01',
     });
   });
