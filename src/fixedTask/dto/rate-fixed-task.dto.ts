@@ -4,7 +4,7 @@ import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class RateFixedTaskDto {
   @ApiProperty({
-    description: 'Manager rating for the fixed task. 0 is weak, 1-2 normal, 3-5 good.',
+    description: 'Manager rating for the fixed task. 0 is weak, 1-3 normal, 4-5 good.',
     minimum: 0,
     maximum: 5,
     example: 4,
