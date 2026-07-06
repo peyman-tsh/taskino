@@ -18,6 +18,7 @@ interface UpdateContext {
   newlyAssignedUserIds: string[];
   changedToDone: boolean;
   statusChanged: boolean;
+  assigneeChanged: boolean;
   progressUserIds: string[];
 }
 
@@ -67,6 +68,7 @@ export class TaskUpdateService {
       changedToDone,
       statusChanged:
         dto.status !== undefined && dto.status !== task.status,
+      assigneeChanged: dto.assignedTo !== undefined,
       newlyAssignedUserIds: this.getNewAssigneeIds(task, dto),
       progressUserIds: this.getAffectedProgressUserIds(task, dto),
     };
@@ -200,8 +202,11 @@ export class TaskUpdateService {
       );
     }
 
-    if (context.progressUserIds.length > 0) {
-      this.eventBus.publish(
+    if (
+      context.progressUserIds.length > 0 &&
+      this.shouldRefreshProgress(updatedTask, context)
+    ) {
+      await this.eventBus.publishAndWait(
         UserProgressEvents.REFRESH_REQUESTED,
         new UserProgressRefreshRequestedEvent(context.progressUserIds),
       );
@@ -217,5 +222,40 @@ export class TaskUpdateService {
       updatedTask._id.toString(),
       updatedTask.title,
     );
+  }
+
+  private shouldRefreshProgress(
+    updatedTask: TaskDocument,
+    context: UpdateContext,
+  ): boolean {
+    if (context.assigneeChanged) return true;
+    if (!context.statusChanged) return false;
+    if (updatedTask.status !== TaskStatus.DONE) return true;
+
+    return this.isCompletedByDeadline(updatedTask);
+  }
+
+  private isCompletedByDeadline(task: TaskDocument): boolean {
+    const deadline = this.getDeadline(task);
+    return (
+      task.doneTime instanceof Date &&
+      deadline instanceof Date &&
+      task.doneTime.getTime() <= deadline.getTime()
+    );
+  }
+
+  private getDeadline(task: TaskDocument): Date | null {
+    const deadlineDate = task.endDate ?? task.dueDate;
+    if (!(deadlineDate instanceof Date)) return null;
+
+    const deadline = new Date(deadlineDate);
+    if (!task.endTime) {
+      deadline.setHours(23, 59, 59, 999);
+      return deadline;
+    }
+
+    const [hours, minutes] = task.endTime.split(':').map(Number);
+    deadline.setHours(hours, minutes, 0, 0);
+    return deadline;
   }
 }

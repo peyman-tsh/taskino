@@ -33,6 +33,9 @@ export class UserResponseDto {
   @ApiProperty()
   progressPercentage: number;
 
+  @ApiPropertyOptional()
+  progressDate?: Date;
+
   @ApiProperty({ enum: UserPerformanceStatus })
   performanceStatus: UserPerformanceStatus;
 
@@ -75,6 +78,9 @@ export class SpecialistProgressResponseDto {
   @ApiProperty({ minimum: 0, maximum: 100, example: 75 })
   progressPercentage: number;
 
+  @ApiPropertyOptional()
+  progressDate?: Date;
+
   @ApiProperty({ minimum: 0, maximum: 100, example: 60 })
   taskProgressPercentage: number;
 
@@ -106,4 +112,27 @@ export class UserWorkSummaryResponseDto {
 
   @ApiProperty({ example: 120 })
   score: number;
+}
+
+export class UserDailyProgressListResponseDto {
+  @ApiProperty()
+  userId: string;
+
+  @ApiProperty()
+  from: Date;
+
+  @ApiProperty()
+  to: Date;
+
+  @ApiProperty({ example: 3 })
+  dayCount: number;
+
+  @ApiProperty({ minimum: 0, maximum: 100, example: 67 })
+  averageProgressPercentage: number;
+
+  @ApiProperty()
+  total: number;
+
+  @ApiProperty({ type: [Object] })
+  data: object[];
 }

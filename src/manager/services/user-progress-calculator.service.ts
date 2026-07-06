@@ -27,17 +27,19 @@ export class UserProgressCalculatorService {
       fixedTasks,
       FixedTaskStatus.IN_PROGRESS,
     );
+    const onTimeTasks = this.countOnTimeTasks(tasks);
+    const onTimeFixedTasks = this.countOnTimeFixedTasks(fixedTasks);
     const taskProgressPercentage = this.calculateCompletionPercentage(
-      completedTasks,
+      onTimeTasks,
       tasks.length,
     );
     const fixedTaskProgressPercentage = this.calculateCompletionPercentage(
-      completedFixedTasks,
+      onTimeFixedTasks,
       fixedTasks.length,
     );
     const progressPercentage = this.calculateOverallProgress(
-      taskProgressPercentage,
-      fixedTaskProgressPercentage,
+      onTimeTasks,
+      onTimeFixedTasks,
       tasks.length,
       fixedTasks.length,
     );
@@ -45,12 +47,12 @@ export class UserProgressCalculatorService {
     return {
       totalTasks: tasks.length,
       completedTasks,
-      onTimeTasks: this.countOnTimeTasks(tasks),
+      onTimeTasks,
       inProgressTasks,
       taskProgressPercentage,
       totalFixedTasks: fixedTasks.length,
       completedFixedTasks,
-      onTimeFixedTasks: this.countOnTimeFixedTasks(fixedTasks),
+      onTimeFixedTasks,
       inProgressFixedTasks,
       fixedTaskProgressPercentage,
       progressPercentage,
@@ -66,13 +68,15 @@ export class UserProgressCalculatorService {
   }
 
   private countOnTimeTasks(tasks: ProgressTask[]): number {
-    return tasks.filter(
-      (task) =>
+    return tasks.filter((task) => {
+      const deadline = this.getTaskDeadline(task);
+      return (
         task.status === TaskStatus.DONE &&
         task.doneTime instanceof Date &&
-        task.dueDate instanceof Date &&
-        task.doneTime.getTime() <= task.dueDate.getTime(),
-    ).length;
+        deadline !== null &&
+        task.doneTime.getTime() <= deadline.getTime()
+      );
+    }).length;
   }
 
   private countOnTimeFixedTasks(fixedTasks: ProgressFixedTask[]): number {
@@ -95,17 +99,17 @@ export class UserProgressCalculatorService {
   }
 
   private calculateOverallProgress(
-    taskProgress: number,
-    fixedTaskProgress: number,
+    completedTasks: number,
+    completedFixedTasks: number,
     totalTasks: number,
     totalFixedTasks: number,
   ): number {
-    if (totalTasks > 0 && totalFixedTasks > 0) {
-      return Math.round((taskProgress + fixedTaskProgress) / 2);
-    }
-    if (totalTasks > 0) return taskProgress;
-    if (totalFixedTasks > 0) return fixedTaskProgress;
-    return 0;
+    const totalWork = totalTasks + totalFixedTasks;
+    if (totalWork === 0) return 0;
+
+    return Math.round(
+      ((completedTasks + completedFixedTasks) / totalWork) * 100,
+    );
   }
 
   private getFixedTaskDeadline(
@@ -121,6 +125,21 @@ export class UserProgressCalculatorService {
     }
 
     const [hours, minutes] = endTime.split(':').map(Number);
+    deadline.setHours(hours, minutes, 0, 0);
+    return deadline;
+  }
+
+  private getTaskDeadline(task: ProgressTask): Date | null {
+    const deadlineDate = task.endDate ?? task.dueDate;
+    if (!(deadlineDate instanceof Date)) return null;
+
+    const deadline = new Date(deadlineDate);
+    if (!task.endTime) {
+      deadline.setHours(23, 59, 59, 999);
+      return deadline;
+    }
+
+    const [hours, minutes] = task.endTime.split(':').map(Number);
     deadline.setHours(hours, minutes, 0, 0);
     return deadline;
   }

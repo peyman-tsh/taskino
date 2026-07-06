@@ -31,10 +31,12 @@ import {
   ApproveUserResponseDto,
   PaginatedUsersResponseDto,
   SpecialistProgressResponseDto,
+  UserDailyProgressListResponseDto,
   UserWorkSummaryResponseDto,
   UserResponseDto,
 } from './dto/user-response.dto';
 import { CurrentUserId } from '../auth/decorators/current-user-id.decorator';
+import { DailyProgressRangeQueryDto } from './dto/daily-progress-range-query.dto';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -102,6 +104,27 @@ export class UserController {
   @ApiResponse({ status: 404, description: 'Specialist or supervisor not found' })
   getMyProgress(@CurrentUserId() userId: string) {
     return this.userService.getSpecialistProgress(userId);
+  }
+
+  @Get('me/daily-progress')
+  @Roles(UserRole.SPECIALIST, UserRole.SUPERVISOR)
+  @ApiOperation({
+    summary: 'Get current user daily progress in a date range',
+    description:
+      'Returns one progress item per Tehran calendar day and averages the daily progress percentages across the selected range.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Daily progress retrieved successfully',
+    type: UserDailyProgressListResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Invalid date range' })
+  @ApiResponse({ status: 404, description: 'Specialist or supervisor not found' })
+  getMyDailyProgress(
+    @CurrentUserId() userId: string,
+    @Query() query: DailyProgressRangeQueryDto,
+  ) {
+    return this.userService.getMyDailyProgress(userId, query.from, query.to);
   }
 
   @Get('me/work-summary')

@@ -33,7 +33,7 @@ describe('TaskUpdateService', () => {
   const scoreService = {
     adjustCompletedTaskScore: jest.fn(),
   };
-  const eventBus = { publish: jest.fn() };
+  const eventBus = { publishAndWait: jest.fn() };
   const service = new TaskUpdateService(
     repository as unknown as TaskRepository,
     policy as unknown as TaskPolicyService,
@@ -70,7 +70,7 @@ describe('TaskUpdateService', () => {
       TaskStatus.DONE,
     );
     expect(notificationService.notifyCreatorWhenCompleted).toHaveBeenCalled();
-    expect(eventBus.publish).toHaveBeenCalledWith(
+    expect(eventBus.publishAndWait).toHaveBeenCalledWith(
       UserProgressEvents.REFRESH_REQUESTED,
       expect.objectContaining({
         userIds: [assigneeId.toString()],
@@ -103,6 +103,24 @@ describe('TaskUpdateService', () => {
     );
   });
 
+  it('does not refresh progress when a task is completed after its deadline', async () => {
+    const task = {
+      ...createTask(TaskStatus.IN_PROGRESS),
+      endDate: new Date('2000-01-01T00:00:00.000Z'),
+    } as TaskDocument;
+    const updatedTask = {
+      ...task,
+      status: TaskStatus.DONE,
+      doneTime: new Date(),
+    } as TaskDocument;
+    repository.findRawById.mockResolvedValue(task);
+    repository.updateById.mockResolvedValue(updatedTask);
+
+    await service.update(taskId.toString(), { status: TaskStatus.DONE });
+
+    expect(eventBus.publishAndWait).not.toHaveBeenCalled();
+  });
+
   function createTask(status: TaskStatus): TaskDocument {
     return {
       _id: taskId,
@@ -110,6 +128,8 @@ describe('TaskUpdateService', () => {
       createdBy: creatorId,
       assignedTo: [assigneeId],
       status,
+      endDate: new Date('2099-01-01T00:00:00.000Z'),
+      doneTime: status === TaskStatus.DONE ? new Date() : undefined,
       isExtraTask: false,
     } as TaskDocument;
   }

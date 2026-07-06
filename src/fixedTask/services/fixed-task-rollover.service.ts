@@ -36,7 +36,7 @@ export class FixedTaskRolloverService {
     private readonly scheduleService: FixedTaskScheduleService,
   ) {}
 
-  @Cron('53 1 * * *', { timeZone: 'Asia/Tehran' })
+  @Cron('35 16 * * *', { timeZone: 'Asia/Tehran' })
   async handleDailyRollover(): Promise<void> {
     this.logger.log('Daily fixed task rollover started');
 
@@ -53,7 +53,7 @@ export class FixedTaskRolloverService {
     );
   }
 
-  @Cron('53 1 * * *', { timeZone: 'Asia/Tehran' })
+  @Cron('35 16 * * *', { timeZone: 'Asia/Tehran' })
   async handleWeeklyRollover(): Promise<void> {
     this.logger.log('Weekly fixed task rollover started');
 
@@ -70,7 +70,7 @@ export class FixedTaskRolloverService {
     );
   }
 
-  @Cron('53 1 * * *', { timeZone: 'Asia/Tehran' })
+  @Cron('35 16 * * *', { timeZone: 'Asia/Tehran' })
   async handleMonthlyRollover(): Promise<void> {
     this.logger.log('Monthly fixed task rollover started');
 

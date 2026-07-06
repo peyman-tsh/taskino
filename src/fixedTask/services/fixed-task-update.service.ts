@@ -59,7 +59,7 @@ export class FixedTaskUpdateService {
     }
 
     await this.runCompletionActions(template, updatedTemplate, dto, isAssignee);
-    this.publishProgressRefresh(template, updatedTemplate, dto);
+    await this.publishProgressRefresh(template, updatedTemplate, dto);
     return this.queryService.findById(updatedTemplate._id.toString());
   }
 
@@ -221,12 +221,19 @@ export class FixedTaskUpdateService {
     );
   }
 
-  private publishProgressRefresh(
+  private async publishProgressRefresh(
     previousTemplate: FixedTaskTemplateDocument,
     updatedTemplate: FixedTaskTemplateDocument,
     dto: UpdateFixedTaskDto,
-  ): void {
+  ): Promise<void> {
     if (dto.status === undefined && dto.assignedTo === undefined) return;
+    if (
+      dto.assignedTo === undefined &&
+      updatedTemplate.status === FixedTaskStatus.DONE &&
+      !this.isCompletedByDeadline(updatedTemplate)
+    ) {
+      return;
+    }
 
     const userIds = [
       ...new Set([
@@ -234,10 +241,35 @@ export class FixedTaskUpdateService {
         updatedTemplate.assignedTo.toString(),
       ]),
     ];
-    this.eventBus.publish(
+    await this.eventBus.publishAndWait(
       UserProgressEvents.REFRESH_REQUESTED,
       new UserProgressRefreshRequestedEvent(userIds),
     );
+  }
+
+  private isCompletedByDeadline(
+    template: FixedTaskTemplateDocument,
+  ): boolean {
+    const deadline = this.getDeadline(template);
+    return (
+      template.doneTime instanceof Date &&
+      deadline instanceof Date &&
+      template.doneTime.getTime() <= deadline.getTime()
+    );
+  }
+
+  private getDeadline(template: FixedTaskTemplateDocument): Date | null {
+    if (!(template.endDate instanceof Date)) return null;
+
+    const deadline = new Date(template.endDate);
+    if (!template.endTime) {
+      deadline.setHours(23, 59, 59, 999);
+      return deadline;
+    }
+
+    const [hours, minutes] = template.endTime.split(':').map(Number);
+    deadline.setHours(hours, minutes, 0, 0);
+    return deadline;
   }
 
   private toPlainFixedTask(

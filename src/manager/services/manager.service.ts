@@ -186,6 +186,11 @@ export class ManagerService extends BaseManagerService {
     return this.userProgressService.evaluate();
   }
 
+  getUserDailyProgress(userId: string, from: string, to: string) {
+    this.toObjectId(userId, 'user ID');
+    return this.userProgressService.getDailyProgress(userId, from, to);
+  }
+
   findAllTasks(query: ManagerTasksQueryDto) {
     return this.managerTasksService.findAll(query);
   }

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   ConflictException,
@@ -22,6 +23,10 @@ import {
   UserProgressRefreshRequestedEvent,
 } from '../../common/events/user-progress.events';
 import { calculatePerformanceStatus } from '../../common/utils/performance-status.util';
+import {
+  buildDailyProgressRange,
+  parseTehranDayBoundary,
+} from '../../common/utils/daily-progress-range.util';
 
 @Injectable()
 export class UserService {
@@ -171,6 +176,7 @@ export class UserService {
     taskProgressPercentage: number;
     fixedTaskProgressPercentage: number;
     progressPercentage: number;
+    progressDate?: Date;
     performanceStatus: UserPerformanceStatus;
     score: number;
   }> {
@@ -205,6 +211,7 @@ export class UserService {
       taskProgressPercentage: progress.taskProgressPercentage,
       fixedTaskProgressPercentage: progress.fixedTaskProgressPercentage,
       progressPercentage: progress.progressPercentage,
+      progressDate: progress.progressDate,
       performanceStatus,
       score: progress.score,
     };
@@ -228,6 +235,44 @@ export class UserService {
     }
 
     return summary;
+  }
+
+  async getMyDailyProgress(
+    userId: string,
+    fromValue: string,
+    toValue: string,
+  ) {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new NotFoundException('Invalid user ID');
+    }
+
+    const user = await this.userRepository.findSpecialistProgressById(userId);
+    if (!user) {
+      throw new NotFoundException('Specialist or supervisor user not found');
+    }
+
+    const from = parseTehranDayBoundary(fromValue);
+    const to = parseTehranDayBoundary(toValue);
+    if (to.getTime() < from.getTime()) {
+      throw new BadRequestException('to must be on or after from');
+    }
+
+    const records = await this.userRepository.findDailyProgressByUser(
+      new Types.ObjectId(userId),
+      from,
+      to,
+    );
+    const range = buildDailyProgressRange(from, to, records);
+
+    return {
+      userId,
+      from,
+      to,
+      dayCount: range.dayCount,
+      averageProgressPercentage: range.averageProgressPercentage,
+      total: range.data.length,
+      data: range.data,
+    };
   }
 
   /**

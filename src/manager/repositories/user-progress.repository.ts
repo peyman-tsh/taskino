@@ -4,9 +4,11 @@ import { Connection, Types } from 'mongoose';
 import { UserPerformanceStatus, UserRole } from '../../user/schemas/user.schema';
 import {
   ProgressFixedTask,
+  ProgressMetrics,
   ProgressTask,
   ProgressUser,
 } from '../types/user-progress.types';
+import { DailyProgressRecord } from '../../common/utils/daily-progress-range.util';
 
 @Injectable()
 export class UserProgressRepository {
@@ -74,7 +76,13 @@ export class UserProgressRepository {
           assignedTo: userId,
           ...monthlyDateFilter,
         })
-        .project({ status: 1, dueDate: 1, doneTime: 1 })
+        .project({
+          status: 1,
+          dueDate: 1,
+          endDate: 1,
+          endTime: 1,
+          doneTime: 1,
+        })
         .toArray(),
       this.connection
         .collection('fixedtasktemplates')
@@ -94,23 +102,66 @@ export class UserProgressRepository {
 
   async saveEvaluation(
     userId: Types.ObjectId,
-    taskProgressPercentage: number,
-    fixedTaskProgressPercentage: number,
-    progressPercentage: number,
-    performanceStatus: UserPerformanceStatus,
+    progressDate: Date,
+    metrics: ProgressMetrics,
     evaluatedAt: Date,
   ): Promise<void> {
-    await this.connection.collection('users').updateOne(
-      { _id: userId },
-      {
-        $set: {
-          taskProgressPercentage,
-          fixedTaskProgressPercentage,
-          progressPercentage,
-          performanceStatus,
-          performanceEvaluatedAt: evaluatedAt,
+    await Promise.all([
+      this.connection.collection('users').updateOne(
+        { _id: userId },
+        {
+          $set: {
+            taskProgressPercentage: metrics.taskProgressPercentage,
+            fixedTaskProgressPercentage: metrics.fixedTaskProgressPercentage,
+            progressPercentage: metrics.progressPercentage,
+            progressDate,
+            performanceStatus: metrics.performanceStatus,
+            performanceEvaluatedAt: evaluatedAt,
+          },
         },
-      },
-    );
+      ),
+      this.connection.collection('userdailyprogresses').updateOne(
+        { userId, date: progressDate },
+        {
+          $set: {
+            totalTasks: metrics.totalTasks,
+            completedTasks: metrics.completedTasks,
+            totalFixedTasks: metrics.totalFixedTasks,
+            completedFixedTasks: metrics.completedFixedTasks,
+            taskProgressPercentage: metrics.taskProgressPercentage,
+            fixedTaskProgressPercentage: metrics.fixedTaskProgressPercentage,
+            progressPercentage: metrics.progressPercentage,
+            performanceStatus: metrics.performanceStatus,
+            evaluatedAt,
+          },
+          $setOnInsert: {
+            userId,
+            date: progressDate,
+            createdAt: new Date(),
+          },
+          $currentDate: {
+            updatedAt: true,
+          },
+        },
+        { upsert: true },
+      ),
+    ]);
+  }
+
+  async findDailyProgressByUser(
+    userId: Types.ObjectId,
+    from: Date,
+    to: Date,
+  ): Promise<DailyProgressRecord[]> {
+    const records = await this.connection
+      .collection('userdailyprogresses')
+      .find({
+        userId,
+        date: { $gte: from, $lte: to },
+      })
+      .sort({ date: 1 })
+      .toArray();
+
+    return records as unknown as DailyProgressRecord[];
   }
 }

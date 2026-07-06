@@ -17,6 +17,8 @@ export interface ProgressUser {
 export interface ProgressTask {
   status: TaskStatus;
   dueDate?: Date;
+  endDate?: Date;
+  endTime?: string;
   doneTime?: Date;
 }
 

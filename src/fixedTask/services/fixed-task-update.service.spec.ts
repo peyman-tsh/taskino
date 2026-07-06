@@ -33,7 +33,7 @@ describe('FixedTaskUpdateService', () => {
   const scoreService = { adjustTaskScore: jest.fn() };
   const notificationService = { notifyCreatorWhenCompleted: jest.fn() };
   const queryService = { findById: jest.fn() };
-  const eventBus = { publish: jest.fn() };
+  const eventBus = { publishAndWait: jest.fn() };
   const scheduleService = {
     hasScheduleConfig: jest.fn(),
     shouldGenerateToday: jest.fn(),
@@ -89,7 +89,7 @@ describe('FixedTaskUpdateService', () => {
       }),
     );
     expect(notificationService.notifyCreatorWhenCompleted).toHaveBeenCalled();
-    expect(eventBus.publish).toHaveBeenCalledWith(
+    expect(eventBus.publishAndWait).toHaveBeenCalledWith(
       UserProgressEvents.REFRESH_REQUESTED,
       expect.objectContaining({
         userIds: [assigneeId.toString()],
@@ -122,6 +122,27 @@ describe('FixedTaskUpdateService', () => {
         actualDurationMinutes: 180,
       }),
     );
+  });
+
+  it('does not refresh progress when a fixed task is completed after its deadline', async () => {
+    const template = {
+      ...createTemplate(),
+      endDate: new Date('2000-01-01T00:00:00.000Z'),
+    } as FixedTaskTemplateDocument;
+    const updatedTemplate = {
+      ...template,
+      status: FixedTaskStatus.DONE,
+      doneTime: new Date(),
+    } as FixedTaskTemplateDocument;
+    repository.findRawById.mockResolvedValue(template);
+    repository.updateById.mockResolvedValue(updatedTemplate);
+    queryService.findById.mockResolvedValue(updatedTemplate);
+
+    await service.update(templateId.toString(), assigneeId.toString(), {
+      status: FixedTaskStatus.DONE,
+    });
+
+    expect(eventBus.publishAndWait).not.toHaveBeenCalled();
   });
 
   it('allows the assignee to update only actual duration', async () => {
@@ -280,6 +301,7 @@ describe('FixedTaskUpdateService', () => {
       recurrence: FixedTaskRecurrence.DAILY,
       status: FixedTaskStatus.TODO,
       isActive: true,
+      endDate: new Date('2099-01-01T00:00:00.000Z'),
     } as FixedTaskTemplateDocument;
   }
 });

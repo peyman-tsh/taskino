@@ -5,17 +5,19 @@ import { UserProgressCalculatorService } from './user-progress-calculator.servic
 
 describe('UserProgressCalculatorService', () => {
   const calculator = new UserProgressCalculatorService();
+  const doneTime = new Date('2026-06-11T10:00:00.000Z');
+  const deadline = new Date('2026-06-11T12:00:00.000Z');
 
-  it('returns separate task and fixed-task percentages and their average', () => {
+  it('returns separate percentages and combined overall completion', () => {
     const result = calculator.calculate(
       [
-        { status: TaskStatus.DONE },
-        { status: TaskStatus.DONE },
+        { status: TaskStatus.DONE, doneTime, endDate: deadline },
+        { status: TaskStatus.DONE, doneTime, endDate: deadline },
         { status: TaskStatus.TODO },
         { status: TaskStatus.TODO },
       ],
       [
-        { status: FixedTaskStatus.DONE },
+        { status: FixedTaskStatus.DONE, doneTime, endDate: deadline },
         { status: FixedTaskStatus.TODO },
       ],
     );
@@ -26,12 +28,31 @@ describe('UserProgressCalculatorService', () => {
     expect(result.performanceStatus).toBe(UserPerformanceStatus.NORMAL);
   });
 
-  it('calculates fixed-task progress as completed divided by total', () => {
+  it('calculates overall progress from all on-time done work divided by all assigned work', () => {
+    const result = calculator.calculate(
+      [
+        { status: TaskStatus.DONE, doneTime, endDate: deadline },
+        { status: TaskStatus.DONE, doneTime, endDate: deadline },
+        { status: TaskStatus.DONE, doneTime, endDate: deadline },
+        { status: TaskStatus.TODO },
+      ],
+      [
+        { status: FixedTaskStatus.TODO },
+        { status: FixedTaskStatus.TODO },
+      ],
+    );
+
+    expect(result.taskProgressPercentage).toBe(75);
+    expect(result.fixedTaskProgressPercentage).toBe(0);
+    expect(result.progressPercentage).toBe(50);
+  });
+
+  it('calculates fixed-task progress as on-time completed divided by total', () => {
     const result = calculator.calculate(
       [],
       [
-        { status: FixedTaskStatus.DONE },
-        { status: FixedTaskStatus.DONE },
+        { status: FixedTaskStatus.DONE, doneTime, endDate: deadline },
+        { status: FixedTaskStatus.DONE, doneTime, endDate: deadline },
         ...Array.from({ length: 31 }, () => ({
           status: FixedTaskStatus.TODO,
         })),
@@ -48,9 +69,9 @@ describe('UserProgressCalculatorService', () => {
   it('uses task progress as overall when the user has no fixed tasks', () => {
     const result = calculator.calculate(
       [
-        { status: TaskStatus.DONE },
-        { status: TaskStatus.DONE },
-        { status: TaskStatus.DONE },
+        { status: TaskStatus.DONE, doneTime, endDate: deadline },
+        { status: TaskStatus.DONE, doneTime, endDate: deadline },
+        { status: TaskStatus.DONE, doneTime, endDate: deadline },
         { status: TaskStatus.TODO },
       ],
       [],
@@ -66,8 +87,8 @@ describe('UserProgressCalculatorService', () => {
     const result = calculator.calculate(
       [],
       [
-        { status: FixedTaskStatus.DONE },
-        { status: FixedTaskStatus.DONE },
+        { status: FixedTaskStatus.DONE, doneTime, endDate: deadline },
+        { status: FixedTaskStatus.DONE, doneTime, endDate: deadline },
       ],
     );
 
@@ -89,15 +110,21 @@ describe('UserProgressCalculatorService', () => {
     expect(result.performanceStatus).toBe(UserPerformanceStatus.WEAK);
   });
 
-  it('counts done work for progress regardless of completion time', () => {
+  it('does not count late done work for progress', () => {
     const late = new Date('2026-06-11T13:00:00.000Z');
-    const dueDate = new Date('2026-06-11T12:00:00.000Z');
     const result = calculator.calculate(
-      [{ status: TaskStatus.DONE, dueDate, doneTime: late }],
+      [
+        {
+          status: TaskStatus.DONE,
+          endDate: deadline,
+          endTime: '12:00',
+          doneTime: late,
+        },
+      ],
       [
         {
           status: FixedTaskStatus.DONE,
-          endDate: dueDate,
+          endDate: deadline,
           endTime: '12:00',
           doneTime: late,
         },
@@ -106,8 +133,10 @@ describe('UserProgressCalculatorService', () => {
 
     expect(result.completedTasks).toBe(1);
     expect(result.completedFixedTasks).toBe(1);
-    expect(result.taskProgressPercentage).toBe(100);
-    expect(result.fixedTaskProgressPercentage).toBe(100);
-    expect(result.progressPercentage).toBe(100);
+    expect(result.onTimeTasks).toBe(0);
+    expect(result.onTimeFixedTasks).toBe(0);
+    expect(result.taskProgressPercentage).toBe(0);
+    expect(result.fixedTaskProgressPercentage).toBe(0);
+    expect(result.progressPercentage).toBe(0);
   });
 });

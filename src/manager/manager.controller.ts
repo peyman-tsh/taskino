@@ -37,6 +37,7 @@ import {
   FixedTaskStatusDocumentListResponseDto,
   FixedTaskDurationBalanceResponseDto,
   UserScoreResponseDto,
+  UserDailyProgressListResponseDto,
 } from './dto/manager-response.dto';
 import { MongoIdParamDto } from './dto/mongo-id-param.dto';
 import { MonthlyPerformanceQueryDto } from './dto/monthly-performance-query.dto';
@@ -53,6 +54,7 @@ import { FixedTaskTimingApprovalDto } from './dto/fixed-task-timing-approval.dto
 import { FixedTaskDurationBalanceQueryDto } from './dto/fixed-task-duration-balance-query.dto';
 import { PaginatedTasksResponseDto } from '../task/dto/task-response.dto';
 import { FixedTaskUserFilterQueryDto } from './dto/fixed-task-user-filter-query.dto';
+import { DailyProgressRangeQueryDto } from './dto/daily-progress-range-query.dto';
 
 @ApiTags('Manager')
 @ApiBearerAuth()
@@ -136,6 +138,26 @@ export class ManagerController {
   @ApiNotFoundResponse({ description: 'Specialist or supervisor user not found' })
   getUserScore(@Param() params: MongoIdParamDto) {
     return this.managerService.getUserScore(params.id);
+  }
+
+  @Get('users/:id/daily-progress')
+  @ApiOperation({
+    summary: 'Get user daily progress history',
+    description:
+      'Returns saved daily progress snapshots for a specialist or supervisor in a date range.',
+  })
+  @ApiParam({ name: 'id', description: 'Specialist or supervisor user ID' })
+  @ApiOkResponse({ type: UserDailyProgressListResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid user ID or date range' })
+  getUserDailyProgress(
+    @Param() params: MongoIdParamDto,
+    @Query() query: DailyProgressRangeQueryDto,
+  ) {
+    return this.managerService.getUserDailyProgress(
+      params.id,
+      query.from,
+      query.to,
+    );
   }
 
   @Roles(UserRole.SUPERVISOR)

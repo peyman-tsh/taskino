@@ -1,8 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { UserProgressCalculatorService } from './user-progress-calculator.service';
 import { UserProgressRepository } from '../repositories/user-progress.repository';
 import { ProgressUser } from '../types/user-progress.types';
 import { Types } from 'mongoose';
+import {
+  buildDailyProgressRange,
+  getTehranDayRange,
+  parseTehranDayBoundary,
+} from '../../common/utils/daily-progress-range.util';
 
 @Injectable()
 export class UserProgressService {
@@ -43,16 +48,7 @@ export class UserProgressService {
   }
 
   private async evaluateUser(user: ProgressUser, evaluatedAt: Date) {
-    const periodStart = new Date(
-      evaluatedAt.getFullYear(),
-      evaluatedAt.getMonth(),
-      1,
-    );
-    const periodEnd = new Date(
-      evaluatedAt.getFullYear(),
-      evaluatedAt.getMonth() + 1,
-      1,
-    );
+    const { periodStart, periodEnd } = getTehranDayRange(evaluatedAt);
     const { tasks, fixedTasks } = await this.repository.findAssignedWork(
       user._id,
       periodStart,
@@ -62,10 +58,8 @@ export class UserProgressService {
 
     await this.repository.saveEvaluation(
       user._id,
-      metrics.taskProgressPercentage,
-      metrics.fixedTaskProgressPercentage,
-      metrics.progressPercentage,
-      metrics.performanceStatus,
+      periodStart,
+      metrics,
       evaluatedAt,
     );
 
@@ -76,7 +70,41 @@ export class UserProgressService {
       email: user.email,
       role: user.roles,
       ...metrics,
+      progressDate: periodStart,
       performanceEvaluatedAt: evaluatedAt,
+    };
+  }
+
+  async getDailyProgress(
+    userId: string,
+    fromValue: string,
+    toValue: string,
+  ) {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new BadRequestException('Invalid user ID');
+    }
+
+    const from = parseTehranDayBoundary(fromValue);
+    const to = parseTehranDayBoundary(toValue);
+    if (to.getTime() < from.getTime()) {
+      throw new BadRequestException('to must be on or after from');
+    }
+
+    const records = await this.repository.findDailyProgressByUser(
+      new Types.ObjectId(userId),
+      from,
+      to,
+    );
+    const range = buildDailyProgressRange(from, to, records);
+
+    return {
+      userId,
+      from,
+      to,
+      dayCount: range.dayCount,
+      averageProgressPercentage: range.averageProgressPercentage,
+      total: range.data.length,
+      data: range.data,
     };
   }
 }

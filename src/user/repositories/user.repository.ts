@@ -12,6 +12,7 @@ import {
   UserRole,
 } from '../schemas/user.schema';
 import { WorkField } from '../../common/enums/work-field.enum';
+import { DailyProgressRecord } from '../../common/utils/daily-progress-range.util';
 
 @Injectable()
 export class UserRepository {
@@ -303,6 +304,7 @@ export class UserRepository {
     taskProgressPercentage: number;
     fixedTaskProgressPercentage: number;
     progressPercentage: number;
+    progressDate?: Date;
     performanceStatus: UserPerformanceStatus;
     score: number;
   } | null> {
@@ -312,7 +314,7 @@ export class UserRepository {
         roles: { $in: [UserRole.SPECIALIST, UserRole.SUPERVISOR] },
       })
       .select(
-        'taskProgressPercentage fixedTaskProgressPercentage progressPercentage performanceStatus score',
+        'taskProgressPercentage fixedTaskProgressPercentage progressPercentage progressDate performanceStatus score',
       )
       .lean()
       .exec();
@@ -326,10 +328,31 @@ export class UserRepository {
       taskProgressPercentage: user.taskProgressPercentage ?? 0,
       fixedTaskProgressPercentage: user.fixedTaskProgressPercentage ?? 0,
       progressPercentage: user.progressPercentage ?? 0,
+      progressDate: user.progressDate,
       performanceStatus:
         user.performanceStatus ?? UserPerformanceStatus.WEAK,
       score: user.score ?? 0,
     };
+  }
+
+  async findDailyProgressByUser(
+    userId: Types.ObjectId,
+    from: Date,
+    to: Date,
+  ): Promise<DailyProgressRecord[]> {
+    const records = await this.connection
+      .collection('userdailyprogresses')
+      .find({
+        userId,
+        date: {
+          $gte: from,
+          $lte: to,
+        },
+      })
+      .sort({ date: 1 })
+      .toArray();
+
+    return records as unknown as DailyProgressRecord[];
   }
 
   updatePerformanceStatus(

@@ -31,6 +31,10 @@ describe('UserProgressService', () => {
       fixedTasks: [],
     });
     calculator.calculate.mockReturnValue({
+      totalTasks: 1,
+      completedTasks: 1,
+      totalFixedTasks: 1,
+      completedFixedTasks: 1,
       taskProgressPercentage: 60,
       fixedTaskProgressPercentage: 90,
       progressPercentage: 75,
@@ -47,15 +51,16 @@ describe('UserProgressService', () => {
     );
     const [, periodStart, periodEnd] =
       repository.findAssignedWork.mock.calls[0];
-    expect(periodStart.getDate()).toBe(1);
-    expect(periodEnd.getDate()).toBe(1);
-    expect(periodEnd.getMonth()).toBe((periodStart.getMonth() + 1) % 12);
+    expect(periodEnd.getTime() - periodStart.getTime()).toBe(86_400_000);
     expect(repository.saveEvaluation).toHaveBeenCalledWith(
       userId,
-      60,
-      90,
-      75,
-      'good',
+      periodStart,
+      expect.objectContaining({
+        taskProgressPercentage: 60,
+        fixedTaskProgressPercentage: 90,
+        progressPercentage: 75,
+        performanceStatus: 'good',
+      }),
       expect.any(Date),
     );
   });
