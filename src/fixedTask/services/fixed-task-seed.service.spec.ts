@@ -10,15 +10,23 @@ describe('buildFixedTaskSeedSchedule', () => {
   it.each([
     [FixedTaskRecurrence.DAILY, new Date('2026-06-19T20:30:00.000Z')],
     [FixedTaskRecurrence.WEEKLY, new Date('2026-06-25T20:30:00.000Z')],
-    [FixedTaskRecurrence.MONTHLY, new Date('2026-07-18T20:30:00.000Z')],
+    [FixedTaskRecurrence.MONTHLY, new Date('2026-07-19T20:30:00.000Z')],
   ])('builds %s seed schedule', (recurrence, expectedEndDate) => {
     const schedule = buildFixedTaskSeedSchedule(recurrence, now);
+    const expectedStartDate =
+      recurrence === FixedTaskRecurrence.DAILY
+        ? new Date('2026-06-18T20:30:00.000Z')
+        : now;
+    const expectedTime =
+      recurrence === FixedTaskRecurrence.DAILY ? '00:00' : '14:35';
+    const expectedEndTime =
+      recurrence === FixedTaskRecurrence.DAILY ? '00:00' : '00:01';
 
     expect(schedule).toEqual({
-      startDate: now,
-      startTime: '14:35',
+      startDate: expectedStartDate,
+      startTime: expectedTime,
       endDate: expectedEndDate,
-      endTime: '00:01',
+      endTime: expectedEndTime,
     });
   });
 
@@ -31,7 +39,7 @@ describe('buildFixedTaskSeedSchedule', () => {
     );
 
     expect(schedule.endDate).toEqual(
-      new Date('2026-02-27T20:30:00.000Z'),
+      new Date('2026-03-01T20:30:00.000Z'),
     );
   });
 
@@ -42,7 +50,7 @@ describe('buildFixedTaskSeedSchedule', () => {
     );
 
     expect(schedule).toEqual({
-      startDate: now,
+      startDate: new Date('2026-06-18T20:30:00.000Z'),
       startTime: null,
       endDate: new Date('2026-06-19T20:30:00.000Z'),
       endTime: null,

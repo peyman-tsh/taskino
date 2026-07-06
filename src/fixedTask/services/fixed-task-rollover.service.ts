@@ -36,7 +36,7 @@ export class FixedTaskRolloverService {
     private readonly scheduleService: FixedTaskScheduleService,
   ) {}
 
-  @Cron('35 16 * * *', { timeZone: 'Asia/Tehran' })
+  @Cron('11 16 * * *', { timeZone: 'Asia/Tehran' })
   async handleDailyRollover(): Promise<void> {
     this.logger.log('Daily fixed task rollover started');
 
@@ -53,7 +53,7 @@ export class FixedTaskRolloverService {
     );
   }
 
-  @Cron('35 16 * * *', { timeZone: 'Asia/Tehran' })
+  @Cron('11 16 * * *', { timeZone: 'Asia/Tehran' })
   async handleWeeklyRollover(): Promise<void> {
     this.logger.log('Weekly fixed task rollover started');
 
@@ -70,7 +70,7 @@ export class FixedTaskRolloverService {
     );
   }
 
-  @Cron('35 16 * * *', { timeZone: 'Asia/Tehran' })
+  @Cron('11 16 * * *', { timeZone: 'Asia/Tehran' })
   async handleMonthlyRollover(): Promise<void> {
     this.logger.log('Monthly fixed task rollover started');
 
@@ -97,7 +97,6 @@ export class FixedTaskRolloverService {
           continue;
         }
         if (this.startedToday(candidate, now)) continue;
-        if (this.isConfiguredDailyBlockStillOpen(candidate, now)) continue;
         const created = candidate.isActive
           ? await this.rolloverIfExpired(candidate, now)
           : await this.createNextOccurrenceFromPrevious(candidate, now);
@@ -219,16 +218,6 @@ export class FixedTaskRolloverService {
     const schedule = buildFixedTaskSeedSchedule(candidate.recurrence, now);
 
     if (
-      candidate.recurrence === FixedTaskRecurrence.DAILY &&
-      this.hasDailyScheduleGap(candidate)
-    ) {
-      schedule.endDate = this.calculateConfiguredDailyBlockEndDate(
-        candidate,
-        now,
-      );
-    }
-
-    if (
       candidate.recurrence === FixedTaskRecurrence.WEEKLY &&
       this.hasConfiguredWeekdays(candidate)
     ) {
@@ -274,16 +263,6 @@ export class FixedTaskRolloverService {
   private hasScheduleConfig(candidate: FixedTaskTemplateDocument): boolean {
     const config = candidate.scheduleConfig;
     return Boolean(config?.weekdays?.length || config?.monthDays?.length);
-  }
-
-  private hasDailyScheduleGap(candidate: FixedTaskTemplateDocument): boolean {
-    const weekdays = candidate.scheduleConfig?.weekdays;
-    return (
-      candidate.recurrence === FixedTaskRecurrence.DAILY &&
-      Array.isArray(weekdays) &&
-      weekdays.length > 0 &&
-      new Set(weekdays).size < 7
-    );
   }
 
   private hasConfiguredWeekdays(
@@ -339,39 +318,6 @@ export class FixedTaskRolloverService {
       start.month === today.month &&
       start.day === today.day
     );
-  }
-
-  private isConfiguredDailyBlockStillOpen(
-    candidate: FixedTaskTemplateDocument,
-    now: Date,
-  ): boolean {
-    if (
-      !candidate.isActive ||
-      !this.hasDailyScheduleGap(candidate) ||
-      !(candidate.endDate instanceof Date)
-    ) {
-      return false;
-    }
-
-    return candidate.endDate.getTime() > now.getTime();
-  }
-
-  private calculateConfiguredDailyBlockEndDate(
-    candidate: FixedTaskTemplateDocument,
-    now: Date,
-  ): Date {
-    const weekdays = new Set(candidate.scheduleConfig?.weekdays ?? []);
-    const today = this.getTehranCalendar(now);
-    let blockDays = 1;
-
-    for (let offset = 1; offset < 7; offset += 1) {
-      const nextWeekday = (today.weekday + offset) % 7;
-      if (!weekdays.has(nextWeekday)) break;
-      blockDays += 1;
-    }
-
-    const target = addTehranCalendarPeriod(now, blockDays, 0);
-    return tehranDateTimeToUtc(target.year, target.month, target.day);
   }
 
   private calculateNextConfiguredWeekdayEndDate(

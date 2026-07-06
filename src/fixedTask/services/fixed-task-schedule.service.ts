@@ -47,16 +47,6 @@ export class FixedTaskScheduleService {
     const schedule = buildFixedTaskSeedSchedule(candidate.recurrence, now);
 
     if (
-      candidate.recurrence === FixedTaskRecurrence.DAILY &&
-      this.hasDailyScheduleGap(candidate)
-    ) {
-      schedule.endDate = this.calculateConfiguredDailyBlockEndDate(
-        candidate,
-        now,
-      );
-    }
-
-    if (
       candidate.recurrence === FixedTaskRecurrence.WEEKLY &&
       this.hasConfiguredWeekdays(candidate)
     ) {
@@ -77,16 +67,6 @@ export class FixedTaskScheduleService {
     }
 
     return schedule;
-  }
-
-  hasDailyScheduleGap(candidate: FixedTaskTemplateDocument): boolean {
-    const weekdays = candidate.scheduleConfig?.weekdays;
-    return (
-      candidate.recurrence === FixedTaskRecurrence.DAILY &&
-      Array.isArray(weekdays) &&
-      weekdays.length > 0 &&
-      new Set(weekdays).size < 7
-    );
   }
 
   getSeriesKey(candidate: FixedTaskTemplateDocument): string {
@@ -143,24 +123,6 @@ export class FixedTaskScheduleService {
     }
 
     return Boolean(config?.weekdays?.includes(today.weekday));
-  }
-
-  private calculateConfiguredDailyBlockEndDate(
-    candidate: FixedTaskTemplateDocument,
-    now: Date,
-  ): Date {
-    const weekdays = new Set(candidate.scheduleConfig?.weekdays ?? []);
-    const today = this.getTehranCalendar(now);
-    let blockDays = 1;
-
-    for (let offset = 1; offset < 7; offset += 1) {
-      const nextWeekday = (today.weekday + offset) % 7;
-      if (!weekdays.has(nextWeekday)) break;
-      blockDays += 1;
-    }
-
-    const target = addTehranCalendarPeriod(now, blockDays, 0);
-    return tehranDateTimeToUtc(target.year, target.month, target.day);
   }
 
   private calculateNextConfiguredWeekdayEndDate(

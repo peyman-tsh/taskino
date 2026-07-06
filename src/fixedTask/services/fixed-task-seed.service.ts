@@ -15,6 +15,7 @@ import {
   addTehranCalendarPeriod,
   addTehranPersianCalendarMonths,
   formatTehranTime,
+  getTehranDateParts,
   tehranDateTimeToUtc,
   tehranPersianDateTimeToUtc,
 } from '../../common/utils/tehran-time.util';
@@ -23,6 +24,7 @@ type ExcelRow = Array<string | number | null>;
 
 const PASSWORD = '123456';
 const SEED_END_TIME = '00:01';
+const DAILY_BOUNDARY_TIME = '00:00';
 export const FIXED_TASK_SEED_EXCEL_PATH =
   'C:\\Users\\Zarnegar\\Downloads\\-1408847228164432127_81294547954101.xlsx';
 
@@ -44,6 +46,10 @@ export function buildFixedTaskSeedSchedule(
   recurrence: FixedTaskRecurrence,
   now = new Date(),
 ): FixedTaskSeedSchedule {
+  if (recurrence === FixedTaskRecurrence.DAILY) {
+    return buildDailySeedSchedule(now);
+  }
+
   const startDate = new Date(now);
   const endDate = calculateSeedEndDate(recurrence, now);
 
@@ -52,6 +58,18 @@ export function buildFixedTaskSeedSchedule(
     startTime: formatTehranTime(now),
     endDate,
     endTime: SEED_END_TIME,
+  };
+}
+
+function buildDailySeedSchedule(now: Date): FixedTaskSeedSchedule {
+  const today = getTehranDateParts(now);
+  const tomorrow = addTehranCalendarPeriod(now, 1, 0);
+
+  return {
+    startDate: tehranDateTimeToUtc(today.year, today.month, today.day),
+    startTime: DAILY_BOUNDARY_TIME,
+    endDate: tehranDateTimeToUtc(tomorrow.year, tomorrow.month, tomorrow.day),
+    endTime: DAILY_BOUNDARY_TIME,
   };
 }
 

@@ -102,10 +102,10 @@ describe('FixedTaskRolloverService', () => {
     );
     expect(scoreService.adjustTaskScore).toHaveBeenCalledWith(task);
     expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
-      startDate: now,
-      startTime: '14:35',
+      startDate: new Date('2026-06-18T20:30:00.000Z'),
+      startTime: '00:00',
       endDate: new Date('2026-06-19T20:30:00.000Z'),
-      endTime: '00:01',
+      endTime: '00:00',
     });
     expect(eventBus.publish).toHaveBeenCalledWith(
       UserProgressEvents.REFRESH_REQUESTED,
@@ -169,14 +169,14 @@ describe('FixedTaskRolloverService', () => {
 
     expect(repository.claimExpiredOccurrence).not.toHaveBeenCalled();
     expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
-      startDate: sunday,
-      startTime: '14:35',
+      startDate: new Date('2026-06-20T20:30:00.000Z'),
+      startTime: '00:00',
       endDate: new Date('2026-06-21T20:30:00.000Z'),
-      endTime: '00:01',
+      endTime: '00:00',
     });
   });
 
-  it('sets configured daily endDate to the end of the current continuous weekday block', async () => {
+  it('creates configured daily work for the current scheduled day', async () => {
     const saturday = new Date('2026-06-20T11:05:00.000Z');
     const task = createTask(FixedTaskRecurrence.DAILY, FixedTaskStatus.TODO);
     task.scheduleConfig = { weekdays: [6, 0, 1, 3, 4, 5] };
@@ -191,27 +191,39 @@ describe('FixedTaskRolloverService', () => {
     ).resolves.toBe(1);
 
     expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
-      startDate: saturday,
-      startTime: '14:35',
-      endDate: new Date('2026-06-22T20:30:00.000Z'),
-      endTime: '00:01',
+      startDate: new Date('2026-06-19T20:30:00.000Z'),
+      startTime: '00:00',
+      endDate: new Date('2026-06-20T20:30:00.000Z'),
+      endTime: '00:00',
     });
   });
 
-  it('does not recreate a configured daily task while its current weekday block is still open', async () => {
+  it('creates configured daily work on each scheduled day', async () => {
     const sunday = new Date('2026-06-21T11:05:00.000Z');
     const task = createTask(FixedTaskRecurrence.DAILY, FixedTaskStatus.TODO);
     task.scheduleConfig = { weekdays: [6, 0, 1, 3, 4, 5] };
     task.startDate = new Date('2026-06-20T11:05:00.000Z');
     task.endDate = new Date('2026-06-22T20:30:00.000Z');
     repository.findDailyRolloverCandidates.mockResolvedValue([task]);
+    repository.claimExpiredOccurrence.mockResolvedValue(task);
+    repository.createNextOccurrence.mockResolvedValue({
+      _id: new Types.ObjectId(),
+    });
 
     await expect(
       service.runForRecurrence(FixedTaskRecurrence.DAILY, sunday),
-    ).resolves.toBe(0);
+    ).resolves.toBe(1);
 
-    expect(repository.claimExpiredOccurrence).not.toHaveBeenCalled();
-    expect(repository.createNextOccurrence).not.toHaveBeenCalled();
+    expect(repository.claimExpiredOccurrence).toHaveBeenCalledWith(
+      task._id,
+      sunday,
+    );
+    expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
+      startDate: new Date('2026-06-20T20:30:00.000Z'),
+      startTime: '00:00',
+      endDate: new Date('2026-06-21T20:30:00.000Z'),
+      endTime: '00:00',
+    });
   });
 
   it('does not let one unscheduled daily row block other daily rows without scheduleConfig', async () => {

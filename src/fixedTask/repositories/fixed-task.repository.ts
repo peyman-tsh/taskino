@@ -185,6 +185,9 @@ export class FixedTaskRepository {
     const timingApproved =
       previous.timingApprovalStatus ===
       FixedTaskTimingApprovalStatus.APPROVED;
+    const timingRejected =
+      previous.timingApprovalStatus ===
+      FixedTaskTimingApprovalStatus.REJECTED;
 
     return new this.model({
       _id: occurrenceId,
@@ -209,9 +212,17 @@ export class FixedTaskRepository {
       timingApprovedAt: timingApproved ? previous.timingApprovedAt : null,
       scoreAdjusted: false,
       startDate: schedule.startDate,
-      startTime: timingApproved ? (previous.startTime ?? null) : null,
+      startTime: timingRejected
+        ? null
+        : timingApproved
+          ? (previous.startTime ?? schedule.startTime)
+          : schedule.startTime,
       endDate: schedule.endDate,
-      endTime: timingApproved ? (previous.endTime ?? null) : null,
+      endTime: timingRejected
+        ? null
+        : timingApproved
+          ? (previous.endTime ?? schedule.endTime)
+          : schedule.endTime,
       sourceExcel: previous.sourceExcel,
       sourceSheet: previous.sourceSheet,
       sourceRow: occurrenceSourceRow,
