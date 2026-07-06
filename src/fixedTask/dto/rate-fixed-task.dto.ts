@@ -22,4 +22,13 @@ export class RateFixedTaskDto {
   @IsOptional()
   @IsString()
   comment?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Optional manager comment stored as ratingComment. Use this or comment.',
+    example: 'Completed with good quality.',
+  })
+  @IsOptional()
+  @IsString()
+  ratingComment?: string;
 }

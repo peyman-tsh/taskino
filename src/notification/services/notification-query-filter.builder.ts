@@ -15,6 +15,12 @@ export class NotificationQueryFilterBuilder {
     if (dto.entityId) {
       query.entityId = this.policy.toObjectId(dto.entityId, 'entity ID');
     }
+    if (dto.from || dto.to) {
+      const createdAt: Record<string, Date> = {};
+      if (dto.from) createdAt.$gte = new Date(dto.from);
+      if (dto.to) createdAt.$lte = new Date(dto.to);
+      query.createdAt = createdAt;
+    }
     if (dto.search) {
       const escapedSearch = this.policy.escapeRegex(dto.search);
       query.$or = [

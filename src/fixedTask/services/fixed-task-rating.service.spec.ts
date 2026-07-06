@@ -104,4 +104,26 @@ describe('FixedTaskRatingService', () => {
       }),
     );
   });
+
+  it('stores ratingComment when provided directly', async () => {
+    const fixedTask = {
+      _id: fixedTaskId,
+      title: 'Daily report',
+      assignedTo: assigneeId,
+    } as FixedTaskTemplateDocument;
+    repository.findRawById.mockResolvedValue(fixedTask);
+    repository.updateById.mockResolvedValue(fixedTask);
+
+    await service.rate(fixedTaskId.toString(), managerId.toString(), {
+      score: 3,
+      ratingComment: 'Direct rating comment',
+    });
+
+    expect(repository.updateById).toHaveBeenCalledWith(
+      fixedTaskId,
+      expect.objectContaining({
+        ratingComment: 'Direct rating comment',
+      }),
+    );
+  });
 });

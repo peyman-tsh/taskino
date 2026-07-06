@@ -1,5 +1,6 @@
 import {
   IsEnum,
+  IsDateString,
   IsIn,
   IsInt,
   IsMongoId,
@@ -62,4 +63,20 @@ export class QueryNotificationDto {
   @IsOptional()
   @IsMongoId()
   entityId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Return notifications created at or after this date',
+    example: '2026-07-01T00:00:00.000Z',
+  })
+  @IsOptional()
+  @IsDateString()
+  from?: string;
+
+  @ApiPropertyOptional({
+    description: 'Return notifications created at or before this date',
+    example: '2026-07-06T23:59:59.999Z',
+  })
+  @IsOptional()
+  @IsDateString()
+  to?: string;
 }

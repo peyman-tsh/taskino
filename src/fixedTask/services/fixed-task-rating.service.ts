@@ -33,10 +33,11 @@ export class FixedTaskRatingService {
     }
 
     const ratingStatus = this.getRatingStatus(dto.score);
+    const ratingComment = dto.ratingComment ?? dto.comment ?? null;
     const ratedTask = await this.repository.updateById(fixedTaskId, {
       ratingScore: dto.score,
       ratingStatus,
-      ratingComment: dto.comment ?? null,
+      ratingComment,
       ratedBy: managerObjectId,
       ratedAt: new Date(),
     });
