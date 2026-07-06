@@ -38,4 +38,21 @@ export class FixedTaskNotificationTemplateFactory {
       entityId: fixedTaskId,
     };
   }
+
+  rated(
+    userId: string,
+    fixedTaskId: string,
+    title: string,
+    score: number,
+  ): CreateNotificationDto {
+    return {
+      user: userId,
+      title: 'Fixed Task Rated',
+      message: `Manager added a rating of ${score} for the fixed task: ${title}`,
+      type: NotificationType.FIXED_TASK_RATED,
+      link: `/fixed-tasks/${fixedTaskId}`,
+      entityType: NotificationEntityType.FIXED_TASK,
+      entityId: fixedTaskId,
+    };
+  }
 }

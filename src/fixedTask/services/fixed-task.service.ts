@@ -8,6 +8,8 @@ import { FixedTaskQueryService } from './fixed-task-query.service';
 import { FixedTaskUpdateService } from './fixed-task-update.service';
 import { FixedTaskTimingService } from './fixed-task-timing.service';
 import { FixedTaskTimingApprovalStatus } from '../fixed-task.schema';
+import { FixedTaskRatingService } from './fixed-task-rating.service';
+import { RateFixedTaskDto } from '../dto/rate-fixed-task.dto';
 
 @Injectable()
 export class FixedTaskService {
@@ -17,6 +19,7 @@ export class FixedTaskService {
     private readonly updateService: FixedTaskUpdateService,
     private readonly deleteService: FixedTaskDeleteService,
     private readonly timingService: FixedTaskTimingService,
+    private readonly ratingService: FixedTaskRatingService,
   ) {}
 
   create(creatorId: string, dto: CreateFixedTaskDto) {
@@ -59,6 +62,10 @@ export class FixedTaskService {
       approvedDurationMinutes,
       taskComment,
     );
+  }
+
+  rate(id: string, managerId: string, dto: RateFixedTaskDto) {
+    return this.ratingService.rate(id, managerId, dto);
   }
 
   delete(id: string) {

@@ -3,6 +3,7 @@ import { InternalEventBus } from '../common/events/internal-event-bus.service';
 import {
   FixedTaskAssignedNotificationEvent,
   FixedTaskCompletedNotificationEvent,
+  FixedTaskRatedNotificationEvent,
   NotificationEvents,
   TaskAssignedNotificationEvent,
   TaskCompletedNotificationEvent,
@@ -45,6 +46,10 @@ export class NotificationEventListener implements OnModuleInit, OnModuleDestroy 
       this.eventBus.subscribe<FixedTaskCompletedNotificationEvent>(
         NotificationEvents.FIXED_TASK_COMPLETED,
         (event) => this.fixedTaskHandler.handleCompleted(event),
+      ),
+      this.eventBus.subscribe<FixedTaskRatedNotificationEvent>(
+        NotificationEvents.FIXED_TASK_RATED,
+        (event) => this.fixedTaskHandler.handleRated(event),
       ),
       this.eventBus.subscribe<UserRegisteredNotificationEvent>(
         NotificationEvents.USER_REGISTERED,

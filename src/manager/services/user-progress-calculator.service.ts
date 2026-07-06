@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { FixedTaskStatus } from '../../fixedTask/fixed-task.schema';
+import {
+  FixedTaskRatingStatus,
+  FixedTaskStatus,
+} from '../../fixedTask/fixed-task.schema';
 import { TaskStatus } from '../../task/task.schema';
 import { calculatePerformanceStatus } from '../utils/performance-status.util';
 import {
@@ -29,6 +32,7 @@ export class UserProgressCalculatorService {
     );
     const onTimeTasks = this.countOnTimeTasks(tasks);
     const onTimeFixedTasks = this.countOnTimeFixedTasks(fixedTasks);
+    const ratingProgressBoost = this.calculateRatingProgressBoost(fixedTasks);
     const taskProgressPercentage = this.calculateCompletionPercentage(
       onTimeTasks,
       tasks.length,
@@ -42,6 +46,7 @@ export class UserProgressCalculatorService {
       onTimeFixedTasks,
       tasks.length,
       fixedTasks.length,
+      ratingProgressBoost,
     );
 
     return {
@@ -103,13 +108,15 @@ export class UserProgressCalculatorService {
     completedFixedTasks: number,
     totalTasks: number,
     totalFixedTasks: number,
+    ratingProgressBoost = 0,
   ): number {
     const totalWork = totalTasks + totalFixedTasks;
-    if (totalWork === 0) return 0;
+    if (totalWork === 0) return Math.min(100, ratingProgressBoost);
 
-    return Math.round(
+    const baseProgress = Math.round(
       ((completedTasks + completedFixedTasks) / totalWork) * 100,
     );
+    return Math.min(100, baseProgress + ratingProgressBoost);
   }
 
   private getFixedTaskDeadline(
@@ -142,5 +149,15 @@ export class UserProgressCalculatorService {
     const [hours, minutes] = task.endTime.split(':').map(Number);
     deadline.setHours(hours, minutes, 0, 0);
     return deadline;
+  }
+
+  private calculateRatingProgressBoost(
+    fixedTasks: ProgressFixedTask[],
+  ): number {
+    return fixedTasks.reduce((total, task) => {
+      if (task.status !== FixedTaskStatus.DONE) return total;
+      if (task.ratingStatus !== FixedTaskRatingStatus.GOOD) return total;
+      return total + (task.ratingScore ?? 0);
+    }, 0);
   }
 }

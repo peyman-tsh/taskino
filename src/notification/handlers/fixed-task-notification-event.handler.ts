@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import {
   FixedTaskAssignedNotificationEvent,
   FixedTaskCompletedNotificationEvent,
+  FixedTaskRatedNotificationEvent,
 } from '../events/notification.events';
 import { NotificationService } from '../services/notification.service';
 
@@ -24,6 +25,15 @@ export class FixedTaskNotificationEventHandler {
       event.creatorId,
       event.fixedTaskId,
       event.fixedTaskTitle,
+    );
+  }
+
+  async handleRated(event: FixedTaskRatedNotificationEvent): Promise<void> {
+    await this.notificationService.createFixedTaskRatedNotification(
+      event.userId,
+      event.fixedTaskId,
+      event.fixedTaskTitle,
+      event.score,
     );
   }
 }

@@ -31,6 +31,15 @@ export class NotificationTemplateFactory {
     return this.fixedTaskTemplates.completed(userId, fixedTaskId, title);
   }
 
+  fixedTaskRated(
+    userId: string,
+    fixedTaskId: string,
+    title: string,
+    score: number,
+  ) {
+    return this.fixedTaskTemplates.rated(userId, fixedTaskId, title, score);
+  }
+
   leaveRequest(userId: string, title: string) {
     return this.generalTemplates.leaveRequest(userId, title);
   }

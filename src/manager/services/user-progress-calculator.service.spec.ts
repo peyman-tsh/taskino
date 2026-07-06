@@ -1,4 +1,7 @@
-import { FixedTaskStatus } from '../../fixedTask/fixed-task.schema';
+import {
+  FixedTaskRatingStatus,
+  FixedTaskStatus,
+} from '../../fixedTask/fixed-task.schema';
 import { TaskStatus } from '../../task/task.schema';
 import { UserPerformanceStatus } from '../../user/schemas/user.schema';
 import { UserProgressCalculatorService } from './user-progress-calculator.service';
@@ -137,6 +140,49 @@ describe('UserProgressCalculatorService', () => {
     expect(result.onTimeFixedTasks).toBe(0);
     expect(result.taskProgressPercentage).toBe(0);
     expect(result.fixedTaskProgressPercentage).toBe(0);
+    expect(result.progressPercentage).toBe(0);
+  });
+
+  it('adds good fixed-task rating score to overall progress', () => {
+    const result = calculator.calculate(
+      [
+        { status: TaskStatus.DONE, doneTime, endDate: deadline },
+        { status: TaskStatus.DONE, doneTime, endDate: deadline },
+        { status: TaskStatus.DONE, doneTime, endDate: deadline },
+        { status: TaskStatus.DONE, doneTime, endDate: deadline },
+        { status: TaskStatus.DONE, doneTime, endDate: deadline },
+        { status: TaskStatus.DONE, doneTime, endDate: deadline },
+        { status: TaskStatus.DONE, doneTime, endDate: deadline },
+        { status: TaskStatus.DONE, doneTime, endDate: deadline },
+        { status: TaskStatus.DONE, doneTime, endDate: deadline },
+        { status: TaskStatus.TODO },
+      ],
+      [
+        {
+          status: FixedTaskStatus.DONE,
+          doneTime,
+          endDate: deadline,
+          ratingScore: 4,
+          ratingStatus: FixedTaskRatingStatus.GOOD,
+        },
+      ],
+    );
+
+    expect(result.progressPercentage).toBe(95);
+  });
+
+  it('does not add normal fixed-task ratings to overall progress', () => {
+    const result = calculator.calculate(
+      [],
+      [
+        {
+          status: FixedTaskStatus.TODO,
+          ratingScore: 2,
+          ratingStatus: FixedTaskRatingStatus.NORMAL,
+        },
+      ],
+    );
+
     expect(result.progressPercentage).toBe(0);
   });
 });

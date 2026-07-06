@@ -4,6 +4,7 @@ import { FixedTaskQueryService } from './fixed-task-query.service';
 import { FixedTaskService } from './fixed-task.service';
 import { FixedTaskUpdateService } from './fixed-task-update.service';
 import { FixedTaskTimingService } from './fixed-task-timing.service';
+import { FixedTaskRatingService } from './fixed-task-rating.service';
 
 describe('FixedTaskService', () => {
   const creationService = { create: jest.fn() };
@@ -19,12 +20,14 @@ describe('FixedTaskService', () => {
     startTimer: jest.fn(),
     reviewTiming: jest.fn(),
   };
+  const ratingService = { rate: jest.fn() };
   const service = new FixedTaskService(
     creationService as unknown as FixedTaskCreationService,
     queryService as unknown as FixedTaskQueryService,
     updateService as unknown as FixedTaskUpdateService,
     deleteService as unknown as FixedTaskDeleteService,
     timingService as unknown as FixedTaskTimingService,
+    ratingService as unknown as FixedTaskRatingService,
   );
 
   it('delegates commands and queries to focused services', async () => {
@@ -40,6 +43,7 @@ describe('FixedTaskService', () => {
       'approved' as never,
       225,
     );
+    service.rate('fixed-id', 'manager-id', { score: 4 } as never);
     service.delete('fixed-id');
     service.findActiveTemplates('user-id');
 
@@ -50,6 +54,7 @@ describe('FixedTaskService', () => {
     expect(updateService.update).toHaveBeenCalled();
     expect(timingService.startTimer).toHaveBeenCalled();
     expect(timingService.reviewTiming).toHaveBeenCalled();
+    expect(ratingService.rate).toHaveBeenCalled();
     expect(deleteService.delete).toHaveBeenCalled();
     expect(queryService.findActiveTemplates).toHaveBeenCalledWith('user-id');
   });

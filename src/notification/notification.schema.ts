@@ -10,6 +10,7 @@ export enum NotificationType {
   TASK_STATUS_CHANGED = 'task_status_changed',
   FIXED_TASK_ASSIGNED = 'fixed_task_assigned',
   FIXED_TASK_COMPLETED = 'fixed_task_completed',
+  FIXED_TASK_RATED = 'fixed_task_rated',
   TASK_COMPLETION_STATS = 'task_completion_stats',
   DATE_COUNT = 'date_count',
   LEAVE_REQUEST = 'leave_request',

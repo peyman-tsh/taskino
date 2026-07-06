@@ -20,4 +20,15 @@ export class FixedTaskNotificationCommandService {
       this.templates.fixedTaskCompleted(userId, fixedTaskId, title),
     );
   }
+
+  createRated(
+    userId: string,
+    fixedTaskId: string,
+    title: string,
+    score: number,
+  ) {
+    return this.writer.create(
+      this.templates.fixedTaskRated(userId, fixedTaskId, title, score),
+    );
+  }
 }

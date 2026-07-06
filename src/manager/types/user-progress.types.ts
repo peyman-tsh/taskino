@@ -1,5 +1,6 @@
 import { Types } from 'mongoose';
 import { FixedTaskStatus } from '../../fixedTask/fixed-task.schema';
+import { FixedTaskRatingStatus } from '../../fixedTask/fixed-task.schema';
 import { TaskStatus } from '../../task/task.schema';
 import {
   UserPerformanceStatus,
@@ -27,6 +28,8 @@ export interface ProgressFixedTask {
   doneTime?: Date;
   endDate?: Date;
   endTime?: string;
+  ratingScore?: number | null;
+  ratingStatus?: FixedTaskRatingStatus | null;
 }
 
 export interface ProgressMetrics {

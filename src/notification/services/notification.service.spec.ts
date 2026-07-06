@@ -22,6 +22,7 @@ describe('NotificationService', () => {
   const fixedTaskCommands = {
     createAssigned: jest.fn(),
     createCompleted: jest.fn(),
+    createRated: jest.fn(),
   };
   const generalCommands = {
     createLeaveRequest: jest.fn(),
@@ -43,11 +44,13 @@ describe('NotificationService', () => {
     service.createTaskAssignedNotification('user-id', 'task-id', 'Task');
     service.updateTaskNotificationsStatus('task-id', 'Task', 'done');
     service.createFixedTaskCompletedNotification('user-id', 'fixed-id', 'Fixed');
+    service.createFixedTaskRatedNotification('user-id', 'fixed-id', 'Fixed', 4);
     service.markAllMineAsRead('user-id');
 
     expect(taskCommands.createAssigned).toHaveBeenCalled();
     expect(taskCommands.updateStatus).toHaveBeenCalled();
     expect(fixedTaskCommands.createCompleted).toHaveBeenCalled();
+    expect(fixedTaskCommands.createRated).toHaveBeenCalled();
     expect(management.markAllMineAsRead).toHaveBeenCalled();
   });
 });

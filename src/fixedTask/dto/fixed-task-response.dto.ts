@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   FixedTaskRecurrence,
+  FixedTaskRatingStatus,
   FixedTaskStatus,
   FixedTaskTimingApprovalStatus,
 } from '../fixed-task.schema';
@@ -50,6 +51,21 @@ export class FixedTaskResponseDto {
 
   @ApiPropertyOptional()
   taskComment?: string;
+
+  @ApiPropertyOptional({ minimum: 0, maximum: 5 })
+  ratingScore?: number;
+
+  @ApiPropertyOptional({ enum: FixedTaskRatingStatus })
+  ratingStatus?: FixedTaskRatingStatus;
+
+  @ApiPropertyOptional()
+  ratingComment?: string;
+
+  @ApiPropertyOptional()
+  ratedBy?: object;
+
+  @ApiPropertyOptional()
+  ratedAt?: Date;
 
   @ApiProperty()
   isActive: boolean;

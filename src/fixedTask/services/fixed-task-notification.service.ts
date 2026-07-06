@@ -3,6 +3,7 @@ import { InternalEventBus } from '../../common/events/internal-event-bus.service
 import {
   FixedTaskAssignedNotificationEvent,
   FixedTaskCompletedNotificationEvent,
+  FixedTaskRatedNotificationEvent,
   NotificationEvents,
 } from '../../notification/events/notification.events';
 
@@ -25,6 +26,18 @@ export class FixedTaskNotificationService {
     this.eventBus.publish(
       NotificationEvents.FIXED_TASK_COMPLETED,
       new FixedTaskCompletedNotificationEvent(creatorId, fixedTaskId, title),
+    );
+  }
+
+  notifyRated(
+    userId: string,
+    fixedTaskId: string,
+    title: string,
+    score: number,
+  ): void {
+    this.eventBus.publish(
+      NotificationEvents.FIXED_TASK_RATED,
+      new FixedTaskRatedNotificationEvent(userId, fixedTaskId, title, score),
     );
   }
 }

@@ -6,6 +6,7 @@ export const NotificationEvents = {
   TASK_STATUS_CHANGED: 'notification.task.status-changed',
   FIXED_TASK_ASSIGNED: 'notification.fixed-task.assigned',
   FIXED_TASK_COMPLETED: 'notification.fixed-task.completed',
+  FIXED_TASK_RATED: 'notification.fixed-task.rated',
   USER_REGISTERED: 'notification.user.registered',
 } as const;
 
@@ -47,6 +48,15 @@ export class FixedTaskCompletedNotificationEvent {
     public readonly creatorId: string,
     public readonly fixedTaskId: string,
     public readonly fixedTaskTitle: string,
+  ) {}
+}
+
+export class FixedTaskRatedNotificationEvent {
+  constructor(
+    public readonly userId: string,
+    public readonly fixedTaskId: string,
+    public readonly fixedTaskTitle: string,
+    public readonly score: number,
   ) {}
 }
 

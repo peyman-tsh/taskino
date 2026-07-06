@@ -31,6 +31,7 @@ import { CreateFixedTaskDto } from './dto/create-fixed-task.dto';
 import { FixedTaskParamDto } from './dto/fixed-task-param.dto';
 import { QueryFixedTaskDto } from './dto/query-fixed-task.dto';
 import { UpdateFixedTaskDto } from './dto/update-fixed-task.dto';
+import { RateFixedTaskDto } from './dto/rate-fixed-task.dto';
 import { FixedTaskService } from './services/fixed-task.service';
 import {
   FixedTaskResponseDto,
@@ -223,6 +224,25 @@ export class FixedTaskController {
     @Param() params: FixedTaskParamDto,
   ) {
     return this.fixedTaskService.startTimer(params.id, requesterId);
+  }
+
+  @Patch(':id/rating')
+  @Roles(UserRole.MANAGER)
+  @ApiOperation({
+    summary: 'Rate a fixed task as a manager',
+    description:
+      'Stores a 0-5 fixed-task rating, optional rating comment, notifies the assignee, and refreshes the assignee progress.',
+  })
+  @ApiOkResponse({
+    description: 'Fixed task rating saved successfully',
+    type: FixedTaskResponseDto,
+  })
+  rate(
+    @CurrentUserId() managerId: string,
+    @Param() params: FixedTaskParamDto,
+    @Body() dto: RateFixedTaskDto,
+  ) {
+    return this.fixedTaskService.rate(params.id, managerId, dto);
   }
 
   @Patch(':id')

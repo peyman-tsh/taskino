@@ -90,7 +90,14 @@ export class UserProgressRepository {
           assignedTo: userId,
           ...monthlyDateFilter,
         })
-        .project({ status: 1, doneTime: 1, endDate: 1, endTime: 1 })
+        .project({
+          status: 1,
+          doneTime: 1,
+          endDate: 1,
+          endTime: 1,
+          ratingScore: 1,
+          ratingStatus: 1,
+        })
         .toArray(),
     ]);
 

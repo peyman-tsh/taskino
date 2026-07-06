@@ -3,6 +3,7 @@ import { InternalEventBus } from '../../common/events/internal-event-bus.service
 import {
   FixedTaskAssignedNotificationEvent,
   FixedTaskCompletedNotificationEvent,
+  FixedTaskRatedNotificationEvent,
   NotificationEvents,
 } from '../../notification/events/notification.events';
 import { FixedTaskNotificationService } from './fixed-task-notification.service';
@@ -36,6 +37,15 @@ describe('FixedTaskNotificationService', () => {
     expect(eventBus.publish).toHaveBeenCalledWith(
       NotificationEvents.FIXED_TASK_COMPLETED,
       expect.any(FixedTaskCompletedNotificationEvent),
+    );
+  });
+
+  it('publishes fixed task rated event', () => {
+    service.notifyRated('user-id', 'fixed-id', 'Daily report', 4);
+
+    expect(eventBus.publish).toHaveBeenCalledWith(
+      NotificationEvents.FIXED_TASK_RATED,
+      expect.any(FixedTaskRatedNotificationEvent),
     );
   });
 });

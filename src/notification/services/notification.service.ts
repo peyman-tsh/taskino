@@ -78,6 +78,20 @@ export class NotificationService {
     return this.fixedTaskCommands.createCompleted(userId, fixedTaskId, title);
   }
 
+  createFixedTaskRatedNotification(
+    userId: string,
+    fixedTaskId: string,
+    title: string,
+    score: number,
+  ) {
+    return this.fixedTaskCommands.createRated(
+      userId,
+      fixedTaskId,
+      title,
+      score,
+    );
+  }
+
   createLeaveRequestNotification(userId: string, title: string) {
     return this.generalCommands.createLeaveRequest(userId, title);
   }

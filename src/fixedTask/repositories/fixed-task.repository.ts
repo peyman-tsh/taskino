@@ -241,6 +241,7 @@ export class FixedTaskRepository {
         'firstName lastName email mobile roles workField isActive',
       )
       .populate('createdBy', 'firstName lastName email roles workField')
-      .populate('timingApprovedBy', 'firstName lastName email roles');
+      .populate('timingApprovedBy', 'firstName lastName email roles')
+      .populate('ratedBy', 'firstName lastName email roles');
   }
 }

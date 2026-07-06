@@ -21,6 +21,12 @@ export enum FixedTaskTimingApprovalStatus {
   REJECTED = 'rejected',
 }
 
+export enum FixedTaskRatingStatus {
+  WEAK = 'weak',
+  NORMAL = 'normal',
+  GOOD = 'good',
+}
+
 export interface FixedTaskScheduleConfig {
   weekdays?: number[];
   monthDays?: number[];
@@ -50,6 +56,25 @@ export class FixedTaskTemplate {
 
   @Prop({ type: String, default: null })
   taskComment?: string | null;
+
+  @Prop({ type: Number, min: 0, max: 5, default: null })
+  ratingScore?: number | null;
+
+  @Prop({
+    type: String,
+    enum: FixedTaskRatingStatus,
+    default: null,
+  })
+  ratingStatus?: FixedTaskRatingStatus | null;
+
+  @Prop({ type: String, default: null })
+  ratingComment?: string | null;
+
+  @Prop({ type: Types.ObjectId, ref: User.name, default: null })
+  ratedBy?: Types.ObjectId | null;
+
+  @Prop({ type: Date, default: null })
+  ratedAt?: Date | null;
 
   @Prop({ type: Boolean, default: false, index: true })
   isActive: boolean;

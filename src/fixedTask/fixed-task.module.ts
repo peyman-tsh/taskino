@@ -24,6 +24,7 @@ import { FixedTaskTimingService } from './services/fixed-task-timing.service';
 import { FixedTaskOverdueScoreCronService } from './services/fixed-task-overdue-score-cron.service';
 import { FixedTaskScheduleService } from './services/fixed-task-schedule.service';
 import { HolidayModule } from '../holiday/holiday.module';
+import { FixedTaskRatingService } from './services/fixed-task-rating.service';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { HolidayModule } from '../holiday/holiday.module';
     FixedTaskTimingService,
     FixedTaskOverdueScoreCronService,
     FixedTaskScheduleService,
+    FixedTaskRatingService,
   ],
   exports: [FixedTaskService],
 })
