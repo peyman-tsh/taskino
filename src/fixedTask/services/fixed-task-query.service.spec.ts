@@ -1,6 +1,6 @@
 import { Types } from 'mongoose';
 import { FixedTaskRepository } from '../repositories/fixed-task.repository';
-import { FixedTaskStatus } from '../fixed-task.schema';
+import { FixedTaskRecurrence, FixedTaskStatus } from '../fixed-task.schema';
 import { FixedTaskPolicyService } from './fixed-task-policy.service';
 import { FixedTaskQueryService } from './fixed-task-query.service';
 
@@ -68,13 +68,30 @@ describe('FixedTaskQueryService', () => {
     });
   });
 
-  it('returns all active fixed tasks when name is not provided', async () => {
+  it('returns scheduled active fixed tasks when user ID is not provided', async () => {
     repository.findActive.mockResolvedValue([{ isActive: true }]);
 
     await expect(service.findActiveTemplates()).resolves.toEqual([
       { isActive: true },
     ]);
-    expect(repository.findActive).toHaveBeenCalledWith({ isActive: true });
+    expect(repository.findActive).toHaveBeenCalledWith({
+      isActive: true,
+      $or: [
+        {
+          recurrence: FixedTaskRecurrence.DAILY,
+          'scheduleConfig.weekdays': expect.any(Number),
+        },
+        {
+          recurrence: FixedTaskRecurrence.WEEKLY,
+          'scheduleConfig.weekdays': expect.any(Number),
+        },
+        {
+          recurrence: FixedTaskRecurrence.MONTHLY,
+          startDate: { $lte: expect.any(Date) },
+          endDate: { $gte: expect.any(Date) },
+        },
+      ],
+    });
   });
 
   it('filters active fixed tasks by assigned user ID when provided', async () => {
@@ -86,6 +103,21 @@ describe('FixedTaskQueryService', () => {
     expect(repository.findActive).toHaveBeenCalledWith({
       isActive: true,
       assignedTo: userId,
+      $or: [
+        {
+          recurrence: FixedTaskRecurrence.DAILY,
+          'scheduleConfig.weekdays': expect.any(Number),
+        },
+        {
+          recurrence: FixedTaskRecurrence.WEEKLY,
+          'scheduleConfig.weekdays': expect.any(Number),
+        },
+        {
+          recurrence: FixedTaskRecurrence.MONTHLY,
+          startDate: { $lte: expect.any(Date) },
+          endDate: { $gte: expect.any(Date) },
+        },
+      ],
     });
   });
 });

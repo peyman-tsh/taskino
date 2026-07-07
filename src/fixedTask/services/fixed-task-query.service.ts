@@ -3,6 +3,12 @@ import { QueryFixedTaskDto } from '../dto/query-fixed-task.dto';
 import { FixedTaskRepository } from '../repositories/fixed-task.repository';
 import { FixedTaskRecurrence, FixedTaskStatus } from '../fixed-task.schema';
 import { FixedTaskPolicyService } from './fixed-task-policy.service';
+import {
+  getPersianMonthLength,
+  getTehranDateParts,
+  getTehranPersianDateParts,
+  tehranPersianDateTimeToUtc,
+} from '../../common/utils/tehran-time.util';
 
 @Injectable()
 export class FixedTaskQueryService {
@@ -72,7 +78,51 @@ export class FixedTaskQueryService {
       );
     }
 
+    filter.$or = this.buildActiveScheduleFilter(new Date());
+
     return this.repository.findActive(filter);
+  }
+
+  private buildActiveScheduleFilter(now: Date): Record<string, unknown>[] {
+    const tehranParts = getTehranDateParts(now);
+    const weekday = new Date(
+      Date.UTC(tehranParts.year, tehranParts.month - 1, tehranParts.day),
+    ).getUTCDay();
+    const persianParts = getTehranPersianDateParts(now);
+    const monthLength = getPersianMonthLength(
+      persianParts.year,
+      persianParts.month,
+    );
+    const monthStart = tehranPersianDateTimeToUtc(
+      persianParts.year,
+      persianParts.month,
+      1,
+    );
+    const monthEnd = tehranPersianDateTimeToUtc(
+      persianParts.year,
+      persianParts.month,
+      monthLength,
+      23,
+      59,
+      59,
+      999,
+    );
+
+    return [
+      {
+        recurrence: FixedTaskRecurrence.DAILY,
+        'scheduleConfig.weekdays': weekday,
+      },
+      {
+        recurrence: FixedTaskRecurrence.WEEKLY,
+        'scheduleConfig.weekdays': weekday,
+      },
+      {
+        recurrence: FixedTaskRecurrence.MONTHLY,
+        startDate: { $lte: monthEnd },
+        endDate: { $gte: monthStart },
+      },
+    ];
   }
 
   private buildFilter(queryDto: QueryFixedTaskDto): Record<string, unknown> {
