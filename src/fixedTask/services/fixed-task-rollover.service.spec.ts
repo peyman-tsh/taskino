@@ -302,6 +302,26 @@ describe('FixedTaskRolloverService', () => {
     expect(repository.claimExpiredOccurrence).not.toHaveBeenCalled();
   });
 
+  it('deactivates expired unfinished configured monthly work on unscheduled days', async () => {
+    const daySixteen = new Date('2026-07-07T11:05:00.000Z');
+    const task = createTask(FixedTaskRecurrence.MONTHLY, FixedTaskStatus.TODO);
+    task.scheduleConfig = { monthDays: [13, 14, 15] };
+    task.endDate = new Date('2026-07-06T20:30:00.000Z');
+    repository.findConfiguredRolloverCandidates.mockResolvedValue([task]);
+    repository.claimExpiredOccurrence.mockResolvedValue(task);
+
+    await expect(
+      service.runForRecurrence(FixedTaskRecurrence.MONTHLY, daySixteen),
+    ).resolves.toBe(0);
+
+    expect(scoreService.adjustTaskScore).toHaveBeenCalledWith(task);
+    expect(repository.claimExpiredOccurrence).toHaveBeenCalledWith(
+      task._id,
+      daySixteen,
+    );
+    expect(repository.createNextOccurrence).not.toHaveBeenCalled();
+  });
+
   it('uses the old weekly schedule when scheduleConfig is empty', async () => {
     const task = createTask(FixedTaskRecurrence.WEEKLY, FixedTaskStatus.TODO);
     repository.findConfiguredRolloverCandidates.mockResolvedValue([task]);
@@ -445,7 +465,7 @@ describe('FixedTaskRolloverService', () => {
     });
   });
 
-  it('ends configured monthly work at the current month end on the last configured day', async () => {
+  it('wraps configured monthly work to the first configured day of next month', async () => {
     const dayFifteen = new Date('2026-07-06T11:05:00.000Z');
     const task = createTask(FixedTaskRecurrence.MONTHLY, FixedTaskStatus.TODO);
     task.scheduleConfig = { monthDays: [2, 15] };
@@ -462,12 +482,12 @@ describe('FixedTaskRolloverService', () => {
     expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
       startDate: dayFifteen,
       startTime: '14:35',
-      endDate: new Date('2026-07-21T20:30:00.000Z'),
+      endDate: new Date('2026-07-23T20:30:00.000Z'),
       endTime: '00:01',
     });
   });
 
-  it('ends single-day configured monthly work at the current month end', async () => {
+  it('wraps single-day configured monthly work to next month', async () => {
     const dayFifteen = new Date('2026-07-06T11:05:00.000Z');
     const task = createTask(FixedTaskRecurrence.MONTHLY, FixedTaskStatus.TODO);
     task.scheduleConfig = { monthDays: [15] };
@@ -484,7 +504,7 @@ describe('FixedTaskRolloverService', () => {
     expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
       startDate: dayFifteen,
       startTime: '14:35',
-      endDate: new Date('2026-07-21T20:30:00.000Z'),
+      endDate: new Date('2026-08-05T20:30:00.000Z'),
       endTime: '00:01',
     });
   });
