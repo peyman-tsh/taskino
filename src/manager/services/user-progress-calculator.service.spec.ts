@@ -31,7 +31,7 @@ describe('UserProgressCalculatorService', () => {
     expect(result.performanceStatus).toBe(UserPerformanceStatus.NORMAL);
   });
 
-  it('calculates overall progress from all on-time done work divided by all assigned work', () => {
+  it('calculates overall progress from all done work divided by all assigned work', () => {
     const result = calculator.calculate(
       [
         { status: TaskStatus.DONE, doneTime, endDate: deadline },
@@ -50,7 +50,7 @@ describe('UserProgressCalculatorService', () => {
     expect(result.progressPercentage).toBe(50);
   });
 
-  it('calculates fixed-task progress as on-time completed divided by total', () => {
+  it('calculates fixed-task progress as completed divided by total', () => {
     const result = calculator.calculate(
       [],
       [
@@ -113,7 +113,7 @@ describe('UserProgressCalculatorService', () => {
     expect(result.performanceStatus).toBe(UserPerformanceStatus.WEAK);
   });
 
-  it('does not count late done work for progress', () => {
+  it('counts late done work for completion progress', () => {
     const late = new Date('2026-06-11T13:00:00.000Z');
     const result = calculator.calculate(
       [
@@ -138,12 +138,38 @@ describe('UserProgressCalculatorService', () => {
     expect(result.completedFixedTasks).toBe(1);
     expect(result.onTimeTasks).toBe(0);
     expect(result.onTimeFixedTasks).toBe(0);
-    expect(result.taskProgressPercentage).toBe(0);
-    expect(result.fixedTaskProgressPercentage).toBe(0);
-    expect(result.progressPercentage).toBe(0);
+    expect(result.taskProgressPercentage).toBe(100);
+    expect(result.fixedTaskProgressPercentage).toBe(100);
+    expect(result.progressPercentage).toBe(100);
   });
 
-  it('adds good fixed-task rating score to overall progress', () => {
+  it('calculates the requested daily progress formula from completed over total work', () => {
+    const result = calculator.calculate(
+      [
+        ...Array.from({ length: 4 }, () => ({
+          status: TaskStatus.DONE,
+          doneTime,
+          endDate: deadline,
+        })),
+      ],
+      [
+        ...Array.from({ length: 8 }, () => ({
+          status: FixedTaskStatus.DONE,
+          doneTime,
+          endDate: deadline,
+        })),
+        ...Array.from({ length: 2 }, () => ({
+          status: FixedTaskStatus.TODO,
+        })),
+      ],
+    );
+
+    expect(result.totalTasks + result.totalFixedTasks).toBe(14);
+    expect(result.completedTasks + result.completedFixedTasks).toBe(12);
+    expect(result.progressPercentage).toBe(86);
+  });
+
+  it('does not add good fixed-task rating score to overall progress', () => {
     const result = calculator.calculate(
       [
         { status: TaskStatus.DONE, doneTime, endDate: deadline },
@@ -168,7 +194,7 @@ describe('UserProgressCalculatorService', () => {
       ],
     );
 
-    expect(result.progressPercentage).toBe(95);
+    expect(result.progressPercentage).toBe(91);
   });
 
   it('does not add normal fixed-task ratings to overall progress', () => {

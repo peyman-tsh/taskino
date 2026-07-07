@@ -1,8 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  FixedTaskRatingStatus,
-  FixedTaskStatus,
-} from '../../fixedTask/fixed-task.schema';
+import { FixedTaskStatus } from '../../fixedTask/fixed-task.schema';
 import { TaskStatus } from '../../task/task.schema';
 import { calculatePerformanceStatus } from '../utils/performance-status.util';
 import {
@@ -32,21 +29,19 @@ export class UserProgressCalculatorService {
     );
     const onTimeTasks = this.countOnTimeTasks(tasks);
     const onTimeFixedTasks = this.countOnTimeFixedTasks(fixedTasks);
-    const ratingProgressBoost = this.calculateRatingProgressBoost(fixedTasks);
     const taskProgressPercentage = this.calculateCompletionPercentage(
-      onTimeTasks,
+      completedTasks,
       tasks.length,
     );
     const fixedTaskProgressPercentage = this.calculateCompletionPercentage(
-      onTimeFixedTasks,
+      completedFixedTasks,
       fixedTasks.length,
     );
     const progressPercentage = this.calculateOverallProgress(
-      onTimeTasks,
-      onTimeFixedTasks,
+      completedTasks,
+      completedFixedTasks,
       tasks.length,
       fixedTasks.length,
-      ratingProgressBoost,
     );
 
     return {
@@ -108,15 +103,13 @@ export class UserProgressCalculatorService {
     completedFixedTasks: number,
     totalTasks: number,
     totalFixedTasks: number,
-    ratingProgressBoost = 0,
   ): number {
     const totalWork = totalTasks + totalFixedTasks;
-    if (totalWork === 0) return Math.min(100, ratingProgressBoost);
+    if (totalWork === 0) return 0;
 
-    const baseProgress = Math.round(
+    return Math.round(
       ((completedTasks + completedFixedTasks) / totalWork) * 100,
     );
-    return Math.min(100, baseProgress + ratingProgressBoost);
   }
 
   private getFixedTaskDeadline(
@@ -151,13 +144,4 @@ export class UserProgressCalculatorService {
     return deadline;
   }
 
-  private calculateRatingProgressBoost(
-    fixedTasks: ProgressFixedTask[],
-  ): number {
-    return fixedTasks.reduce((total, task) => {
-      if (task.status !== FixedTaskStatus.DONE) return total;
-      if (task.ratingStatus !== FixedTaskRatingStatus.GOOD) return total;
-      return total + (task.ratingScore ?? 0);
-    }, 0);
-  }
 }
