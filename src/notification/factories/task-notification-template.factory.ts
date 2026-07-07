@@ -19,6 +19,27 @@ export class TaskNotificationTemplateFactory {
     };
   }
 
+  createdForManager(
+    userId: string,
+    taskId: string,
+    title: string,
+    isExtraTask: boolean,
+  ): CreateNotificationDto {
+    return {
+      user: userId,
+      title: isExtraTask ? 'Extra Task Created' : 'Task Created',
+      message: isExtraTask
+        ? `A new extra task has been created: ${title}`
+        : `A new task has been created: ${title}`,
+      type: isExtraTask
+        ? NotificationType.EXTRA_TASK_CREATED
+        : NotificationType.TASK_CREATED,
+      link: `/tasks/${taskId}`,
+      entityType: NotificationEntityType.TASK,
+      entityId: taskId,
+    };
+  }
+
   completed(
     userId: string,
     taskId: string,

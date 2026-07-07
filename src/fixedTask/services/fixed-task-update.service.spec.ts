@@ -15,6 +15,7 @@ import { FixedTaskScheduleService } from './fixed-task-schedule.service';
 import { FixedTaskUpdateService } from './fixed-task-update.service';
 import { InternalEventBus } from '../../common/events/internal-event-bus.service';
 import { UserProgressEvents } from '../../common/events/user-progress.events';
+import { UserService } from '../../user/services/user.service';
 
 describe('FixedTaskUpdateService', () => {
   const assigneeId = new Types.ObjectId();
@@ -33,7 +34,10 @@ describe('FixedTaskUpdateService', () => {
     assertValidDateRange: jest.fn(),
   };
   const scoreService = { adjustTaskScore: jest.fn() };
-  const notificationService = { notifyCreatorWhenCompleted: jest.fn() };
+  const notificationService = {
+    notifyCreatorWhenCompleted: jest.fn(),
+    notifyManagersWhenCompleted: jest.fn(),
+  };
   const queryService = { findById: jest.fn() };
   const eventBus = { publishAndWait: jest.fn() };
   const scheduleService = {
@@ -41,6 +45,7 @@ describe('FixedTaskUpdateService', () => {
     shouldGenerateToday: jest.fn(),
     buildRolloverSchedule: jest.fn(),
   };
+  const userService = { findActiveManagerIdsForUser: jest.fn() };
   const service = new FixedTaskUpdateService(
     repository as unknown as FixedTaskRepository,
     policy as unknown as FixedTaskPolicyService,
@@ -49,11 +54,13 @@ describe('FixedTaskUpdateService', () => {
     queryService as unknown as FixedTaskQueryService,
     eventBus as unknown as InternalEventBus,
     scheduleService as unknown as FixedTaskScheduleService,
+    userService as unknown as UserService,
   );
 
   beforeEach(() => {
     jest.clearAllMocks();
     scheduleService.hasScheduleConfig.mockReturnValue(false);
+    userService.findActiveManagerIdsForUser.mockResolvedValue(['manager-id']);
   });
 
   it('scores when the assignee updates status to done', async () => {
@@ -91,6 +98,11 @@ describe('FixedTaskUpdateService', () => {
       }),
     );
     expect(notificationService.notifyCreatorWhenCompleted).toHaveBeenCalled();
+    expect(notificationService.notifyManagersWhenCompleted).toHaveBeenCalledWith(
+      ['manager-id'],
+      updatedTemplate._id.toString(),
+      updatedTemplate.title,
+    );
     expect(eventBus.publishAndWait).toHaveBeenCalledWith(
       UserProgressEvents.REFRESH_REQUESTED,
       expect.objectContaining({

@@ -2,6 +2,7 @@ import { WorkField } from '../../common/enums/work-field.enum';
 
 export const NotificationEvents = {
   TASK_ASSIGNED: 'notification.task.assigned',
+  TASK_CREATED_FOR_MANAGER: 'notification.task.created-for-manager',
   TASK_COMPLETED: 'notification.task.completed',
   TASK_STATUS_CHANGED: 'notification.task.status-changed',
   FIXED_TASK_ASSIGNED: 'notification.fixed-task.assigned',
@@ -15,6 +16,15 @@ export class TaskAssignedNotificationEvent {
     public readonly userIds: string[],
     public readonly taskId: string,
     public readonly taskTitle: string,
+  ) {}
+}
+
+export class TaskCreatedForManagerNotificationEvent {
+  constructor(
+    public readonly userIds: string[],
+    public readonly taskId: string,
+    public readonly taskTitle: string,
+    public readonly isExtraTask: boolean,
   ) {}
 }
 

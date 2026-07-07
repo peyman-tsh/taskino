@@ -29,6 +29,19 @@ export class FixedTaskNotificationService {
     );
   }
 
+  notifyManagersWhenCompleted(
+    managerIds: string[],
+    fixedTaskId: string,
+    title: string,
+  ): void {
+    [...new Set(managerIds)].forEach((managerId) =>
+      this.eventBus.publish(
+        NotificationEvents.FIXED_TASK_COMPLETED,
+        new FixedTaskCompletedNotificationEvent(managerId, fixedTaskId, title),
+      ),
+    );
+  }
+
   notifyRated(
     userId: string,
     fixedTaskId: string,

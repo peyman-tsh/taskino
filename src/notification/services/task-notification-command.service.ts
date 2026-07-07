@@ -18,6 +18,27 @@ export class TaskNotificationCommandService {
     return this.writer.create(this.templates.taskAssigned(userId, taskId, title));
   }
 
+  createCreatedForManagers(
+    userIds: string[],
+    taskId: string,
+    title: string,
+    isExtraTask: boolean,
+  ) {
+    const uniqueUserIds = [...new Set(userIds)];
+    if (uniqueUserIds.length === 0) return Promise.resolve([]);
+
+    return this.writer.createBulk(
+      uniqueUserIds.map((userId) =>
+        this.templates.taskCreatedForManager(
+          userId,
+          taskId,
+          title,
+          isExtraTask,
+        ),
+      ),
+    );
+  }
+
   createCompleted(
     userId: string,
     taskId: string,

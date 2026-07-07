@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { InternalEventBus } from '../../common/events/internal-event-bus.service';
 import {
   NotificationEvents,
+  TaskCreatedForManagerNotificationEvent,
   TaskStatusChangedNotificationEvent,
 } from '../../notification/events/notification.events';
 import { TaskNotificationService } from './task-notification.service';
@@ -40,6 +41,22 @@ describe('TaskNotificationService', () => {
         taskId: 'task-id',
         taskTitle: 'Task title',
       }),
+    );
+  });
+
+  it('publishes and waits for manager task-created notifications', async () => {
+    eventBus.publishAndWait.mockResolvedValue(undefined);
+
+    await service.notifyManagersWhenCreated(
+      ['manager-id'],
+      'task-id',
+      'Task title',
+      true,
+    );
+
+    expect(eventBus.publishAndWait).toHaveBeenCalledWith(
+      NotificationEvents.TASK_CREATED_FOR_MANAGER,
+      expect.any(TaskCreatedForManagerNotificationEvent),
     );
   });
 });

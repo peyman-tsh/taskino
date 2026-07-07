@@ -7,6 +7,7 @@ import { TaskCreationService } from './task-creation.service';
 import { TaskNotificationService } from './task-notification.service';
 import { TaskPolicyService } from './task-policy.service';
 import { TaskScoreService } from './task-score.service';
+import { UserService } from '../../user/services/user.service';
 
 describe('TaskCreationService', () => {
   const specialistId = new Types.ObjectId().toString();
@@ -25,19 +26,26 @@ describe('TaskCreationService', () => {
     assertValidDeadline: jest.fn(),
     assertValidTimeRange: jest.fn(),
   };
-  const notificationService = { notifyAssignedUsers: jest.fn() };
+  const notificationService = {
+    notifyAssignedUsers: jest.fn(),
+    notifyManagersWhenCreated: jest.fn(),
+  };
   const scoreService = { adjustCompletedTaskScore: jest.fn() };
+  const userService = { findActiveManagerIdsForUser: jest.fn() };
   const service = new TaskCreationService(
     repository as unknown as TaskRepository,
     excelService as unknown as ExcelService,
     policy as unknown as TaskPolicyService,
     notificationService as unknown as TaskNotificationService,
     scoreService as unknown as TaskScoreService,
+    userService as unknown as UserService,
   );
 
   beforeEach(() => {
     jest.clearAllMocks();
     notificationService.notifyAssignedUsers.mockResolvedValue(undefined);
+    notificationService.notifyManagersWhenCreated.mockResolvedValue(undefined);
+    userService.findActiveManagerIdsForUser.mockResolvedValue(['manager-id']);
   });
 
   it('creates an extra task only for the current specialist without Excel', async () => {
@@ -63,6 +71,12 @@ describe('TaskCreationService', () => {
       [specialistId],
       task._id.toString(),
       task.title,
+    );
+    expect(notificationService.notifyManagersWhenCreated).toHaveBeenCalledWith(
+      ['manager-id'],
+      task._id.toString(),
+      task.title,
+      true,
     );
     expect(excelService.uploadFile).not.toHaveBeenCalled();
   });
@@ -91,6 +105,12 @@ describe('TaskCreationService', () => {
       [],
       task._id.toString(),
       task.title,
+    );
+    expect(notificationService.notifyManagersWhenCreated).toHaveBeenCalledWith(
+      [specialistId],
+      task._id.toString(),
+      task.title,
+      false,
     );
   });
 });

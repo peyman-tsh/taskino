@@ -6,6 +6,8 @@ export type NotificationDocument = HydratedDocument<Notification>;
 
 export enum NotificationType {
   TASK_ASSIGNED = 'task_assigned',
+  TASK_CREATED = 'task_created',
+  EXTRA_TASK_CREATED = 'extra_task_created',
   TASK_COMPLETED = 'task_completed',
   TASK_STATUS_CHANGED = 'task_status_changed',
   FIXED_TASK_ASSIGNED = 'fixed_task_assigned',

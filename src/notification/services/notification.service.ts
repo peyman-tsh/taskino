@@ -49,6 +49,20 @@ export class NotificationService {
     return this.taskCommands.createAssigned(userId, taskId, title);
   }
 
+  createTaskCreatedForManagerNotifications(
+    userIds: string[],
+    taskId: string,
+    title: string,
+    isExtraTask: boolean,
+  ) {
+    return this.taskCommands.createCreatedForManagers(
+      userIds,
+      taskId,
+      title,
+      isExtraTask,
+    );
+  }
+
   createTaskCompletedNotification(
     userId: string,
     taskId: string,

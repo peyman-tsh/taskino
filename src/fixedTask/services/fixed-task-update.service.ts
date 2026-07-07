@@ -18,6 +18,7 @@ import {
   UserProgressEvents,
   UserProgressRefreshRequestedEvent,
 } from '../../common/events/user-progress.events';
+import { UserService } from '../../user/services/user.service';
 
 @Injectable()
 export class FixedTaskUpdateService {
@@ -29,6 +30,7 @@ export class FixedTaskUpdateService {
     private readonly queryService: FixedTaskQueryService,
     private readonly eventBus: InternalEventBus,
     private readonly scheduleService: FixedTaskScheduleService,
+    private readonly userService: UserService,
   ) {}
 
   async update(id: string, requesterId: string, dto: UpdateFixedTaskDto) {
@@ -271,8 +273,21 @@ export class FixedTaskUpdateService {
     if (dto.status !== FixedTaskStatus.DONE || !isAssignee) return;
 
     await this.scoreService.adjustTaskScore(updatedTemplate);
+    const creatorId = previousTemplate.createdBy.toString();
+    const managerIds = await this.userService.findActiveManagerIdsForUser(
+      previousTemplate.assignedTo.toString(),
+    );
+    const managerIdsWithoutCreator = managerIds.filter(
+      (managerId) => managerId !== creatorId,
+    );
+
     this.notificationService.notifyCreatorWhenCompleted(
-      previousTemplate.createdBy.toString(),
+      creatorId,
+      updatedTemplate._id.toString(),
+      updatedTemplate.title,
+    );
+    this.notificationService.notifyManagersWhenCompleted(
+      managerIdsWithoutCreator,
       updatedTemplate._id.toString(),
       updatedTemplate.title,
     );

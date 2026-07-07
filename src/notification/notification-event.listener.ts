@@ -6,6 +6,7 @@ import {
   FixedTaskRatedNotificationEvent,
   NotificationEvents,
   TaskAssignedNotificationEvent,
+  TaskCreatedForManagerNotificationEvent,
   TaskCompletedNotificationEvent,
   TaskStatusChangedNotificationEvent,
   UserRegisteredNotificationEvent,
@@ -30,6 +31,10 @@ export class NotificationEventListener implements OnModuleInit, OnModuleDestroy 
       this.eventBus.subscribe<TaskAssignedNotificationEvent>(
         NotificationEvents.TASK_ASSIGNED,
         (event) => this.taskHandler.handleAssigned(event),
+      ),
+      this.eventBus.subscribe<TaskCreatedForManagerNotificationEvent>(
+        NotificationEvents.TASK_CREATED_FOR_MANAGER,
+        (event) => this.taskHandler.handleCreatedForManagers(event),
       ),
       this.eventBus.subscribe<TaskCompletedNotificationEvent>(
         NotificationEvents.TASK_COMPLETED,

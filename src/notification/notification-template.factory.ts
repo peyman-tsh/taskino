@@ -15,6 +15,20 @@ export class NotificationTemplateFactory {
     return this.taskTemplates.assigned(userId, taskId, title);
   }
 
+  taskCreatedForManager(
+    userId: string,
+    taskId: string,
+    title: string,
+    isExtraTask: boolean,
+  ) {
+    return this.taskTemplates.createdForManager(
+      userId,
+      taskId,
+      title,
+      isExtraTask,
+    );
+  }
+
   taskCompleted(userId: string, taskId: string, title: string, completedBy: string) {
     return this.taskTemplates.completed(userId, taskId, title, completedBy);
   }

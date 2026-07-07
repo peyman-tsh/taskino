@@ -16,6 +16,7 @@ import {
 import { TaskNotificationService } from './task-notification.service';
 import { TaskPolicyService } from './task-policy.service';
 import { TaskScoreService } from './task-score.service';
+import { UserService } from '../../user/services/user.service';
 
 const EXCEL_IMPORT_TYPE = 'import' as ExcelType;
 
@@ -34,6 +35,7 @@ export class TaskCreationService {
     private readonly policy: TaskPolicyService,
     private readonly notificationService: TaskNotificationService,
     private readonly scoreService: TaskScoreService,
+    private readonly userService: UserService,
   ) {}
 
   async create(
@@ -47,7 +49,7 @@ export class TaskCreationService {
       : undefined;
     const task = await this.repository.create(taskData);
 
-    await this.runPostCreationActions(task, assignedTo);
+    await this.runPostCreationActions(task, assignedTo, [dto.createdBy], false);
 
     return excelUpload ? { task, excelUpload } : task;
   }
@@ -73,7 +75,9 @@ export class TaskCreationService {
     taskData.extraTaskApprovalStatus = ExtraTaskApprovalStatus.PENDING;
 
     const task = await this.repository.create(taskData);
-    await this.runPostCreationActions(task, assignedTo);
+    const managerIds =
+      await this.userService.findActiveManagerIdsForUser(specialistId);
+    await this.runPostCreationActions(task, assignedTo, managerIds, true);
     return task;
   }
 
@@ -146,10 +150,18 @@ export class TaskCreationService {
   private async runPostCreationActions(
     task: TaskDocument,
     assignedTo: string[],
+    managerNotificationUserIds: string[],
+    isExtraTask: boolean,
   ): Promise<void> {
     if (task.status === TaskStatus.DONE) {
       await this.scoreService.adjustCompletedTaskScore(task);
     }
+    await this.notificationService.notifyManagersWhenCreated(
+      managerNotificationUserIds,
+      task._id.toString(),
+      task.title,
+      isExtraTask,
+    );
     await this.notificationService.notifyAssignedUsers(
       assignedTo,
       task._id.toString(),

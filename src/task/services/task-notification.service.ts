@@ -3,6 +3,7 @@ import { InternalEventBus } from '../../common/events/internal-event-bus.service
 import {
   NotificationEvents,
   TaskAssignedNotificationEvent,
+  TaskCreatedForManagerNotificationEvent,
   TaskCompletedNotificationEvent,
   TaskStatusChangedNotificationEvent,
 } from '../../notification/events/notification.events';
@@ -23,6 +24,27 @@ export class TaskNotificationService {
     return this.eventBus.publishAndWait(
       NotificationEvents.TASK_ASSIGNED,
       new TaskAssignedNotificationEvent(userIds, taskId, taskTitle),
+    );
+  }
+
+  notifyManagersWhenCreated(
+    userIds: string[],
+    taskId: string,
+    taskTitle: string,
+    isExtraTask: boolean,
+  ): Promise<void> {
+    if (userIds.length === 0) {
+      return Promise.resolve();
+    }
+
+    return this.eventBus.publishAndWait(
+      NotificationEvents.TASK_CREATED_FOR_MANAGER,
+      new TaskCreatedForManagerNotificationEvent(
+        userIds,
+        taskId,
+        taskTitle,
+        isExtraTask,
+      ),
     );
   }
 

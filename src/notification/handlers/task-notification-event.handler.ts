@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
   TaskAssignedNotificationEvent,
+  TaskCreatedForManagerNotificationEvent,
   TaskCompletedNotificationEvent,
   TaskStatusChangedNotificationEvent,
 } from '../events/notification.events';
@@ -34,6 +35,17 @@ export class TaskNotificationEventHandler {
         `Skipped task assignment notification for user ${uniqueUserIds[index]}: ${reason}`,
       );
     });
+  }
+
+  async handleCreatedForManagers(
+    event: TaskCreatedForManagerNotificationEvent,
+  ): Promise<void> {
+    await this.notificationService.createTaskCreatedForManagerNotifications(
+      event.userIds,
+      event.taskId,
+      event.taskTitle,
+      event.isExtraTask,
+    );
   }
 
   async handleCompleted(event: TaskCompletedNotificationEvent): Promise<void> {

@@ -40,6 +40,20 @@ describe('FixedTaskNotificationService', () => {
     );
   });
 
+  it('publishes fixed task completed events for managers', () => {
+    service.notifyManagersWhenCompleted(
+      ['manager-id', 'manager-id', 'second-manager-id'],
+      'fixed-id',
+      'Daily report',
+    );
+
+    expect(eventBus.publish).toHaveBeenCalledTimes(2);
+    expect(eventBus.publish).toHaveBeenCalledWith(
+      NotificationEvents.FIXED_TASK_COMPLETED,
+      expect.any(FixedTaskCompletedNotificationEvent),
+    );
+  });
+
   it('publishes fixed task rated event', () => {
     service.notifyRated('user-id', 'fixed-id', 'Daily report', 4);
 
