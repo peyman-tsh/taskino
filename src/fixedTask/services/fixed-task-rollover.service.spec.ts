@@ -86,6 +86,7 @@ describe('FixedTaskRolloverService', () => {
       FixedTaskRecurrence.DAILY,
       FixedTaskStatus.IN_PROGRESS,
     );
+    task.scheduleConfig = { weekdays: [5] };
     repository.findDailyRolloverCandidates.mockResolvedValue([task]);
     repository.claimExpiredOccurrence.mockResolvedValue(task);
     repository.createNextOccurrence.mockResolvedValue({ _id: new Types.ObjectId() });
@@ -117,6 +118,7 @@ describe('FixedTaskRolloverService', () => {
 
   it('rolls over a completed occurrence regardless of its deadline', async () => {
     const task = createTask(FixedTaskRecurrence.DAILY, FixedTaskStatus.DONE);
+    task.scheduleConfig = { weekdays: [5] };
     repository.findDailyRolloverCandidates.mockResolvedValue([task]);
     repository.claimExpiredOccurrence.mockResolvedValue(task);
     repository.createNextOccurrence.mockResolvedValue({
@@ -226,7 +228,7 @@ describe('FixedTaskRolloverService', () => {
     });
   });
 
-  it('does not let one unscheduled daily row block other daily rows without scheduleConfig', async () => {
+  it('skips daily rows without scheduleConfig while processing configured rows', async () => {
     const monday = new Date('2026-06-22T11:05:00.000Z');
     const scheduledTask = createTask(
       FixedTaskRecurrence.DAILY,
@@ -245,13 +247,13 @@ describe('FixedTaskRolloverService', () => {
     scheduledTask.sourceSheet = defaultTask.sourceSheet = 'Sheet 1';
     scheduledTask.sourceRow = 10;
     defaultTask.sourceRow = 11;
-    scheduledTask.scheduleConfig = { weekdays: [0, 2, 4, 6] };
+    scheduledTask.scheduleConfig = { weekdays: [1] };
 
     repository.findDailyRolloverCandidates.mockResolvedValue([
       scheduledTask,
       defaultTask,
     ]);
-    repository.claimExpiredOccurrence.mockResolvedValue(defaultTask);
+    repository.claimExpiredOccurrence.mockResolvedValue(scheduledTask);
     repository.createNextOccurrence.mockResolvedValue({
       _id: new Types.ObjectId(),
     });
@@ -261,8 +263,16 @@ describe('FixedTaskRolloverService', () => {
     ).resolves.toBe(1);
 
     expect(repository.createNextOccurrence).toHaveBeenCalledWith(
-      defaultTask,
+      scheduledTask,
       expect.any(Object),
+    );
+    expect(repository.claimExpiredOccurrence).toHaveBeenCalledWith(
+      scheduledTask._id,
+      monday,
+    );
+    expect(repository.claimExpiredOccurrence).not.toHaveBeenCalledWith(
+      defaultTask._id,
+      monday,
     );
   });
 
@@ -322,7 +332,7 @@ describe('FixedTaskRolloverService', () => {
     expect(repository.createNextOccurrence).not.toHaveBeenCalled();
   });
 
-  it('uses the old weekly schedule when scheduleConfig is empty', async () => {
+  it('skips weekly work when scheduleConfig is empty', async () => {
     const task = createTask(FixedTaskRecurrence.WEEKLY, FixedTaskStatus.TODO);
     repository.findConfiguredRolloverCandidates.mockResolvedValue([task]);
 
@@ -331,9 +341,10 @@ describe('FixedTaskRolloverService', () => {
     ).resolves.toBe(0);
 
     expect(repository.claimExpiredOccurrence).not.toHaveBeenCalled();
+    expect(repository.createNextOccurrence).not.toHaveBeenCalled();
   });
 
-  it('rolls over weekly work on Saturday when scheduleConfig is empty', async () => {
+  it('keeps active weekly work active on Saturday when scheduleConfig is empty', async () => {
     const saturday = new Date('2026-06-20T11:05:00.000Z');
     const task = createTask(FixedTaskRecurrence.WEEKLY, FixedTaskStatus.TODO);
     repository.findConfiguredRolloverCandidates.mockResolvedValue([task]);
@@ -344,12 +355,11 @@ describe('FixedTaskRolloverService', () => {
 
     await expect(
       service.runForRecurrence(FixedTaskRecurrence.WEEKLY, saturday),
-    ).resolves.toBe(1);
+    ).resolves.toBe(0);
 
-    expect(repository.claimExpiredOccurrence).toHaveBeenCalledWith(
-      task._id,
-      saturday,
-    );
+    expect(repository.claimExpiredOccurrence).not.toHaveBeenCalled();
+    expect(repository.createNextOccurrence).not.toHaveBeenCalled();
+    expect(scoreService.adjustTaskScore).not.toHaveBeenCalled();
   });
 
   it('sets configured weekly endDate to the next configured weekday', async () => {
@@ -396,7 +406,7 @@ describe('FixedTaskRolloverService', () => {
     });
   });
 
-  it('uses the old monthly schedule when scheduleConfig is empty', async () => {
+  it('skips monthly work when scheduleConfig is empty', async () => {
     const firstDayOfMonth = new Date('2026-06-22T11:05:00.000Z');
     const task = createTask(FixedTaskRecurrence.MONTHLY, FixedTaskStatus.TODO);
     repository.findConfiguredRolloverCandidates.mockResolvedValue([task]);
@@ -407,18 +417,11 @@ describe('FixedTaskRolloverService', () => {
 
     await expect(
       service.runForRecurrence(FixedTaskRecurrence.MONTHLY, firstDayOfMonth),
-    ).resolves.toBe(1);
+    ).resolves.toBe(0);
 
-    expect(repository.claimExpiredOccurrence).toHaveBeenCalledWith(
-      task._id,
-      firstDayOfMonth,
-    );
-    expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
-      startDate: firstDayOfMonth,
-      startTime: '14:35',
-      endDate: new Date('2026-07-22T20:30:00.000Z'),
-      endTime: '00:01',
-    });
+    expect(repository.claimExpiredOccurrence).not.toHaveBeenCalled();
+    expect(repository.createNextOccurrence).not.toHaveBeenCalled();
+    expect(scoreService.adjustTaskScore).not.toHaveBeenCalled();
   });
 
   it('sets configured monthly endDate to the next configured month day', async () => {

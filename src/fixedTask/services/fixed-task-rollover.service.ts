@@ -32,7 +32,7 @@ export class FixedTaskRolloverService {
     private readonly scheduleService: FixedTaskScheduleService,
   ) {}
 
-  @Cron('35 1 * * *', { timeZone: 'Asia/Tehran' })
+  @Cron('45 0 * * *', { timeZone: 'Asia/Tehran' })
   async handleDailyRollover(): Promise<void> {
     this.logger.log('Daily fixed task rollover started');
 
@@ -49,7 +49,7 @@ export class FixedTaskRolloverService {
     );
   }
 
-  @Cron('35 1 * * *', { timeZone: 'Asia/Tehran' })
+  @Cron('45 0 * * *', { timeZone: 'Asia/Tehran' })
   async handleWeeklyRollover(): Promise<void> {
     this.logger.log('Weekly fixed task rollover started');
 
@@ -66,7 +66,7 @@ export class FixedTaskRolloverService {
     );
   }
 
-  @Cron('35 1 * * *', { timeZone: 'Asia/Tehran' })
+  @Cron('45 0 * * *', { timeZone: 'Asia/Tehran' })
   async handleMonthlyRollover(): Promise<void> {
     this.logger.log('Monthly fixed task rollover started');
 
@@ -88,6 +88,8 @@ export class FixedTaskRolloverService {
       let createdCount = 0;
 
       for (const candidate of candidates) {
+        if (!this.hasScheduleConfig(candidate)) continue;
+
         const shouldGenerateToday =
           await this.scheduleService.shouldGenerateTodayForCron(
             candidate,
