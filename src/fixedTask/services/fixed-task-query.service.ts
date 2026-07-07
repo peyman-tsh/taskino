@@ -7,6 +7,7 @@ import {
   getPersianMonthLength,
   getTehranDateParts,
   getTehranPersianDateParts,
+  tehranDateTimeToUtc,
   tehranPersianDateTimeToUtc,
 } from '../../common/utils/tehran-time.util';
 
@@ -68,6 +69,79 @@ export class FixedTaskQueryService {
     };
   }
 
+  async getMyScheduledStatusCounts(userId: string) {
+    const now = new Date();
+    const scheduledTodayFilter = this.buildTodayScheduleFilter(now);
+    const yesterday = this.buildYesterdayRange(now);
+    const assignedTo = this.policy.toObjectId(userId, 'assigned user ID');
+    const baseFilter = {
+      $and: [{ assignedTo }, { $or: scheduledTodayFilter }],
+    };
+    const notExpiredFilter = {
+      $or: [
+        { endDate: { $exists: false } },
+        { endDate: null },
+        { endDate: { $gte: now } },
+      ],
+    };
+
+    const [
+      doneFixedTasks,
+      inProgressFixedTasks,
+      todoFixedTasks,
+      expiredNotDoneFixedTasks,
+    ] = await Promise.all([
+      this.repository.count({
+        $and: [
+          baseFilter,
+          { status: FixedTaskStatus.DONE },
+          { isActive: true },
+        ],
+      }),
+      this.repository.count({
+        $and: [
+          baseFilter,
+          { status: FixedTaskStatus.IN_PROGRESS },
+          { isActive: true },
+          notExpiredFilter,
+        ],
+      }),
+      this.repository.count({
+        $and: [
+          baseFilter,
+          { status: FixedTaskStatus.TODO },
+          { isActive: true },
+          notExpiredFilter,
+        ],
+      }),
+      this.repository.count({
+        $and: [
+          { assignedTo },
+          {
+            status: {
+              $in: [FixedTaskStatus.TODO, FixedTaskStatus.IN_PROGRESS],
+            },
+          },
+          { isActive: false },
+          {
+            startDate: {
+              $gte: yesterday.start,
+              $lt: yesterday.end,
+            },
+          },
+          { endDate: { $type: 'date', $lt: now } },
+        ],
+      }),
+    ]);
+
+    return {
+      doneFixedTasks,
+      inProgressFixedTasks,
+      todoFixedTasks,
+      expiredNotDoneFixedTasks,
+    };
+  }
+
   findActiveTemplates(userId?: string) {
     const filter: Record<string, unknown> = { isActive: true };
 
@@ -123,6 +197,50 @@ export class FixedTaskQueryService {
         endDate: { $gte: monthStart },
       },
     ];
+  }
+
+  private buildTodayScheduleFilter(now: Date): Record<string, unknown>[] {
+    const tehranParts = getTehranDateParts(now);
+    const weekday = new Date(
+      Date.UTC(tehranParts.year, tehranParts.month - 1, tehranParts.day),
+    ).getUTCDay();
+    const persianParts = getTehranPersianDateParts(now);
+
+    return [
+      {
+        recurrence: FixedTaskRecurrence.DAILY,
+        'scheduleConfig.weekdays': weekday,
+      },
+      {
+        recurrence: FixedTaskRecurrence.WEEKLY,
+        'scheduleConfig.weekdays': weekday,
+      },
+      {
+        recurrence: FixedTaskRecurrence.MONTHLY,
+        'scheduleConfig.monthDays': persianParts.day,
+      },
+    ];
+  }
+
+  private buildYesterdayRange(now: Date): { start: Date; end: Date } {
+    const today = getTehranDateParts(now);
+    const todayStart = tehranDateTimeToUtc(
+      today.year,
+      today.month,
+      today.day,
+    );
+    const yesterday = getTehranDateParts(
+      new Date(todayStart.getTime() - 1),
+    );
+
+    return {
+      start: tehranDateTimeToUtc(
+        yesterday.year,
+        yesterday.month,
+        yesterday.day,
+      ),
+      end: todayStart,
+    };
   }
 
   private buildFilter(queryDto: QueryFixedTaskDto): Record<string, unknown> {

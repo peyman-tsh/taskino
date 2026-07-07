@@ -3,6 +3,7 @@ import { Types } from 'mongoose';
 import { UpdateFixedTaskDto } from '../dto/update-fixed-task.dto';
 import { FixedTaskRepository } from '../repositories/fixed-task.repository';
 import {
+  FixedTaskRecurrence,
   FixedTaskStatus,
   FixedTaskTemplateDocument,
   FixedTaskTimingApprovalStatus,
@@ -49,6 +50,15 @@ export class FixedTaskUpdateService {
 
     const updateData = this.buildUpdateData(template, dto, requesterObjectId);
     Object.assign(updateData, this.buildScheduleConfigUpdateData(template, dto));
+
+    const scheduledOccurrence = await this.createOccurrenceWhenActivatedToday(
+      template,
+      dto,
+      updateData,
+    );
+    if (scheduledOccurrence) {
+      return this.queryService.findById(scheduledOccurrence._id.toString());
+    }
 
     const updatedTemplate = await this.repository.updateById(
       template._id,
@@ -173,6 +183,83 @@ export class FixedTaskUpdateService {
     }
 
     return scheduleUpdate;
+  }
+
+  private async createOccurrenceWhenActivatedToday(
+    template: FixedTaskTemplateDocument,
+    dto: UpdateFixedTaskDto,
+    updateData: Record<string, unknown>,
+  ): Promise<FixedTaskTemplateDocument | null> {
+    const recurrence = dto.recurrence ?? template.recurrence;
+    if (!this.shouldCreateOccurrenceWhenActivatedToday(template, dto)) {
+      return null;
+    }
+
+    const candidate = this.buildScheduleCandidate(template, dto, true);
+    const schedule = this.scheduleService.buildRolloverSchedule(
+      candidate,
+      new Date(),
+    );
+    const created = await this.repository.createOccurrenceFromUpdate(
+      template,
+      updateData,
+      schedule,
+    );
+
+    if (template.isActive) {
+      await this.repository.deleteById(template._id);
+    }
+
+    return created;
+  }
+
+  private shouldCreateOccurrenceWhenActivatedToday(
+    template: FixedTaskTemplateDocument,
+    dto: UpdateFixedTaskDto,
+  ): boolean {
+    if (dto.scheduleConfig === undefined) return false;
+    if (dto.isActive === false) return false;
+
+    const recurrence = dto.recurrence ?? template.recurrence;
+    if (
+      recurrence !== FixedTaskRecurrence.DAILY &&
+      recurrence !== FixedTaskRecurrence.WEEKLY &&
+      recurrence !== FixedTaskRecurrence.MONTHLY
+    ) {
+      return false;
+    }
+
+    const now = new Date();
+    const previousCandidate = this.buildScheduleCandidate(
+      template,
+      {
+        recurrence,
+        scheduleConfig: template.scheduleConfig,
+      },
+      template.isActive,
+    );
+    const nextCandidate = this.buildScheduleCandidate(template, dto, true);
+    const previousRunsToday =
+      this.scheduleService.hasScheduleConfig(previousCandidate) &&
+      this.scheduleService.shouldGenerateToday(previousCandidate, now);
+    const nextRunsToday =
+      this.scheduleService.hasScheduleConfig(nextCandidate) &&
+      this.scheduleService.shouldGenerateToday(nextCandidate, now);
+
+    return !previousRunsToday && nextRunsToday;
+  }
+
+  private buildScheduleCandidate(
+    template: FixedTaskTemplateDocument,
+    dto: Pick<UpdateFixedTaskDto, 'recurrence' | 'scheduleConfig'>,
+    isActive: boolean,
+  ): FixedTaskTemplateDocument {
+    return {
+      ...this.toPlainFixedTask(template),
+      recurrence: dto.recurrence ?? template.recurrence,
+      scheduleConfig: dto.scheduleConfig,
+      isActive,
+    } as FixedTaskTemplateDocument;
   }
 
   private async runCompletionActions(

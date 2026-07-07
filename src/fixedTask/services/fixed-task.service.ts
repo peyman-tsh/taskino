@@ -38,6 +38,10 @@ export class FixedTaskService {
     return this.queryService.getStatusCounts();
   }
 
+  getMyScheduledStatusCounts(userId: string) {
+    return this.queryService.getMyScheduledStatusCounts(userId);
+  }
+
   update(id: string, requesterId: string, dto: UpdateFixedTaskDto) {
     return this.updateService.update(id, requesterId, dto);
   }

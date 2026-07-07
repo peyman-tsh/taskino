@@ -150,7 +150,7 @@ export class TaskCreationService {
     if (task.status === TaskStatus.DONE) {
       await this.scoreService.adjustCompletedTaskScore(task);
     }
-    this.notificationService.notifyAssignedUsers(
+    await this.notificationService.notifyAssignedUsers(
       assignedTo,
       task._id.toString(),
       task.title,

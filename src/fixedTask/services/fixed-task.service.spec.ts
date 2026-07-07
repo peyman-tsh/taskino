@@ -12,6 +12,7 @@ describe('FixedTaskService', () => {
     findAll: jest.fn(),
     findById: jest.fn(),
     getStatusCounts: jest.fn(),
+    getMyScheduledStatusCounts: jest.fn(),
     findActiveTemplates: jest.fn(),
   };
   const updateService = { update: jest.fn() };
@@ -35,6 +36,7 @@ describe('FixedTaskService', () => {
     await service.findAll({} as never);
     service.findById('fixed-id');
     service.getStatusCounts();
+    service.getMyScheduledStatusCounts('user-id');
     service.update('fixed-id', 'requester-id', {} as never);
     service.startTimer('fixed-id', 'requester-id');
     service.reviewTiming(
@@ -51,6 +53,9 @@ describe('FixedTaskService', () => {
     expect(queryService.findAll).toHaveBeenCalled();
     expect(queryService.findById).toHaveBeenCalled();
     expect(queryService.getStatusCounts).toHaveBeenCalled();
+    expect(queryService.getMyScheduledStatusCounts).toHaveBeenCalledWith(
+      'user-id',
+    );
     expect(updateService.update).toHaveBeenCalled();
     expect(timingService.startTimer).toHaveBeenCalled();
     expect(timingService.reviewTiming).toHaveBeenCalled();

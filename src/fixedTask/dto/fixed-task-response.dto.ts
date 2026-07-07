@@ -122,3 +122,20 @@ export class FixedTaskStatusCountsResponseDto {
   })
   activeDatedTodoFixedTasks: number;
 }
+
+export class MyScheduledFixedTaskStatusCountsResponseDto {
+  @ApiProperty()
+  doneFixedTasks: number;
+
+  @ApiProperty()
+  inProgressFixedTasks: number;
+
+  @ApiProperty()
+  todoFixedTasks: number;
+
+  @ApiProperty({
+    description:
+      'Scheduled fixed tasks for today whose status is not done and whose endDate is before now',
+  })
+  expiredNotDoneFixedTasks: number;
+}

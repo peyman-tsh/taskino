@@ -23,6 +23,8 @@ describe('FixedTaskUpdateService', () => {
   const repository = {
     findRawById: jest.fn(),
     updateById: jest.fn(),
+    deleteById: jest.fn(),
+    createOccurrenceFromUpdate: jest.fn(),
   };
   const policy = {
     toObjectId: jest.fn((id: string) => new Types.ObjectId(id)),
@@ -280,6 +282,236 @@ describe('FixedTaskUpdateService', () => {
       }),
     );
     expect(scheduleService.buildRolloverSchedule).not.toHaveBeenCalled();
+  });
+
+  it('creates a new daily occurrence when scheduleConfig is updated to include today', async () => {
+    const template = {
+      ...createTemplate(),
+      scheduleConfig: { weekdays: [1] },
+    } as FixedTaskTemplateDocument;
+    const startDate = new Date('2026-07-06T20:30:00.000Z');
+    const endDate = new Date('2026-07-07T20:30:00.000Z');
+    const createdTemplate = {
+      ...template,
+      _id: new Types.ObjectId(),
+      scheduleConfig: { weekdays: [2] },
+      startDate,
+      endDate,
+    } as FixedTaskTemplateDocument;
+    repository.findRawById.mockResolvedValue(template);
+    repository.createOccurrenceFromUpdate.mockResolvedValue(
+      createdTemplate,
+    );
+    repository.deleteById.mockResolvedValue(template);
+    queryService.findById.mockResolvedValue(createdTemplate);
+    scheduleService.hasScheduleConfig.mockReturnValue(true);
+    scheduleService.shouldGenerateToday
+      .mockReturnValueOnce(true)
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(true);
+    scheduleService.buildRolloverSchedule.mockReturnValue({
+      startDate,
+      startTime: '00:00',
+      endDate,
+      endTime: '00:00',
+    });
+
+    await expect(
+      service.update(templateId.toString(), creatorId.toString(), {
+        scheduleConfig: { weekdays: [2] },
+      }),
+    ).resolves.toEqual(createdTemplate);
+
+    expect(repository.createOccurrenceFromUpdate).toHaveBeenCalledWith(
+      template,
+      expect.objectContaining({
+        scheduleConfig: { weekdays: [2] },
+        isActive: true,
+        startDate,
+        endDate,
+      }),
+      expect.objectContaining({
+        startDate,
+        endDate,
+      }),
+    );
+    expect(repository.deleteById).toHaveBeenCalledWith(templateId);
+    expect(repository.updateById).not.toHaveBeenCalled();
+    expect(queryService.findById).toHaveBeenCalledWith(
+      createdTemplate._id.toString(),
+    );
+  });
+
+  it('creates a new daily occurrence when previous scheduleConfig is empty and the update includes today', async () => {
+    const template = {
+      ...createTemplate(),
+      scheduleConfig: {},
+    } as FixedTaskTemplateDocument;
+    const startDate = new Date('2026-07-06T20:30:00.000Z');
+    const endDate = new Date('2026-07-07T20:30:00.000Z');
+    const createdTemplate = {
+      ...template,
+      _id: new Types.ObjectId(),
+      scheduleConfig: { weekdays: [3] },
+      startDate,
+      endDate,
+    } as FixedTaskTemplateDocument;
+    repository.findRawById.mockResolvedValue(template);
+    repository.createOccurrenceFromUpdate.mockResolvedValue(createdTemplate);
+    repository.deleteById.mockResolvedValue(template);
+    queryService.findById.mockResolvedValue(createdTemplate);
+    scheduleService.hasScheduleConfig.mockImplementation(
+      (candidate: FixedTaskTemplateDocument) =>
+        Boolean(
+          candidate.scheduleConfig?.weekdays?.length ||
+            candidate.scheduleConfig?.monthDays?.length,
+        ),
+    );
+    scheduleService.shouldGenerateToday
+      .mockReturnValueOnce(true)
+      .mockReturnValueOnce(true);
+    scheduleService.buildRolloverSchedule.mockReturnValue({
+      startDate,
+      startTime: '00:00',
+      endDate,
+      endTime: '00:00',
+    });
+
+    await expect(
+      service.update(templateId.toString(), creatorId.toString(), {
+        scheduleConfig: { weekdays: [3] },
+      }),
+    ).resolves.toEqual(createdTemplate);
+
+    expect(repository.createOccurrenceFromUpdate).toHaveBeenCalledWith(
+      template,
+      expect.objectContaining({
+        scheduleConfig: { weekdays: [3] },
+        isActive: true,
+        startDate,
+        endDate,
+      }),
+      expect.objectContaining({
+        startDate,
+        endDate,
+      }),
+    );
+    expect(repository.deleteById).toHaveBeenCalledWith(templateId);
+    expect(repository.updateById).not.toHaveBeenCalled();
+  });
+
+  it('creates a new weekly occurrence and deletes the old active one when scheduleConfig is updated to include today', async () => {
+    const template = {
+      ...createTemplate(),
+      recurrence: FixedTaskRecurrence.WEEKLY,
+      scheduleConfig: { weekdays: [1, 4, 5] },
+    } as FixedTaskTemplateDocument;
+    const startDate = new Date('2026-07-07T20:30:00.000Z');
+    const endDate = new Date('2026-07-09T20:30:00.000Z');
+    const createdTemplate = {
+      ...template,
+      _id: new Types.ObjectId(),
+      scheduleConfig: { weekdays: [1, 3, 5] },
+      startDate,
+      endDate,
+    } as FixedTaskTemplateDocument;
+    repository.findRawById.mockResolvedValue(template);
+    repository.createOccurrenceFromUpdate.mockResolvedValue(createdTemplate);
+    repository.deleteById.mockResolvedValue(template);
+    queryService.findById.mockResolvedValue(createdTemplate);
+    scheduleService.hasScheduleConfig.mockReturnValue(true);
+    scheduleService.shouldGenerateToday
+      .mockReturnValueOnce(true)
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(true);
+    scheduleService.buildRolloverSchedule.mockReturnValue({
+      startDate,
+      startTime: '00:00',
+      endDate,
+      endTime: '00:00',
+    });
+
+    await expect(
+      service.update(templateId.toString(), creatorId.toString(), {
+        scheduleConfig: { weekdays: [1, 3, 5] },
+      }),
+    ).resolves.toEqual(createdTemplate);
+
+    expect(repository.createOccurrenceFromUpdate).toHaveBeenCalledWith(
+      template,
+      expect.objectContaining({
+        scheduleConfig: { weekdays: [1, 3, 5] },
+        isActive: true,
+        startDate,
+        endDate,
+      }),
+      expect.objectContaining({
+        startDate,
+        endDate,
+      }),
+    );
+    expect(repository.deleteById).toHaveBeenCalledWith(templateId);
+    expect(repository.updateById).not.toHaveBeenCalled();
+    expect(queryService.findById).toHaveBeenCalledWith(
+      createdTemplate._id.toString(),
+    );
+  });
+
+  it('creates a new monthly occurrence and deletes the old active one when scheduleConfig is updated to include today', async () => {
+    const template = {
+      ...createTemplate(),
+      recurrence: FixedTaskRecurrence.MONTHLY,
+      scheduleConfig: { monthDays: [1, 10] },
+    } as FixedTaskTemplateDocument;
+    const startDate = new Date('2026-07-06T20:30:00.000Z');
+    const endDate = new Date('2026-07-20T20:30:00.000Z');
+    const createdTemplate = {
+      ...template,
+      _id: new Types.ObjectId(),
+      scheduleConfig: { monthDays: [15, 20] },
+      startDate,
+      endDate,
+    } as FixedTaskTemplateDocument;
+    repository.findRawById.mockResolvedValue(template);
+    repository.createOccurrenceFromUpdate.mockResolvedValue(createdTemplate);
+    repository.deleteById.mockResolvedValue(template);
+    queryService.findById.mockResolvedValue(createdTemplate);
+    scheduleService.hasScheduleConfig.mockReturnValue(true);
+    scheduleService.shouldGenerateToday
+      .mockReturnValueOnce(true)
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(true);
+    scheduleService.buildRolloverSchedule.mockReturnValue({
+      startDate,
+      startTime: '00:00',
+      endDate,
+      endTime: '00:00',
+    });
+
+    await expect(
+      service.update(templateId.toString(), creatorId.toString(), {
+        scheduleConfig: { monthDays: [15, 20] },
+      }),
+    ).resolves.toEqual(createdTemplate);
+
+    expect(repository.createOccurrenceFromUpdate).toHaveBeenCalledWith(
+      template,
+      expect.objectContaining({
+        scheduleConfig: { monthDays: [15, 20] },
+        isActive: true,
+        startDate,
+        endDate,
+      }),
+      expect.objectContaining({
+        startDate,
+        endDate,
+      }),
+    );
+    expect(repository.deleteById).toHaveBeenCalledWith(templateId);
+    expect(repository.updateById).not.toHaveBeenCalled();
+    expect(queryService.findById).toHaveBeenCalledWith(
+      createdTemplate._id.toString(),
+    );
   });
 
   it('prevents non-assignees from updating status', async () => {

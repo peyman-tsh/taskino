@@ -36,6 +36,7 @@ import { FixedTaskService } from './services/fixed-task.service';
 import {
   FixedTaskResponseDto,
   FixedTaskStatusCountsResponseDto,
+  MyScheduledFixedTaskStatusCountsResponseDto,
   PaginatedFixedTasksResponseDto,
 } from './dto/fixed-task-response.dto';
 import { FixedTaskSeedService } from './services/fixed-task-seed.service';
@@ -180,6 +181,21 @@ export class FixedTaskController {
   })
   getStatusCounts() {
     return this.fixedTaskService.getStatusCounts();
+  }
+
+  @Get('me/scheduled-status-counts')
+  @Roles(UserRole.SPECIALIST, UserRole.SUPERVISOR)
+  @ApiOperation({
+    summary: 'Get current user scheduled fixed-task counts for today',
+    description:
+      'Counts today-matching fixed tasks assigned to the authenticated specialist or supervisor. Daily and weekly tasks must include today in scheduleConfig.weekdays; monthly tasks must include today in scheduleConfig.monthDays.',
+  })
+  @ApiOkResponse({
+    description: 'Scheduled fixed-task status counts retrieved successfully',
+    type: MyScheduledFixedTaskStatusCountsResponseDto,
+  })
+  getMyScheduledStatusCounts(@CurrentUserId() userId: string) {
+    return this.fixedTaskService.getMyScheduledStatusCounts(userId);
   }
 
   @Get('active')

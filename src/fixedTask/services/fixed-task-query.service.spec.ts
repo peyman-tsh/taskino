@@ -68,6 +68,77 @@ describe('FixedTaskQueryService', () => {
     });
   });
 
+  it('returns current user scheduled fixed task counts grouped by status', async () => {
+    const userId = new Types.ObjectId();
+    repository.count
+      .mockResolvedValueOnce(4)
+      .mockResolvedValueOnce(2)
+      .mockResolvedValueOnce(7)
+      .mockResolvedValueOnce(1);
+
+    await expect(
+      service.getMyScheduledStatusCounts(userId.toString()),
+    ).resolves.toEqual({
+      doneFixedTasks: 4,
+      inProgressFixedTasks: 2,
+      todoFixedTasks: 7,
+      expiredNotDoneFixedTasks: 1,
+    });
+
+    expect(repository.count).toHaveBeenCalledTimes(4);
+    expect(repository.count).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        $and: expect.arrayContaining([
+          expect.objectContaining({
+            $and: expect.arrayContaining([
+              { assignedTo: userId },
+              {
+                $or: [
+                  expect.objectContaining({
+                    recurrence: FixedTaskRecurrence.DAILY,
+                    'scheduleConfig.weekdays': expect.any(Number),
+                  }),
+                  expect.objectContaining({
+                    recurrence: FixedTaskRecurrence.WEEKLY,
+                    'scheduleConfig.weekdays': expect.any(Number),
+                  }),
+                  expect.objectContaining({
+                    recurrence: FixedTaskRecurrence.MONTHLY,
+                    'scheduleConfig.monthDays': expect.any(Number),
+                  }),
+                ],
+              },
+            ]),
+          }),
+          { status: FixedTaskStatus.DONE },
+          { isActive: true },
+        ]),
+      }),
+    );
+    expect(repository.count).toHaveBeenNthCalledWith(
+      4,
+      expect.objectContaining({
+        $and: expect.arrayContaining([
+          { assignedTo: userId },
+          {
+            status: {
+              $in: [FixedTaskStatus.TODO, FixedTaskStatus.IN_PROGRESS],
+            },
+          },
+          { isActive: false },
+          {
+            startDate: {
+              $gte: expect.any(Date),
+              $lt: expect.any(Date),
+            },
+          },
+          { endDate: { $type: 'date', $lt: expect.any(Date) } },
+        ]),
+      }),
+    );
+  });
+
   it('returns scheduled active fixed tasks when user ID is not provided', async () => {
     repository.findActive.mockResolvedValue([{ isActive: true }]);
 

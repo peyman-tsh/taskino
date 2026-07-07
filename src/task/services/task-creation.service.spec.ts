@@ -37,6 +37,7 @@ describe('TaskCreationService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    notificationService.notifyAssignedUsers.mockResolvedValue(undefined);
   });
 
   it('creates an extra task only for the current specialist without Excel', async () => {
@@ -57,6 +58,11 @@ describe('TaskCreationService', () => {
         status: TaskStatus.TODO,
         isExtraTask: true,
       }),
+    );
+    expect(notificationService.notifyAssignedUsers).toHaveBeenCalledWith(
+      [specialistId],
+      task._id.toString(),
+      task.title,
     );
     expect(excelService.uploadFile).not.toHaveBeenCalled();
   });

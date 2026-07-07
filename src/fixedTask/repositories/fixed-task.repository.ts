@@ -230,6 +230,59 @@ export class FixedTaskRepository {
     }).save();
   }
 
+  createOccurrenceFromUpdate(
+    previous: FixedTaskTemplateDocument,
+    update: Record<string, unknown>,
+    schedule: FixedTaskRolloverSchedule,
+  ) {
+    const occurrenceId = new Types.ObjectId();
+    const occurrenceSourceRow = -Number.parseInt(
+      occurrenceId.toHexString().slice(-12),
+      16,
+    );
+    const timingApproved =
+      update.timingApprovalStatus === FixedTaskTimingApprovalStatus.APPROVED ||
+      previous.timingApprovalStatus ===
+        FixedTaskTimingApprovalStatus.APPROVED;
+
+    return new this.model({
+      _id: occurrenceId,
+      title: update.title ?? previous.title,
+      assignedTo: update.assignedTo ?? previous.assignedTo,
+      createdBy: previous.createdBy,
+      recurrence: update.recurrence ?? previous.recurrence,
+      description: update.description ?? previous.description,
+      scheduleConfig: update.scheduleConfig ?? previous.scheduleConfig,
+      isActive: true,
+      status: FixedTaskStatus.TODO,
+      startedAt: null,
+      doneTime: null,
+      actualDurationMinutes: null,
+      approvedDurationMinutes: timingApproved
+        ? (update.approvedDurationMinutes ?? previous.approvedDurationMinutes)
+        : null,
+      timingApprovalStatus: timingApproved
+        ? FixedTaskTimingApprovalStatus.APPROVED
+        : FixedTaskTimingApprovalStatus.PENDING,
+      timingApprovedBy: timingApproved
+        ? (update.timingApprovedBy ?? previous.timingApprovedBy)
+        : null,
+      timingApprovedAt: timingApproved
+        ? (update.timingApprovedAt ?? previous.timingApprovedAt)
+        : null,
+      scoreAdjusted: false,
+      startDate: update.startDate ?? schedule.startDate,
+      startTime: update.startTime ?? schedule.startTime,
+      endDate: update.endDate ?? schedule.endDate,
+      endTime: update.endTime ?? schedule.endTime,
+      nextRunAt: update.nextRunAt ?? previous.nextRunAt,
+      sourceExcel: previous.sourceExcel,
+      sourceSheet: previous.sourceSheet,
+      sourceRow: occurrenceSourceRow,
+      originalSourceRow: previous.originalSourceRow ?? previous.sourceRow,
+    }).save();
+  }
+
   count(filter: Record<string, unknown>) {
     return this.model.countDocuments(filter).exec();
   }

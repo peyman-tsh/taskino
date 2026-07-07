@@ -15,12 +15,12 @@ export class TaskNotificationService {
     userIds: string[],
     taskId: string,
     taskTitle: string,
-  ): void {
+  ): Promise<void> {
     if (userIds.length === 0) {
-      return;
+      return Promise.resolve();
     }
 
-    this.eventBus.publish(
+    return this.eventBus.publishAndWait(
       NotificationEvents.TASK_ASSIGNED,
       new TaskAssignedNotificationEvent(userIds, taskId, taskTitle),
     );
