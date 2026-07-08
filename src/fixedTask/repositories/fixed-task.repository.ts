@@ -63,6 +63,7 @@ export class FixedTaskRepository {
         .find({
           assignedTo: userId,
           status: FixedTaskStatus.DONE,
+          isActive: true,
           doneTime: { $gte: from, $lte: to },
         })
         .sort({ doneTime: -1, _id: -1 }),

@@ -8,6 +8,34 @@ import {
 import { FixedTaskRepository } from './fixed-task.repository';
 
 describe('FixedTaskRepository rollover', () => {
+  it('finds active done fixed tasks for a user inside a doneTime range', async () => {
+    const query = {
+      sort: jest.fn(),
+      populate: jest.fn(),
+      exec: jest.fn().mockResolvedValue([]),
+    };
+    query.sort.mockReturnValue(query);
+    query.populate.mockReturnValue(query);
+    const find = jest.fn().mockReturnValue(query);
+    const repository = new FixedTaskRepository({
+      find,
+    } as unknown as Model<FixedTaskTemplateDocument>);
+    const userId = new Types.ObjectId();
+    const from = new Date('2026-07-01T00:00:00.000Z');
+    const to = new Date('2026-07-31T23:59:59.999Z');
+
+    const result = await repository.findDoneByUserInDateRange(userId, from, to);
+
+    expect(find).toHaveBeenCalledWith({
+      assignedTo: userId,
+      status: FixedTaskStatus.DONE,
+      isActive: true,
+      doneTime: { $gte: from, $lte: to },
+    });
+    expect(query.sort).toHaveBeenCalledWith({ doneTime: -1, _id: -1 });
+    expect(result).toEqual([]);
+  });
+
   it('uses returnDocument after when claiming an expired occurrence', async () => {
     const exec = jest.fn();
     const findOneAndUpdate = jest.fn().mockReturnValue({ exec });
