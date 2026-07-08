@@ -150,6 +150,9 @@ export class FixedTaskTemplate {
   })
   scheduleConfig?: FixedTaskScheduleConfig;
 
+  @Prop({type:Boolean,default:false})
+  isTemplate?:boolean;
+
   @Prop({ type: Number })
   sourceRow?: number;
 
