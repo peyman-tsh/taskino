@@ -151,10 +151,17 @@ describe('FixedTaskQueryService', () => {
         {
           recurrence: FixedTaskRecurrence.DAILY,
           'scheduleConfig.weekdays': expect.any(Number),
+          startDate: {
+            $gte: expect.any(Date),
+            $lt: expect.any(Date),
+          },
+          endDate: expect.any(Date),
         },
         {
           recurrence: FixedTaskRecurrence.WEEKLY,
           'scheduleConfig.weekdays': expect.any(Number),
+          startDate: { $lte: expect.any(Date) },
+          endDate: { $gte: expect.any(Date) },
         },
         {
           recurrence: FixedTaskRecurrence.MONTHLY,
@@ -178,10 +185,17 @@ describe('FixedTaskQueryService', () => {
         {
           recurrence: FixedTaskRecurrence.DAILY,
           'scheduleConfig.weekdays': expect.any(Number),
+          startDate: {
+            $gte: expect.any(Date),
+            $lt: expect.any(Date),
+          },
+          endDate: expect.any(Date),
         },
         {
           recurrence: FixedTaskRecurrence.WEEKLY,
           'scheduleConfig.weekdays': expect.any(Number),
+          startDate: { $lte: expect.any(Date) },
+          endDate: { $gte: expect.any(Date) },
         },
         {
           recurrence: FixedTaskRecurrence.MONTHLY,

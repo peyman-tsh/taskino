@@ -4,6 +4,7 @@ import { FixedTaskRepository } from '../repositories/fixed-task.repository';
 import { FixedTaskRecurrence, FixedTaskStatus } from '../fixed-task.schema';
 import { FixedTaskPolicyService } from './fixed-task-policy.service';
 import {
+  addTehranCalendarPeriod,
   getPersianMonthLength,
   getTehranDateParts,
   getTehranPersianDateParts,
@@ -159,6 +160,34 @@ export class FixedTaskQueryService {
 
   private buildActiveScheduleFilter(now: Date): Record<string, unknown>[] {
     const tehranParts = getTehranDateParts(now);
+    const todayStart = tehranDateTimeToUtc(
+      tehranParts.year,
+      tehranParts.month,
+      tehranParts.day,
+    );
+    const todayEnd = tehranDateTimeToUtc(
+      tehranParts.year,
+      tehranParts.month,
+      tehranParts.day,
+      23,
+      59,
+      59,
+      999,
+    );
+    const tomorrow = addTehranCalendarPeriod(now, 1, 0);
+    const tomorrowStart = tehranDateTimeToUtc(
+      tomorrow.year,
+      tomorrow.month,
+      tomorrow.day,
+    );
+    const dailyDateRange = {
+      startDate: { $gte: todayStart, $lt: tomorrowStart },
+      endDate: tomorrowStart,
+    };
+    const todayDateRange = {
+      startDate: { $lte: todayEnd },
+      endDate: { $gte: todayStart },
+    };
     const weekday = new Date(
       Date.UTC(tehranParts.year, tehranParts.month - 1, tehranParts.day),
     ).getUTCDay();
@@ -186,10 +215,12 @@ export class FixedTaskQueryService {
       {
         recurrence: FixedTaskRecurrence.DAILY,
         'scheduleConfig.weekdays': weekday,
+        ...dailyDateRange,
       },
       {
         recurrence: FixedTaskRecurrence.WEEKLY,
         'scheduleConfig.weekdays': weekday,
+        ...todayDateRange,
       },
       {
         recurrence: FixedTaskRecurrence.MONTHLY,
