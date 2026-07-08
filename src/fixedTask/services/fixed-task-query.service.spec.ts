@@ -165,8 +165,11 @@ describe('FixedTaskQueryService', () => {
         },
         {
           recurrence: FixedTaskRecurrence.MONTHLY,
-          startDate: { $lte: expect.any(Date) },
-          endDate: { $gte: expect.any(Date) },
+          'scheduleConfig.monthDays': expect.any(Number),
+          startDate: {
+            $gte: expect.any(Date),
+            $lt: expect.any(Date),
+          },
         },
       ],
     });
@@ -199,8 +202,11 @@ describe('FixedTaskQueryService', () => {
         },
         {
           recurrence: FixedTaskRecurrence.MONTHLY,
-          startDate: { $lte: expect.any(Date) },
-          endDate: { $gte: expect.any(Date) },
+          'scheduleConfig.monthDays': expect.any(Number),
+          startDate: {
+            $gte: expect.any(Date),
+            $lt: expect.any(Date),
+          },
         },
       ],
     });

@@ -192,24 +192,9 @@ export class FixedTaskQueryService {
       Date.UTC(tehranParts.year, tehranParts.month - 1, tehranParts.day),
     ).getUTCDay();
     const persianParts = getTehranPersianDateParts(now);
-    const monthLength = getPersianMonthLength(
-      persianParts.year,
-      persianParts.month,
-    );
-    const monthStart = tehranPersianDateTimeToUtc(
-      persianParts.year,
-      persianParts.month,
-      1,
-    );
-    const monthEnd = tehranPersianDateTimeToUtc(
-      persianParts.year,
-      persianParts.month,
-      monthLength,
-      23,
-      59,
-      59,
-      999,
-    );
+    const monthlyDateRange = {
+      startDate: { $gte: todayStart, $lt: tomorrowStart },
+    };
 
     return [
       {
@@ -224,8 +209,8 @@ export class FixedTaskQueryService {
       },
       {
         recurrence: FixedTaskRecurrence.MONTHLY,
-        startDate: { $lte: monthEnd },
-        endDate: { $gte: monthStart },
+        'scheduleConfig.monthDays': persianParts.day,
+        ...monthlyDateRange,
       },
     ];
   }
