@@ -8,7 +8,7 @@ import {
 import { FixedTaskRepository } from './fixed-task.repository';
 
 describe('FixedTaskRepository rollover', () => {
-  it('finds active done fixed tasks for a user inside a doneTime range', async () => {
+  it('finds active done fixed tasks for a user inside a startDate range whose endDate has not passed', async () => {
     const query = {
       sort: jest.fn(),
       populate: jest.fn(),
@@ -23,16 +23,23 @@ describe('FixedTaskRepository rollover', () => {
     const userId = new Types.ObjectId();
     const from = new Date('2026-07-01T00:00:00.000Z');
     const to = new Date('2026-07-31T23:59:59.999Z');
+    const evaluatedAt = new Date('2026-07-15T08:00:00.000Z');
 
-    const result = await repository.findDoneByUserInDateRange(userId, from, to);
+    const result = await repository.findDoneByUserInDateRange(
+      userId,
+      from,
+      to,
+      evaluatedAt,
+    );
 
     expect(find).toHaveBeenCalledWith({
       assignedTo: userId,
       status: FixedTaskStatus.DONE,
       isActive: true,
-      doneTime: { $gte: from, $lte: to },
+      endDate: { $type: 'date', $gte: evaluatedAt },
+      startDate: { $gte: from, $lte: to },
     });
-    expect(query.sort).toHaveBeenCalledWith({ doneTime: -1, _id: -1 });
+    expect(query.sort).toHaveBeenCalledWith({ startDate: -1, _id: -1 });
     expect(result).toEqual([]);
   });
 

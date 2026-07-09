@@ -147,7 +147,7 @@ export class FixedTaskController {
   @ApiOperation({
     summary: 'Get completed fixed tasks for a user in a date range',
     description:
-      'Returns fixed tasks assigned to userId whose status is done and doneTime is between from and to.',
+      'Returns active fixed tasks assigned to userId whose status is done, startDate is between from and to, and endDate has not been reached.',
   })
   @ApiParam({
     name: 'userId',

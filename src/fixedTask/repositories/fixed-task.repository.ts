@@ -57,6 +57,7 @@ export class FixedTaskRepository {
     userId: Types.ObjectId,
     from: Date,
     to: Date,
+    evaluatedAt = new Date(),
   ) {
     return this.populate(
       this.model
@@ -64,9 +65,10 @@ export class FixedTaskRepository {
           assignedTo: userId,
           status: FixedTaskStatus.DONE,
           isActive: true,
-          doneTime: { $gte: from, $lte: to },
+          endDate: { $type: 'date', $gte: evaluatedAt },
+          startDate: { $gte: from, $lte: to },
         })
-        .sort({ doneTime: -1, _id: -1 }),
+        .sort({ startDate: -1, _id: -1 }),
     ).exec();
   }
 

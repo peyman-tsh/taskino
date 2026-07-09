@@ -391,6 +391,7 @@ export class ManagerWorkStatusRepository {
       {
         status,
         isActive: true,
+        isTemplate: { $ne: true },
       },
       userId,
     );

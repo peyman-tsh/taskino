@@ -8,6 +8,46 @@ import { TaskDocument, TaskStatus } from '../../task/task.schema';
 import { ManagerWorkStatusRepository } from './manager-work-status.repository';
 
 describe('ManagerWorkStatusRepository', () => {
+  it.each([
+    [FixedTaskStatus.IN_PROGRESS, 'findInProgressFixedTasks'],
+    [FixedTaskStatus.TODO, 'findTodoFixedTasks'],
+  ] as const)(
+    'excludes template fixed tasks from active %s documents',
+    async (status, methodName) => {
+      const taskFind = jest.fn();
+      const fixedExec = jest.fn().mockResolvedValue([]);
+      const fixedLean = jest.fn().mockReturnValue({ exec: fixedExec });
+      const fixedSort = jest.fn().mockReturnValue({ lean: fixedLean });
+      const fixedPopulate = jest.fn();
+      fixedPopulate.mockReturnValue({
+        populate: fixedPopulate,
+        sort: fixedSort,
+      });
+      const fixedFind = jest.fn().mockReturnValue({ populate: fixedPopulate });
+      const repository = new ManagerWorkStatusRepository(
+        { find: taskFind } as unknown as Model<TaskDocument>,
+        { find: fixedFind } as unknown as Model<FixedTaskTemplateDocument>,
+      );
+
+      await repository[methodName]();
+
+      expect(fixedFind).toHaveBeenCalledWith({
+        $and: [
+          {
+            status,
+            isActive: true,
+            isTemplate: { $ne: true },
+          },
+          {
+            timingApprovalStatus: {
+              $ne: FixedTaskTimingApprovalStatus.REJECTED,
+            },
+          },
+        ],
+      });
+    },
+  );
+
   it('excludes template fixed tasks from overdue documents', async () => {
     const taskFind = jest.fn();
     const fixedExec = jest.fn().mockResolvedValue([]);
