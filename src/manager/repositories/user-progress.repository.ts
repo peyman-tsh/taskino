@@ -67,8 +67,8 @@ export class UserProgressRepository {
   }> {
     const todayScheduleFilter = this.buildTodayScheduleFilter(periodStart);
     const taskDateFilter = {
-      startDate: { $gte: periodStart, $lt: periodEnd },
-      endDate: { $type: 'date', $lte: periodEnd },
+      startDate: { $lte: periodEnd },
+      endDate: { $type: 'date', $gte: periodStart },
     };
     const [tasks, fixedTasks] = await Promise.all([
       this.connection

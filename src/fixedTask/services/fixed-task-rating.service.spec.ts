@@ -46,7 +46,7 @@ describe('FixedTaskRatingService', () => {
     } as FixedTaskTemplateDocument;
     const ratedTask = {
       ...fixedTask,
-      ratingScore: 4,
+      ratingScore: 8,
       ratingStatus: FixedTaskRatingStatus.GOOD,
     };
     repository.findRawById.mockResolvedValue(fixedTask);
@@ -55,14 +55,14 @@ describe('FixedTaskRatingService', () => {
     const result = await service.rate(
       fixedTaskId.toString(),
       managerId.toString(),
-      { score: 4, comment: 'Good work' },
+      { score: 8, comment: 'Good work' },
     );
 
     expect(result).toBe(ratedTask);
     expect(repository.updateById).toHaveBeenCalledWith(
       fixedTaskId,
       expect.objectContaining({
-        ratingScore: 4,
+        ratingScore: 8,
         ratingStatus: FixedTaskRatingStatus.GOOD,
         ratingComment: 'Good work',
         ratedBy: managerId,
@@ -73,7 +73,7 @@ describe('FixedTaskRatingService', () => {
       assigneeId.toString(),
       fixedTaskId.toString(),
       'Daily report',
-      4,
+      8,
     );
     expect(eventBus.publishAndWait).toHaveBeenCalledWith(
       UserProgressEvents.REFRESH_REQUESTED,
@@ -83,7 +83,7 @@ describe('FixedTaskRatingService', () => {
     );
   });
 
-  it('stores zero as weak rating', async () => {
+  it('stores zero through three as weak rating', async () => {
     const fixedTask = {
       _id: fixedTaskId,
       title: 'Daily report',
@@ -92,20 +92,26 @@ describe('FixedTaskRatingService', () => {
     repository.findRawById.mockResolvedValue(fixedTask);
     repository.updateById.mockResolvedValue(fixedTask);
 
-    await service.rate(fixedTaskId.toString(), managerId.toString(), {
-      score: 0,
-    });
+    for (const score of [0, 1, 2, 3]) {
+      jest.clearAllMocks();
+      repository.findRawById.mockResolvedValue(fixedTask);
+      repository.updateById.mockResolvedValue(fixedTask);
 
-    expect(repository.updateById).toHaveBeenCalledWith(
-      fixedTaskId,
-      expect.objectContaining({
-        ratingScore: 0,
-        ratingStatus: FixedTaskRatingStatus.WEAK,
-      }),
-    );
+      await service.rate(fixedTaskId.toString(), managerId.toString(), {
+        score,
+      });
+
+      expect(repository.updateById).toHaveBeenCalledWith(
+        fixedTaskId,
+        expect.objectContaining({
+          ratingScore: score,
+          ratingStatus: FixedTaskRatingStatus.WEAK,
+        }),
+      );
+    }
   });
 
-  it('stores one through three as normal rating', async () => {
+  it('stores four through six as normal rating', async () => {
     const fixedTask = {
       _id: fixedTaskId,
       title: 'Daily report',
@@ -114,7 +120,7 @@ describe('FixedTaskRatingService', () => {
     repository.findRawById.mockResolvedValue(fixedTask);
     repository.updateById.mockResolvedValue(fixedTask);
 
-    for (const score of [1, 2, 3]) {
+    for (const score of [4, 5, 6]) {
       jest.clearAllMocks();
       repository.findRawById.mockResolvedValue(fixedTask);
       repository.updateById.mockResolvedValue(fixedTask);
@@ -133,7 +139,7 @@ describe('FixedTaskRatingService', () => {
     }
   });
 
-  it('stores four and five as good rating', async () => {
+  it('stores seven through ten as good rating', async () => {
     const fixedTask = {
       _id: fixedTaskId,
       title: 'Daily report',
@@ -142,7 +148,7 @@ describe('FixedTaskRatingService', () => {
     repository.findRawById.mockResolvedValue(fixedTask);
     repository.updateById.mockResolvedValue(fixedTask);
 
-    for (const score of [4, 5]) {
+    for (const score of [7, 8, 9, 10]) {
       jest.clearAllMocks();
       repository.findRawById.mockResolvedValue(fixedTask);
       repository.updateById.mockResolvedValue(fixedTask);

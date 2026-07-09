@@ -20,7 +20,12 @@ describe('UserProgressCalculatorService', () => {
         { status: TaskStatus.TODO },
       ],
       [
-        { status: FixedTaskStatus.DONE, doneTime, endDate: deadline },
+        {
+          status: FixedTaskStatus.DONE,
+          doneTime,
+          endDate: deadline,
+          ratingScore: 10,
+        },
         { status: FixedTaskStatus.TODO },
       ],
     );
@@ -47,15 +52,25 @@ describe('UserProgressCalculatorService', () => {
 
     expect(result.taskProgressPercentage).toBe(75);
     expect(result.fixedTaskProgressPercentage).toBe(0);
-    expect(result.progressPercentage).toBe(50);
+    expect(result.progressPercentage).toBe(15);
   });
 
-  it('calculates fixed-task progress as completed divided by total', () => {
+  it('calculates fixed-task progress from manager rating score divided by max score', () => {
     const result = calculator.calculate(
       [],
       [
-        { status: FixedTaskStatus.DONE, doneTime, endDate: deadline },
-        { status: FixedTaskStatus.DONE, doneTime, endDate: deadline },
+        {
+          status: FixedTaskStatus.DONE,
+          doneTime,
+          endDate: deadline,
+          ratingScore: 10,
+        },
+        {
+          status: FixedTaskStatus.DONE,
+          doneTime,
+          endDate: deadline,
+          ratingScore: 10,
+        },
         ...Array.from({ length: 31 }, () => ({
           status: FixedTaskStatus.TODO,
         })),
@@ -90,8 +105,18 @@ describe('UserProgressCalculatorService', () => {
     const result = calculator.calculate(
       [],
       [
-        { status: FixedTaskStatus.DONE, doneTime, endDate: deadline },
-        { status: FixedTaskStatus.DONE, doneTime, endDate: deadline },
+        {
+          status: FixedTaskStatus.DONE,
+          doneTime,
+          endDate: deadline,
+          ratingScore: 10,
+        },
+        {
+          status: FixedTaskStatus.DONE,
+          doneTime,
+          endDate: deadline,
+          ratingScore: 10,
+        },
       ],
     );
 
@@ -130,6 +155,7 @@ describe('UserProgressCalculatorService', () => {
           endDate: deadline,
           endTime: '12:00',
           doneTime: late,
+          ratingScore: 10,
         },
       ],
     );
@@ -143,72 +169,97 @@ describe('UserProgressCalculatorService', () => {
     expect(result.progressPercentage).toBe(100);
   });
 
-  it('calculates the requested daily progress formula from completed over total work', () => {
+  it('calculates weighted progress from fixed-task ratings and task completion', () => {
     const result = calculator.calculate(
       [
-        ...Array.from({ length: 4 }, () => ({
-          status: TaskStatus.DONE,
-          doneTime,
-          endDate: deadline,
-        })),
+        { status: TaskStatus.TODO },
+        { status: TaskStatus.TODO },
       ],
       [
-        ...Array.from({ length: 8 }, () => ({
+        ...Array.from({ length: 5 }, () => ({
           status: FixedTaskStatus.DONE,
           doneTime,
           endDate: deadline,
+          ratingScore: 10,
+        })),
+        ...Array.from({ length: 2 }, () => ({
+          status: FixedTaskStatus.DONE,
+          doneTime,
+          endDate: deadline,
+          ratingScore: 6,
         })),
         ...Array.from({ length: 2 }, () => ({
           status: FixedTaskStatus.TODO,
         })),
+        { status: FixedTaskStatus.TODO },
       ],
     );
 
-    expect(result.totalTasks + result.totalFixedTasks).toBe(14);
-    expect(result.completedTasks + result.completedFixedTasks).toBe(12);
-    expect(result.progressPercentage).toBe(86);
+    expect(result.totalTasks).toBe(2);
+    expect(result.totalFixedTasks).toBe(10);
+    expect(result.fixedTaskProgressPercentage).toBe(62);
+    expect(result.taskProgressPercentage).toBe(0);
+    expect(result.progressPercentage).toBe(50);
   });
 
-  it('does not add good fixed-task rating score to overall progress', () => {
+  it('caps full fixed-task score at 80 percent when tasks also exist and are not done', () => {
     const result = calculator.calculate(
       [
-        { status: TaskStatus.DONE, doneTime, endDate: deadline },
-        { status: TaskStatus.DONE, doneTime, endDate: deadline },
-        { status: TaskStatus.DONE, doneTime, endDate: deadline },
-        { status: TaskStatus.DONE, doneTime, endDate: deadline },
-        { status: TaskStatus.DONE, doneTime, endDate: deadline },
-        { status: TaskStatus.DONE, doneTime, endDate: deadline },
-        { status: TaskStatus.DONE, doneTime, endDate: deadline },
-        { status: TaskStatus.DONE, doneTime, endDate: deadline },
-        { status: TaskStatus.DONE, doneTime, endDate: deadline },
+        { status: TaskStatus.TODO },
         { status: TaskStatus.TODO },
       ],
+      [
+        ...Array.from({ length: 10 }, () => ({
+          status: FixedTaskStatus.DONE,
+          doneTime,
+          endDate: deadline,
+          ratingScore: 10,
+          ratingStatus: FixedTaskRatingStatus.GOOD,
+        })),
+      ],
+    );
+
+    expect(result.fixedTaskProgressPercentage).toBe(100);
+    expect(result.taskProgressPercentage).toBe(0);
+    expect(result.progressPercentage).toBe(80);
+  });
+
+  it('uses fixed-task score as overall progress when no tasks exist', () => {
+    const result = calculator.calculate(
+      [],
       [
         {
           status: FixedTaskStatus.DONE,
           doneTime,
           endDate: deadline,
-          ratingScore: 4,
+          ratingScore: 6,
+          ratingStatus: FixedTaskRatingStatus.NORMAL,
+        },
+        {
+          status: FixedTaskStatus.DONE,
+          doneTime,
+          endDate: deadline,
+          ratingScore: 10,
           ratingStatus: FixedTaskRatingStatus.GOOD,
         },
       ],
     );
 
-    expect(result.progressPercentage).toBe(91);
+    expect(result.fixedTaskProgressPercentage).toBe(80);
+    expect(result.progressPercentage).toBe(80);
   });
 
-  it('does not add normal fixed-task ratings to overall progress', () => {
+  it('treats unrated fixed tasks as zero score', () => {
     const result = calculator.calculate(
       [],
       [
         {
           status: FixedTaskStatus.TODO,
-          ratingScore: 2,
-          ratingStatus: FixedTaskRatingStatus.NORMAL,
         },
       ],
     );
 
+    expect(result.fixedTaskProgressPercentage).toBe(0);
     expect(result.progressPercentage).toBe(0);
   });
 });

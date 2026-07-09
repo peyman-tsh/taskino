@@ -8,6 +8,45 @@ import { TaskDocument, TaskStatus } from '../../task/task.schema';
 import { ManagerWorkStatusRepository } from './manager-work-status.repository';
 
 describe('ManagerWorkStatusRepository', () => {
+  it('excludes template fixed tasks from overdue documents', async () => {
+    const taskFind = jest.fn();
+    const fixedExec = jest.fn().mockResolvedValue([]);
+    const fixedLean = jest.fn().mockReturnValue({ exec: fixedExec });
+    const fixedSort = jest.fn().mockReturnValue({ lean: fixedLean });
+    const fixedPopulate = jest.fn();
+    fixedPopulate.mockReturnValue({ populate: fixedPopulate, sort: fixedSort });
+    const fixedFind = jest.fn().mockReturnValue({ populate: fixedPopulate });
+    const repository = new ManagerWorkStatusRepository(
+      { find: taskFind } as unknown as Model<TaskDocument>,
+      { find: fixedFind } as unknown as Model<FixedTaskTemplateDocument>,
+    );
+    const from = new Date('2026-06-01T00:00:00.000Z');
+    const to = new Date('2026-06-30T23:59:59.999Z');
+    const evaluatedAt = new Date('2026-07-01T00:00:00.000Z');
+
+    await repository.findOverdueFixedTasks(from, to, evaluatedAt);
+
+    expect(fixedFind).toHaveBeenCalledWith({
+      $and: [
+        {
+          status: {
+            $in: [FixedTaskStatus.TODO, FixedTaskStatus.IN_PROGRESS],
+          },
+          isActive: false,
+          isTemplate: { $ne: true },
+          startDate: {
+            $gte: from,
+          },
+          endDate: {
+            $lte: to,
+            $lt: evaluatedAt,
+          },
+        },
+        { timingApprovalStatus: { $ne: FixedTaskTimingApprovalStatus.REJECTED } },
+      ],
+    });
+  });
+
   it('filters regular and fixed tasks by date overlap with createdAt fallback', async () => {
     const taskExec = jest.fn().mockResolvedValue([]);
     const taskLean = jest.fn().mockReturnValue({ exec: taskExec });

@@ -247,7 +247,7 @@ export class FixedTaskController {
   @ApiOperation({
     summary: 'Rate a fixed task as a manager',
     description:
-      'Stores a 0-5 fixed-task rating, optional rating comment, notifies the assignee, and refreshes the assignee progress.',
+      'Stores a 0-10 fixed-task rating, optional rating comment, notifies the assignee, and refreshes the assignee progress.',
   })
   @ApiOkResponse({
     description: 'Fixed task rating saved successfully',

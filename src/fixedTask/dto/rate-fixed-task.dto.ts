@@ -4,15 +4,16 @@ import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class RateFixedTaskDto {
   @ApiProperty({
-    description: 'Manager rating for the fixed task. 0 is weak, 1-3 normal, 4-5 good.',
+    description:
+      'Manager rating for the fixed task. 0-3 weak, 4-6 normal, 7-10 good.',
     minimum: 0,
-    maximum: 5,
-    example: 4,
+    maximum: 10,
+    example: 8,
   })
   @Type(() => Number)
   @IsInt()
   @Min(0)
-  @Max(5)
+  @Max(10)
   score: number;
 
   @ApiPropertyOptional({

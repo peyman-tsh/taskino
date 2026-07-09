@@ -52,7 +52,7 @@ export class FixedTaskResponseDto {
   @ApiPropertyOptional()
   taskComment?: string;
 
-  @ApiPropertyOptional({ minimum: 0, maximum: 5 })
+  @ApiPropertyOptional({ minimum: 0, maximum: 10 })
   ratingScore?: number;
 
   @ApiPropertyOptional({ enum: FixedTaskRatingStatus })

@@ -3,7 +3,7 @@ import { FixedTaskRecurrence } from '../../fixedTask/fixed-task.schema';
 import { UserProgressRepository } from './user-progress.repository';
 
 describe('UserProgressRepository', () => {
-  it('loads today-window tasks and active fixed tasks scheduled for today', async () => {
+  it('loads tasks overlapping today and active fixed tasks scheduled for today', async () => {
     const toArray = jest.fn().mockResolvedValue([]);
     const project = jest.fn().mockReturnValue({ toArray });
     const find = jest.fn().mockReturnValue({ project });
@@ -20,8 +20,8 @@ describe('UserProgressRepository', () => {
     expect(collection).toHaveBeenCalledWith('tasks');
     expect(find).toHaveBeenCalledWith({
       assignedTo: userId,
-      startDate: { $gte: periodStart, $lt: periodEnd },
-      endDate: { $type: 'date', $lte: periodEnd },
+      startDate: { $lte: periodEnd },
+      endDate: { $type: 'date', $gte: periodStart },
     });
     expect(collection).toHaveBeenCalledWith('fixedtasktemplates');
     expect(find).toHaveBeenCalledWith({

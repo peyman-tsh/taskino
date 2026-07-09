@@ -34,14 +34,14 @@ export class UserProgressCalculatorService {
       tasks.length,
     );
     const fixedTaskProgressPercentage = this.calculateCompletionPercentage(
-      completedFixedTasks,
-      fixedTasks.length,
+      this.sumFixedTaskRatingScores(fixedTasks),
+      fixedTasks.length * 10,
     );
     const progressPercentage = this.calculateOverallProgress(
-      completedTasks,
-      completedFixedTasks,
-      tasks.length,
-      fixedTasks.length,
+      taskProgressPercentage,
+      fixedTaskProgressPercentage,
+      tasks.length > 0,
+      fixedTasks.length > 0,
     );
 
     return {
@@ -98,18 +98,31 @@ export class UserProgressCalculatorService {
     return total === 0 ? 0 : Math.round((completed / total) * 100);
   }
 
-  private calculateOverallProgress(
-    completedTasks: number,
-    completedFixedTasks: number,
-    totalTasks: number,
-    totalFixedTasks: number,
-  ): number {
-    const totalWork = totalTasks + totalFixedTasks;
-    if (totalWork === 0) return 0;
+  private sumFixedTaskRatingScores(fixedTasks: ProgressFixedTask[]): number {
+    return fixedTasks.reduce((sum, task) => {
+      const score = task.ratingScore ?? 0;
+      if (!Number.isFinite(score)) return sum;
 
-    return Math.round(
-      ((completedTasks + completedFixedTasks) / totalWork) * 100,
-    );
+      return sum + Math.min(Math.max(score, 0), 10);
+    }, 0);
+  }
+
+  private calculateOverallProgress(
+    taskProgressPercentage: number,
+    fixedTaskProgressPercentage: number,
+    hasTasks: boolean,
+    hasFixedTasks: boolean,
+  ): number {
+    if (hasTasks && hasFixedTasks) {
+      return Math.round(
+        fixedTaskProgressPercentage * 0.8 + taskProgressPercentage * 0.2,
+      );
+    }
+
+    if (hasFixedTasks) return fixedTaskProgressPercentage;
+    if (hasTasks) return taskProgressPercentage;
+
+    return 0;
   }
 
   private getFixedTaskDeadline(

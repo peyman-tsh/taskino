@@ -107,6 +107,7 @@ export class ManagerWorkStatusRepository {
           $in: [FixedTaskStatus.TODO, FixedTaskStatus.IN_PROGRESS],
         },
         isActive: false,
+        isTemplate: { $ne: true },
         startDate: {
           $gte: from,
         },

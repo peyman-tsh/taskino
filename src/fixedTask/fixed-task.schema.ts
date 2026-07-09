@@ -57,7 +57,7 @@ export class FixedTaskTemplate {
   @Prop({ type: String, default: null })
   taskComment?: string | null;
 
-  @Prop({ type: Number, min: 0, max: 5, default: null })
+  @Prop({ type: Number, min: 0, max: 10, default: null })
   ratingScore?: number | null;
 
   @Prop({
