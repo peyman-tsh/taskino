@@ -176,6 +176,15 @@ export class FixedTaskRepository {
       .exec();
   }
 
+  activateOccurrence(id: Types.ObjectId) {
+    return this.model
+      .updateOne(
+        { _id: id, isActive: false },
+        { $set: { isActive: true } },
+      )
+      .exec();
+  }
+
   createNextOccurrence(
     previous: FixedTaskTemplateDocument,
     schedule: FixedTaskRolloverSchedule,

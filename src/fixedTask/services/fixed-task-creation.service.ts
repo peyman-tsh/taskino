@@ -10,6 +10,7 @@ import { FixedTaskNotificationService } from './fixed-task-notification.service'
 import { FixedTaskPolicyService } from './fixed-task-policy.service';
 import { FixedTaskQueryService } from './fixed-task-query.service';
 import { FixedTaskDeadlineService } from './fixed-task-deadline.service';
+import { getTehranDateParts } from '../../common/utils/tehran-time.util';
 
 @Injectable()
 export class FixedTaskCreationService {
@@ -49,7 +50,7 @@ export class FixedTaskCreationService {
       timingApprovedAt:
         dto.approvedDurationMinutes !== undefined ? new Date() : null,
       scheduleConfig: dto.scheduleConfig,
-      isActive: dto.isActive ?? true,
+      isActive: this.isTodayInTehran(startDate),
       nextRunAt: dto.nextRunAt
         ? new Date(dto.nextRunAt)
         : this.deadlineService.getNextDeadline(dto.recurrence, dto.endTime),
@@ -87,5 +88,17 @@ export class FixedTaskCreationService {
 
   private parseOptionalDate(value: string | undefined, label: string) {
     return value ? this.policy.parseDate(value, label) : undefined;
+  }
+
+  private isTodayInTehran(startDate?: Date): boolean {
+    if (!startDate) return false;
+
+    const start = getTehranDateParts(startDate);
+    const today = getTehranDateParts(new Date());
+    return (
+      start.year === today.year &&
+      start.month === today.month &&
+      start.day === today.day
+    );
   }
 }

@@ -20,6 +20,7 @@ describe('FixedTaskRolloverService', () => {
     claimExpiredOccurrence: jest.fn(),
     createNextOccurrence: jest.fn(),
     reactivateOccurrence: jest.fn(),
+    activateOccurrence: jest.fn(),
   };
   const scoreService = {
     adjustTaskScore: jest.fn(),
@@ -176,6 +177,24 @@ describe('FixedTaskRolloverService', () => {
       endDate: new Date('2026-06-21T20:30:00.000Z'),
       endTime: '00:00',
     });
+  });
+
+  it('activates an existing occurrence that starts on the scheduled day without creating a duplicate', async () => {
+    const sunday = new Date('2026-06-21T11:05:00.000Z');
+    const task = createTask(FixedTaskRecurrence.WEEKLY, FixedTaskStatus.TODO);
+    task.isActive = false;
+    task.startDate = new Date('2026-06-20T20:30:00.000Z');
+    task.scheduleConfig = { weekdays: [0] };
+    repository.findConfiguredRolloverCandidates.mockResolvedValue([task]);
+    repository.activateOccurrence.mockResolvedValue({ modifiedCount: 1 });
+
+    await expect(
+      service.runForRecurrence(FixedTaskRecurrence.WEEKLY, sunday),
+    ).resolves.toBe(0);
+
+    expect(repository.activateOccurrence).toHaveBeenCalledWith(task._id);
+    expect(repository.claimExpiredOccurrence).not.toHaveBeenCalled();
+    expect(repository.createNextOccurrence).not.toHaveBeenCalled();
   });
 
   it('creates configured daily work for the current scheduled day', async () => {
@@ -377,8 +396,8 @@ describe('FixedTaskRolloverService', () => {
     ).resolves.toBe(1);
 
     expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
-      startDate: saturday,
-      startTime: '14:35',
+      startDate: new Date('2026-06-19T20:30:00.000Z'),
+      startTime: '00:00',
       endDate: new Date('2026-06-21T20:30:00.000Z'),
       endTime: '00:01',
     });
@@ -399,8 +418,8 @@ describe('FixedTaskRolloverService', () => {
     ).resolves.toBe(1);
 
     expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
-      startDate: monday,
-      startTime: '14:35',
+      startDate: new Date('2026-06-21T20:30:00.000Z'),
+      startTime: '00:00',
       endDate: new Date('2026-06-23T20:30:00.000Z'),
       endTime: '00:01',
     });
@@ -439,8 +458,8 @@ describe('FixedTaskRolloverService', () => {
     ).resolves.toBe(1);
 
     expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
-      startDate: firstDayOfMonth,
-      startTime: '14:35',
+      startDate: new Date('2026-06-21T20:30:00.000Z'),
+      startTime: '00:00',
       endDate: new Date('2026-06-25T20:30:00.000Z'),
       endTime: '00:01',
     });
@@ -461,8 +480,8 @@ describe('FixedTaskRolloverService', () => {
     ).resolves.toBe(1);
 
     expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
-      startDate: dayTwentySeven,
-      startTime: '14:35',
+      startDate: new Date('2026-07-17T20:30:00.000Z'),
+      startTime: '00:00',
       endDate: new Date('2026-07-18T20:30:00.000Z'),
       endTime: '00:01',
     });
@@ -483,8 +502,8 @@ describe('FixedTaskRolloverService', () => {
     ).resolves.toBe(1);
 
     expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
-      startDate: dayFifteen,
-      startTime: '14:35',
+      startDate: new Date('2026-07-05T20:30:00.000Z'),
+      startTime: '00:00',
       endDate: new Date('2026-07-23T20:30:00.000Z'),
       endTime: '00:01',
     });
@@ -505,8 +524,8 @@ describe('FixedTaskRolloverService', () => {
     ).resolves.toBe(1);
 
     expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
-      startDate: dayFifteen,
-      startTime: '14:35',
+      startDate: new Date('2026-07-05T20:30:00.000Z'),
+      startTime: '00:00',
       endDate: new Date('2026-08-05T20:30:00.000Z'),
       endTime: '00:01',
     });

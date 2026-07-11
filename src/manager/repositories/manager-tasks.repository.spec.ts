@@ -39,9 +39,6 @@ describe('ManagerTasksRepository', () => {
           status: FixedTaskStatus.DONE,
           actualDurationMinutes: { $type: 'number' },
           approvedDurationMinutes: { $type: 'number' },
-          $expr: {
-            $lt: ['$actualDurationMinutes', '$approvedDurationMinutes'],
-          },
           $or: [
             {
               recurrence: FixedTaskRecurrence.DAILY,
@@ -64,7 +61,12 @@ describe('ManagerTasksRepository', () => {
         $group: {
           _id: null,
           totalActualDurationMinutes: {
-            $sum: '$actualDurationMinutes',
+            $sum: {
+              $min: [
+                '$actualDurationMinutes',
+                '$approvedDurationMinutes',
+              ],
+            },
           },
         },
       },

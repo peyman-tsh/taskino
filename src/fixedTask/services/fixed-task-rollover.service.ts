@@ -101,7 +101,10 @@ export class FixedTaskRolloverService {
           await this.deactivateUnscheduledDailyTask(candidate, now);
           continue;
         }
-        if (this.startedToday(candidate, now)) continue;
+        if (this.startedToday(candidate, now)) {
+          await this.activateScheduledOccurrence(candidate);
+          continue;
+        }
         const created = candidate.isActive
           ? await this.rolloverIfExpired(candidate, now)
           : await this.createNextOccurrenceFromPrevious(candidate, now);
@@ -299,6 +302,15 @@ export class FixedTaskRolloverService {
 
   private hasScheduleConfig(candidate: FixedTaskTemplateDocument): boolean {
     return this.scheduleService.hasScheduleConfig(candidate);
+  }
+
+  private async activateScheduledOccurrence(
+    candidate: FixedTaskTemplateDocument,
+  ): Promise<void> {
+    if (candidate.isActive) return;
+
+    await this.repository.activateOccurrence(candidate._id);
+    this.publishProgressRefresh(candidate);
   }
 
   private startedToday(

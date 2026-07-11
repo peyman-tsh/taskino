@@ -423,7 +423,7 @@ export class ManagerController {
   @ApiOperation({
     summary: 'Get daily fixed-task duration balance',
     description:
-      'Sums actualDurationMinutes for done FixedTasks whose actual duration is less than approved duration, plus done Task and extra Task duration from startDate to doneTime when completed before endDate. Daily fixed tasks are matched by startDate; weekly and monthly fixed tasks are matched by doneTime.',
+      'Sums the lower of actualDurationMinutes and approvedDurationMinutes for done FixedTasks, plus done Task and extra Task duration from startDate to doneTime when completed before endDate. Daily fixed tasks are matched by startDate; weekly and monthly fixed tasks are matched by doneTime.',
   })
   @ApiOkResponse({
     description: 'Daily fixed-task duration balance retrieved successfully',

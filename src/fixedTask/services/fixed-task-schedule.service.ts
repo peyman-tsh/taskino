@@ -46,6 +46,16 @@ export class FixedTaskScheduleService {
   ) {
     const schedule = buildFixedTaskSeedSchedule(candidate.recurrence, now);
 
+    if (candidate.recurrence !== FixedTaskRecurrence.DAILY) {
+      const today = this.getTehranCalendar(now);
+      schedule.startDate = tehranDateTimeToUtc(
+        today.year,
+        today.month,
+        today.day,
+      );
+      schedule.startTime = '00:00';
+    }
+
     if (
       candidate.recurrence === FixedTaskRecurrence.WEEKLY &&
       this.hasConfiguredWeekdays(candidate)

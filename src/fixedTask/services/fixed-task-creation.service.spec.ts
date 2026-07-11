@@ -35,6 +35,8 @@ describe('FixedTaskCreationService', () => {
 
   beforeEach(() => jest.clearAllMocks());
 
+  afterEach(() => jest.useRealTimers());
+
   it('rejects creating a fixed task with done status', async () => {
     await expect(
       service.create(creatorId, {
@@ -73,6 +75,39 @@ describe('FixedTaskCreationService', () => {
         startDate: new Date(startDate),
         endDate: new Date(endDate),
       }),
+    );
+  });
+
+  it('activates a fixed task when its start date is today in Tehran', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-07-11T20:30:00.000Z'));
+    queryService.findById.mockResolvedValue({});
+
+    await service.create(creatorId, {
+      title: 'Today task',
+      assignedTo: assigneeId,
+      recurrence: FixedTaskRecurrence.DAILY,
+      startDate: '2026-07-12T14:30:00.000Z',
+    });
+
+    expect(repository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ isActive: true }),
+    );
+  });
+
+  it('deactivates a fixed task whose start date is not today in Tehran', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-07-11T20:30:00.000Z'));
+    queryService.findById.mockResolvedValue({});
+
+    await service.create(creatorId, {
+      title: 'Future task',
+      assignedTo: assigneeId,
+      recurrence: FixedTaskRecurrence.DAILY,
+      startDate: '2026-07-12T20:30:00.000Z',
+      isActive: true,
+    });
+
+    expect(repository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ isActive: false }),
     );
   });
 });
