@@ -69,18 +69,31 @@ describe('ManagerWorkStatusRepository', () => {
     expect(fixedFind).toHaveBeenCalledWith({
       $and: [
         {
-          status: {
-            $in: [FixedTaskStatus.TODO, FixedTaskStatus.IN_PROGRESS],
-          },
-          isActive: false,
           isTemplate: { $ne: true },
           startDate: {
             $gte: from,
           },
           endDate: {
             $lte: to,
-            $lt: evaluatedAt,
           },
+          $or: [
+            {
+              status: {
+                $in: [FixedTaskStatus.TODO, FixedTaskStatus.IN_PROGRESS],
+              },
+              endDate: {
+                $lt: evaluatedAt,
+              },
+            },
+            {
+              status: { $ne: FixedTaskStatus.TODO },
+              actualDurationMinutes: { $type: 'number' },
+              approvedDurationMinutes: { $type: 'number' },
+              $expr: {
+                $gt: ['$actualDurationMinutes', '$approvedDurationMinutes'],
+              },
+            },
+          ],
         },
         { timingApprovalStatus: { $ne: FixedTaskTimingApprovalStatus.REJECTED } },
       ],
@@ -150,5 +163,35 @@ describe('ManagerWorkStatusRepository', () => {
 
     expect(taskFind).toHaveBeenCalledWith(taskFilter);
     expect(fixedFind).toHaveBeenCalledWith(fixedTaskFilter);
+  });
+
+  it('excludes template fixed tasks from per-user work status summary', async () => {
+    const taskExec = jest.fn().mockResolvedValue([]);
+    const taskLean = jest.fn().mockReturnValue({ exec: taskExec });
+    const taskPopulate = jest.fn().mockReturnValue({ lean: taskLean });
+    const taskSelect = jest.fn().mockReturnValue({ populate: taskPopulate });
+    const taskFind = jest.fn().mockReturnValue({ select: taskSelect });
+    const fixedExec = jest.fn().mockResolvedValue([]);
+    const fixedLean = jest.fn().mockReturnValue({ exec: fixedExec });
+    const fixedPopulate = jest.fn().mockReturnValue({ lean: fixedLean });
+    const fixedSelect = jest.fn().mockReturnValue({ populate: fixedPopulate });
+    const fixedFind = jest.fn().mockReturnValue({ select: fixedSelect });
+    const repository = new ManagerWorkStatusRepository(
+      { find: taskFind } as unknown as Model<TaskDocument>,
+      { find: fixedFind } as unknown as Model<FixedTaskTemplateDocument>,
+    );
+    const from = new Date('2026-06-01T00:00:00.000Z');
+    const to = new Date('2026-06-30T23:59:59.999Z');
+    const managerId = '6a39043bfc4f15b8c14eb3de';
+
+    await repository.findByDateRangeForUsers(from, to, managerId);
+
+    expect(fixedFind).toHaveBeenCalledWith(
+      expect.objectContaining({
+        $and: expect.arrayContaining([
+          { isTemplate: { $ne: true } },
+        ]),
+      }),
+    );
   });
 });

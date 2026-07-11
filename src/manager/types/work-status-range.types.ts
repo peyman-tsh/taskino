@@ -8,6 +8,8 @@ export interface WorkStatusItem {
   endDate?: Date;
   endTime?: string;
   isActive?: boolean;
+  actualDurationMinutes?: number | null;
+  approvedDurationMinutes?: number | null;
 }
 
 export interface WorkStatusUser {

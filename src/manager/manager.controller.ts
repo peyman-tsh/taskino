@@ -239,7 +239,7 @@ export class ManagerController {
   @ApiOperation({
     summary: 'Get overdue fixed-task documents',
     description:
-      'Returns overdue FixedTask documents in the selected date range. When userId is provided, only that user is returned; otherwise all users are included.',
+      'Returns FixedTask documents in the selected date range that are expired while todo/in_progress, or whose actual duration is greater than approved duration except todo tasks. When userId is provided, only that user is returned; otherwise all users are included.',
   })
   @ApiOkResponse({
     description: 'Overdue fixed tasks retrieved successfully',
@@ -423,7 +423,7 @@ export class ManagerController {
   @ApiOperation({
     summary: 'Get daily fixed-task duration balance',
     description:
-      'Sums actualDurationMinutes for done daily FixedTasks in a date range and subtracts the total from 8 hours.',
+      'Sums actualDurationMinutes for done FixedTasks whose actual duration is less than approved duration, plus done Task and extra Task duration from startDate to doneTime when completed before endDate. Daily fixed tasks are matched by startDate; weekly and monthly fixed tasks are matched by doneTime.',
   })
   @ApiOkResponse({
     description: 'Daily fixed-task duration balance retrieved successfully',

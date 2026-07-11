@@ -39,7 +39,11 @@ export class ManagerTasksService extends BaseManagerService {
     if (userId) this.toObjectId(userId, 'user ID');
 
     const totalActualDurationMinutes =
-      await this.repository.sumDailyDoneFixedTaskDuration(from, to, userId);
+      await this.repository.sumDoneWorkDurationForBalance(
+        from,
+        to,
+        userId,
+      );
 
     return {
       from,

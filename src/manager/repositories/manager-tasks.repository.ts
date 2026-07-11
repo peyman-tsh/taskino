@@ -7,7 +7,12 @@ import {
   FixedTaskTemplate,
   FixedTaskTemplateDocument,
 } from '../../fixedTask/fixed-task.schema';
-import { Task, TaskDocument, TaskRecurrence } from '../../task/task.schema';
+import {
+  Task,
+  TaskDocument,
+  TaskRecurrence,
+  TaskStatus,
+} from '../../task/task.schema';
 
 @Injectable()
 export class ManagerTasksRepository {
@@ -41,36 +46,94 @@ export class ManagerTasksRepository {
     return { tasks, fixedTasks };
   }
 
-  async sumDailyDoneFixedTaskDuration(
+  async sumDoneWorkDurationForBalance(
     from: Date,
     to: Date,
     userId?: string,
   ): Promise<number> {
-    const filter: Record<string, unknown> = {
+    const fixedTaskFilter: Record<string, unknown> = {
       status: FixedTaskStatus.DONE,
-      recurrence: FixedTaskRecurrence.DAILY,
-      actualDurationMinutes: { $exists: true, $ne: null },
+      actualDurationMinutes: { $type: 'number' },
+      approvedDurationMinutes: { $type: 'number' },
+      $expr: {
+        $lt: ['$actualDurationMinutes', '$approvedDurationMinutes'],
+      },
+      $or: [
+        {
+          recurrence: FixedTaskRecurrence.DAILY,
+          startDate: { $gte: from, $lte: to },
+        },
+        {
+          recurrence: {
+            $in: [FixedTaskRecurrence.WEEKLY, FixedTaskRecurrence.MONTHLY],
+          },
+          doneTime: { $gte: from, $lte: to },
+        },
+      ],
+    };
+    const taskFilter: Record<string, unknown> = {
+      status: TaskStatus.DONE,
       startDate: { $gte: from, $lte: to },
+      doneTime: { $type: 'date' },
+      endDate: { $type: 'date' },
+      $expr: {
+        $and: [
+          { $gte: ['$doneTime', '$startDate'] },
+          { $gte: ['$endDate', '$doneTime'] },
+        ],
+      },
     };
 
     if (userId) {
-      filter.assignedTo = new Types.ObjectId(userId);
+      const assignedTo = new Types.ObjectId(userId);
+      fixedTaskFilter.assignedTo = assignedTo;
+      taskFilter.assignedTo = assignedTo;
     }
 
-    const [result] = await this.fixedTaskModel
-      .aggregate<{ totalActualDurationMinutes: number }>([
-        { $match: filter },
-        {
-          $group: {
-            _id: null,
-            totalActualDurationMinutes: {
-              $sum: '$actualDurationMinutes',
+    const [fixedTaskResults, taskResults] = await Promise.all([
+      this.fixedTaskModel
+        .aggregate<{ totalActualDurationMinutes: number }>([
+          { $match: fixedTaskFilter },
+          {
+            $group: {
+              _id: null,
+              totalActualDurationMinutes: {
+                $sum: '$actualDurationMinutes',
+              },
             },
           },
-        },
-      ])
-      .exec();
+        ])
+        .exec(),
+      this.taskModel
+        .aggregate<{ totalActualDurationMinutes: number }>([
+          { $match: taskFilter },
+          {
+            $group: {
+              _id: null,
+              totalActualDurationMinutes: {
+                $sum: {
+                  $max: [
+                    1,
+                    {
+                      $ceil: {
+                        $divide: [
+                          { $subtract: ['$doneTime', '$startDate'] },
+                          60_000,
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
+        ])
+        .exec(),
+    ]);
 
-    return result?.totalActualDurationMinutes ?? 0;
+    return (
+      (fixedTaskResults[0]?.totalActualDurationMinutes ?? 0) +
+      (taskResults[0]?.totalActualDurationMinutes ?? 0)
+    );
   }
 }

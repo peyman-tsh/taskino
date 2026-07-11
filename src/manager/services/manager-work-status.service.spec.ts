@@ -82,14 +82,14 @@ describe('ManagerWorkStatusService', () => {
         total: 7,
         done: 2,
         inProgress: 2,
-        todo: 1,
-        overdueUnfinished: 2,
+        todo: 0,
+        overdueUnfinished: 3,
         tasks: {
           total: 4,
           done: 1,
           inProgress: 1,
-          todo: 1,
-          overdueUnfinished: 1,
+          todo: 0,
+          overdueUnfinished: 2,
         },
         fixedTasks: {
           total: 3,
@@ -240,7 +240,7 @@ describe('ManagerWorkStatusService', () => {
     });
   });
 
-  it('counts fixed tasks as overdue only when unfinished and inactive', async () => {
+  it('counts unfinished fixed tasks as overdue when their end date is expired', async () => {
     const user = {
       userId: '6a39043bfc4f15b8c14eb3df',
       firstName: 'Ali',
@@ -277,8 +277,99 @@ describe('ManagerWorkStatusService', () => {
       total: 2,
       done: 0,
       inProgress: 0,
-      todo: 1,
+      todo: 0,
+      overdueUnfinished: 2,
+    });
+  });
+
+  it('counts expired non-done regular tasks as overdue before in-progress', async () => {
+    const user = {
+      userId: '6a39043bfc4f15b8c14eb3df',
+      firstName: 'Ali',
+      lastName: 'Test',
+      email: 'ali@test.com',
+    };
+    repository.findByDateRangeForUsers.mockResolvedValue({
+      tasks: [
+        {
+          status: TaskStatus.IN_PROGRESS,
+          startDate: new Date('2026-06-22T10:00:00.000Z'),
+          endDate: new Date('2026-06-28T10:00:00.000Z'),
+          user,
+        },
+      ],
+      fixedTasks: [],
+    });
+
+    const result = await service.getUserStatusCounts(
+      '6a39043bfc4f15b8c14eb3de',
+      '2026-06-21T20:30:00.000Z',
+      '2026-06-29T20:29:59.999Z',
+    );
+
+    expect(result.users[0].tasks).toEqual({
+      total: 1,
+      done: 0,
+      inProgress: 0,
+      todo: 0,
       overdueUnfinished: 1,
+    });
+  });
+
+  it('counts fixed task duration overruns as overdue except todo status', async () => {
+    const user = {
+      userId: '6a39043bfc4f15b8c14eb3df',
+      firstName: 'Ali',
+      lastName: 'Test',
+      email: 'ali@test.com',
+    };
+    const startDate = new Date('2026-06-22T10:00:00.000Z');
+    const endDate = new Date('2026-06-28T10:00:00.000Z');
+    repository.findByDateRangeForUsers.mockResolvedValue({
+      tasks: [],
+      fixedTasks: [
+        {
+          status: FixedTaskStatus.DONE,
+          isActive: true,
+          startDate,
+          endDate,
+          actualDurationMinutes: 90,
+          approvedDurationMinutes: 60,
+          user,
+        },
+        {
+          status: FixedTaskStatus.IN_PROGRESS,
+          isActive: true,
+          startDate,
+          endDate,
+          actualDurationMinutes: 80,
+          approvedDurationMinutes: 60,
+          user,
+        },
+        {
+          status: FixedTaskStatus.TODO,
+          isActive: true,
+          startDate,
+          endDate: new Date('2026-07-30T10:00:00.000Z'),
+          actualDurationMinutes: 120,
+          approvedDurationMinutes: 60,
+          user,
+        },
+      ],
+    });
+
+    const result = await service.getUserStatusCounts(
+      '6a39043bfc4f15b8c14eb3de',
+      '2026-06-21T20:30:00.000Z',
+      '2026-07-31T20:29:59.999Z',
+    );
+
+    expect(result.users[0].fixedTasks).toEqual({
+      total: 3,
+      done: 0,
+      inProgress: 0,
+      todo: 1,
+      overdueUnfinished: 2,
     });
   });
 

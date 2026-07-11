@@ -1,7 +1,11 @@
 import { BadRequestException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { FixedTaskRepository } from '../repositories/fixed-task.repository';
-import { FixedTaskRecurrence, FixedTaskStatus } from '../fixed-task.schema';
+import {
+  FixedTaskRecurrence,
+  FixedTaskStatus,
+  FixedTaskTimingApprovalStatus,
+} from '../fixed-task.schema';
 import { FixedTaskCreationService } from './fixed-task-creation.service';
 import { FixedTaskNotificationService } from './fixed-task-notification.service';
 import { FixedTaskPolicyService } from './fixed-task-policy.service';
@@ -51,6 +55,7 @@ describe('FixedTaskCreationService', () => {
       title: 'Weekly task',
       assignedTo: assigneeId,
       recurrence: FixedTaskRecurrence.WEEKLY,
+      approvedDurationMinutes: 225,
       startDate,
       endDate,
       startTime: '16:17',
@@ -61,6 +66,10 @@ describe('FixedTaskCreationService', () => {
       expect.objectContaining({
         startTime: '16:17',
         endTime: '16:17',
+        approvedDurationMinutes: 225,
+        timingApprovalStatus: FixedTaskTimingApprovalStatus.APPROVED,
+        timingApprovedBy: new Types.ObjectId(creatorId),
+        timingApprovedAt: expect.any(Date),
         startDate: new Date(startDate),
         endDate: new Date(endDate),
       }),

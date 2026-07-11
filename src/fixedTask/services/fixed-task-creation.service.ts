@@ -2,7 +2,10 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { CreateFixedTaskDto } from '../dto/create-fixed-task.dto';
 import { FixedTaskRepository } from '../repositories/fixed-task.repository';
-import { FixedTaskStatus } from '../fixed-task.schema';
+import {
+  FixedTaskStatus,
+  FixedTaskTimingApprovalStatus,
+} from '../fixed-task.schema';
 import { FixedTaskNotificationService } from './fixed-task-notification.service';
 import { FixedTaskPolicyService } from './fixed-task-policy.service';
 import { FixedTaskQueryService } from './fixed-task-query.service';
@@ -34,6 +37,17 @@ export class FixedTaskCreationService {
       status: FixedTaskStatus.TODO,
       description: dto.description ?? '',
       taskComment: dto.taskComment ?? null,
+      approvedDurationMinutes: dto.approvedDurationMinutes ?? null,
+      timingApprovalStatus:
+        dto.approvedDurationMinutes !== undefined
+          ? FixedTaskTimingApprovalStatus.APPROVED
+          : FixedTaskTimingApprovalStatus.PENDING,
+      timingApprovedBy:
+        dto.approvedDurationMinutes !== undefined
+          ? new Types.ObjectId(creatorId)
+          : null,
+      timingApprovedAt:
+        dto.approvedDurationMinutes !== undefined ? new Date() : null,
       scheduleConfig: dto.scheduleConfig,
       isActive: dto.isActive ?? true,
       nextRunAt: dto.nextRunAt

@@ -305,6 +305,15 @@ export class ManagerWorkStatusService {
     from: Date,
     to: Date,
   ): void {
+    if (
+      item.status !== TaskStatus.DONE &&
+      this.isOverdueInRange(item, now, from, to)
+    ) {
+      counts.total += 1;
+      counts.overdueUnfinished += 1;
+      return;
+    }
+
     if (item.status === TaskStatus.IN_PROGRESS) {
       counts.total += 1;
       counts.inProgress += 1;
@@ -335,6 +344,18 @@ export class ManagerWorkStatusService {
     from: Date,
     to: Date,
   ): void {
+    if (this.isFixedTaskDurationOverdue(item) && this.isInSelectedRange(item, from, to)) {
+      counts.overdueUnfinished += 1;
+      counts.total += 1;
+      return;
+    }
+
+    if (this.isUnfinishedFixedTask(item) && this.isOverdueInRange(item, now, from, to)) {
+      counts.overdueUnfinished += 1;
+      counts.total += 1;
+      return;
+    }
+
     if (item.isActive && item.status === FixedTaskStatus.IN_PROGRESS) {
       counts.inProgress += 1;
       counts.total += 1;
@@ -351,12 +372,6 @@ export class ManagerWorkStatusService {
 
     if (item.status === FixedTaskStatus.DONE) {
       counts.done += 1;
-      counts.total += 1;
-      return;
-    }
-
-    if (this.isInactiveUnfinishedFixedTask(item) && this.isOverdueInRange(item, now, from, to)) {
-      counts.overdueUnfinished += 1;
       counts.total += 1;
       return;
     }
@@ -381,11 +396,19 @@ export class ManagerWorkStatusService {
     );
   }
 
-  private isInactiveUnfinishedFixedTask(item: WorkStatusItem): boolean {
+  private isUnfinishedFixedTask(item: WorkStatusItem): boolean {
     return (
-      item.isActive === false &&
-      (item.status === FixedTaskStatus.TODO ||
-        item.status === FixedTaskStatus.IN_PROGRESS)
+      item.status === FixedTaskStatus.TODO ||
+      item.status === FixedTaskStatus.IN_PROGRESS
+    );
+  }
+
+  private isFixedTaskDurationOverdue(item: WorkStatusItem): boolean {
+    return (
+      item.status !== FixedTaskStatus.TODO &&
+      typeof item.actualDurationMinutes === 'number' &&
+      typeof item.approvedDurationMinutes === 'number' &&
+      item.actualDurationMinutes > item.approvedDurationMinutes
     );
   }
 

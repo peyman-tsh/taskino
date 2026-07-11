@@ -3,11 +3,13 @@ import {
   IsBoolean,
   IsDateString,
   IsEnum,
+  IsInt,
   IsMongoId,
   IsNotEmpty,
   IsOptional,
   IsString,
   Matches,
+  Min,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -51,6 +53,18 @@ export class CreateFixedTaskDto {
   @IsOptional()
   @IsString()
   taskComment?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Approved duration for the fixed task in minutes. Providing this value marks timing as approved.',
+    example: 225,
+    minimum: 0,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  approvedDurationMinutes?: number;
 
   @ApiPropertyOptional({ type: FixedTaskScheduleConfigDto })
   @IsOptional()

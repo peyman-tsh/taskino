@@ -44,7 +44,7 @@ export class ManagerWorkStatusRepository {
         .exec(),
       this.fixedTaskModel
         .find(fixedTaskFilter)
-        .select('status startDate endDate endTime')
+        .select('status startDate endDate endTime actualDurationMinutes approvedDurationMinutes')
         .lean()
         .exec(),
     ]);
@@ -83,7 +83,7 @@ export class ManagerWorkStatusRepository {
         .exec(),
       this.fixedTaskModel
         .find(fixedTaskFilter)
-        .select('status startDate endDate endTime assignedTo isActive')
+        .select('status startDate endDate endTime assignedTo isActive actualDurationMinutes approvedDurationMinutes')
         .populate('assignedTo', 'firstName lastName email')
         .lean()
         .exec(),
@@ -103,18 +103,31 @@ export class ManagerWorkStatusRepository {
   ) {
     const filter = this.buildFixedTaskDocumentFilter(
       {
-        status: {
-          $in: [FixedTaskStatus.TODO, FixedTaskStatus.IN_PROGRESS],
-        },
-        isActive: false,
         isTemplate: { $ne: true },
         startDate: {
           $gte: from,
         },
         endDate: {
           $lte: to,
-          $lt: evaluatedAt,
         },
+        $or: [
+          {
+            status: {
+              $in: [FixedTaskStatus.TODO, FixedTaskStatus.IN_PROGRESS],
+            },
+            endDate: {
+              $lt: evaluatedAt,
+            },
+          },
+          {
+            status: { $ne: FixedTaskStatus.TODO },
+            actualDurationMinutes: { $type: 'number' },
+            approvedDurationMinutes: { $type: 'number' },
+            $expr: {
+              $gt: ['$actualDurationMinutes', '$approvedDurationMinutes'],
+            },
+          },
+        ],
       },
       userId,
     );
@@ -353,6 +366,7 @@ export class ManagerWorkStatusRepository {
   ) {
     const filters: Record<string, unknown>[] = [
       dateFilter,
+      { isTemplate: { $ne: true } },
       { timingApprovalStatus: { $ne: FixedTaskTimingApprovalStatus.REJECTED } },
     ];
 
@@ -430,6 +444,8 @@ export class ManagerWorkStatusRepository {
         endDate: task.endDate,
         endTime: task.endTime,
         isActive: task.isActive,
+        actualDurationMinutes: task.actualDurationMinutes,
+        approvedDurationMinutes: task.approvedDurationMinutes,
         user: this.mapUser(task.assignedTo),
       }));
   }
