@@ -105,6 +105,10 @@ export class FixedTaskRepository {
     return this.model.findByIdAndDelete(id).exec();
   }
 
+  deleteByTitle(title: string) {
+    return this.model.deleteMany({ title }).exec();
+  }
+
   findActive(filter: Record<string, unknown> = { isActive: true }) {
     return this.populate(this.model.find(filter)).exec();
   }

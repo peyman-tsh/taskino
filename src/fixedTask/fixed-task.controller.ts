@@ -282,9 +282,9 @@ export class FixedTaskController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete a fixed task template' })
+  @ApiOperation({ summary: 'Delete all fixed task occurrences with the same title' })
   @ApiNoContentResponse({
-    description: 'Fixed task template deleted successfully',
+    description: 'Fixed task occurrences deleted successfully',
   })
   delete(@Param() params: FixedTaskParamDto) {
     return this.fixedTaskService.delete(params.id);

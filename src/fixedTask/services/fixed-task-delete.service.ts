@@ -10,12 +10,13 @@ export class FixedTaskDeleteService {
   ) {}
 
   async delete(id: string): Promise<void> {
-    const result = await this.repository.deleteById(
-      this.policy.toObjectId(id, 'fixed task ID'),
-    );
+    const fixedTaskId = this.policy.toObjectId(id, 'fixed task ID');
+    const template = await this.repository.findRawById(fixedTaskId);
 
-    if (!result) {
+    if (!template) {
       throw new NotFoundException('Fixed task template not found');
     }
+
+    await this.repository.deleteByTitle(template.title);
   }
 }
