@@ -356,19 +356,27 @@ export class ManagerWorkStatusService {
       return;
     }
 
-    if (item.isActive && item.status === FixedTaskStatus.IN_PROGRESS) {
+    if (
+      item.isActive &&
+      item.status === FixedTaskStatus.IN_PROGRESS &&
+      this.isStartedInSelectedRange(item, from, to)
+    ) {
       counts.inProgress += 1;
       counts.total += 1;
       return;
     }
 
-    if (item.isActive && item.status === FixedTaskStatus.TODO) {
+    if (
+      item.isActive &&
+      item.status === FixedTaskStatus.TODO &&
+      this.isStartedInSelectedRange(item, from, to)
+    ) {
       counts.todo += 1;
       counts.total += 1;
       return;
     }
 
-    if (!this.isInSelectedRange(item, from, to)) return;
+    if (!this.isStartedInSelectedRange(item, from, to)) return;
 
     if (item.status === FixedTaskStatus.DONE) {
       counts.done += 1;
@@ -442,6 +450,18 @@ export class ManagerWorkStatusService {
     return (
       item.startDate.getTime() >= from.getTime() &&
       deadline.getTime() <= to.getTime()
+    );
+  }
+
+  private isStartedInSelectedRange(
+    item: WorkStatusItem,
+    from: Date,
+    to: Date,
+  ): boolean {
+    return (
+      item.startDate instanceof Date &&
+      item.startDate.getTime() >= from.getTime() &&
+      item.startDate.getTime() <= to.getTime()
     );
   }
 

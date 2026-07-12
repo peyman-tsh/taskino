@@ -100,7 +100,7 @@ describe('ManagerWorkStatusRepository', () => {
     });
   });
 
-  it('filters regular and fixed tasks by date overlap with createdAt fallback', async () => {
+  it('filters regular tasks by overlap and fixed tasks by their full date range', async () => {
     const taskExec = jest.fn().mockResolvedValue([]);
     const taskLean = jest.fn().mockReturnValue({ exec: taskExec });
     const taskSelect = jest.fn().mockReturnValue({ lean: taskLean });
@@ -137,20 +137,7 @@ describe('ManagerWorkStatusRepository', () => {
       ],
     };
     const fixedFilter = {
-      $or: [
-        { status: FixedTaskStatus.IN_PROGRESS, isActive: true },
-        { status: FixedTaskStatus.TODO, isActive: true },
-        {
-          startDate: { $lte: to },
-          endDate: { $gte: from },
-        },
-        { startDate: { $gte: from, $lte: to } },
-        { endDate: { $gte: from, $lte: to } },
-        {
-          startDate: null,
-          createdAt: { $gte: from, $lte: to },
-        },
-      ],
+      startDate: { $gte: from, $lte: to },
     };
     const fixedTaskFilter = {
       $and: [

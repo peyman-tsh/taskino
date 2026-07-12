@@ -301,20 +301,7 @@ export class ManagerWorkStatusRepository {
 
   private buildFixedTaskDateFilter(from: Date, to: Date) {
     return {
-      $or: [
-        { status: FixedTaskStatus.IN_PROGRESS, isActive: true },
-        { status: FixedTaskStatus.TODO, isActive: true },
-        {
-          startDate: { $lte: to },
-          endDate: { $gte: from },
-        },
-        { startDate: { $gte: from, $lte: to } },
-        { endDate: { $gte: from, $lte: to } },
-        {
-          startDate: null,
-          createdAt: { $gte: from, $lte: to },
-        },
-      ],
+      startDate: { $gte: from, $lte: to },
     };
   }
 

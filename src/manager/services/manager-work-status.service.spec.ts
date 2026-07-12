@@ -373,7 +373,7 @@ describe('ManagerWorkStatusService', () => {
     });
   });
 
-  it('counts in-progress items by status even when they are outside the date range', async () => {
+  it('only counts in-progress fixed tasks when they are inside the date range', async () => {
     const user = {
       userId: '6a39043bfc4f15b8c14eb3df',
       firstName: 'Ali',
@@ -407,10 +407,10 @@ describe('ManagerWorkStatusService', () => {
     );
 
     expect(result.users[0].tasks.inProgress).toBe(1);
-    expect(result.users[0].fixedTasks.inProgress).toBe(1);
+    expect(result.users[0].fixedTasks.inProgress).toBe(0);
   });
 
-  it('counts active fixed todo items even when they are outside the date range', async () => {
+  it('does not count active fixed todo items outside the date range', async () => {
     const user = {
       userId: '6a39043bfc4f15b8c14eb3df',
       firstName: 'Ali',
@@ -437,10 +437,45 @@ describe('ManagerWorkStatusService', () => {
     );
 
     expect(result.users[0].fixedTasks).toEqual({
-      total: 1,
+      total: 0,
       done: 0,
       inProgress: 0,
-      todo: 1,
+      todo: 0,
+      overdueUnfinished: 0,
+    });
+  });
+
+  it('counts a done fixed task when its start date is in range even when its end date is later', async () => {
+    const user = {
+      userId: '6a39043bfc4f15b8c14eb3df',
+      firstName: 'Ali',
+      lastName: 'Test',
+      email: 'ali@test.com',
+    };
+    repository.findByDateRangeForUsers.mockResolvedValue({
+      tasks: [],
+      fixedTasks: [
+        {
+          status: FixedTaskStatus.DONE,
+          isActive: true,
+          startDate: new Date('2026-06-22T09:00:00.000Z'),
+          endDate: new Date('2026-07-10T09:00:00.000Z'),
+          user,
+        },
+      ],
+    });
+
+    const result = await service.getUserStatusCounts(
+      '6a39043bfc4f15b8c14eb3de',
+      '2026-06-21T20:30:00.000Z',
+      '2026-06-22T20:29:59.999Z',
+    );
+
+    expect(result.users[0].fixedTasks).toEqual({
+      total: 1,
+      done: 1,
+      inProgress: 0,
+      todo: 0,
       overdueUnfinished: 0,
     });
   });

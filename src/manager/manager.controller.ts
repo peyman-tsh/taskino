@@ -216,7 +216,7 @@ export class ManagerController {
   @ApiOperation({
     summary: 'Get per-user task and fixed-task status counts for a date range',
     description:
-      'Groups regular Task and FixedTask counts by assigned user, or returns one user when userId is provided. Records are included when their start/end/due date overlaps the selected range. FixedTask done, todo, and in-progress counts only include isActive=true records; expired unfinished FixedTasks only include isActive=false records.',
+      'Groups regular Task and FixedTask counts by assigned user, or returns one user when userId is provided. Regular Task records are included when their start/end/due date overlaps the selected range. FixedTask done, todo, and in-progress records must start inside the selected range; these status counts only include isActive=true records.',
   })
   @ApiOkResponse({
     description: 'Per-user work status summary retrieved successfully',
