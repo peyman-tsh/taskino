@@ -2,6 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as express from 'express';
+import { join } from 'path';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './filter/mongoose.filter';
 
@@ -32,6 +34,10 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
   app.setGlobalPrefix('api');
+  app.use(
+    '/uploads/images',
+    express.static(join(process.cwd(), 'uploads', 'images')),
+  );
 
   app.useGlobalFilters(new AllExceptionsFilter());
   // Swagger configuration

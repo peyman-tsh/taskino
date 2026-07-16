@@ -381,7 +381,7 @@ describe('FixedTaskRolloverService', () => {
     expect(scoreService.adjustTaskScore).not.toHaveBeenCalled();
   });
 
-  it('sets configured weekly endDate to the next configured weekday', async () => {
+  it('sets configured weekly work to end at the following midnight', async () => {
     const saturday = new Date('2026-06-20T11:05:00.000Z');
     const task = createTask(FixedTaskRecurrence.WEEKLY, FixedTaskStatus.TODO);
     task.scheduleConfig = { weekdays: [6, 1, 3] };
@@ -398,12 +398,12 @@ describe('FixedTaskRolloverService', () => {
     expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
       startDate: new Date('2026-06-19T20:30:00.000Z'),
       startTime: '00:00',
-      endDate: new Date('2026-06-21T20:30:00.000Z'),
-      endTime: '00:01',
+      endDate: new Date('2026-06-20T20:30:00.000Z'),
+      endTime: '00:00',
     });
   });
 
-  it('uses the following configured weekday for weekly windows', async () => {
+  it('gives every configured weekly occurrence a one-day window', async () => {
     const monday = new Date('2026-06-22T11:05:00.000Z');
     const task = createTask(FixedTaskRecurrence.WEEKLY, FixedTaskStatus.TODO);
     task.scheduleConfig = { weekdays: [6, 1, 3] };
@@ -420,8 +420,8 @@ describe('FixedTaskRolloverService', () => {
     expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
       startDate: new Date('2026-06-21T20:30:00.000Z'),
       startTime: '00:00',
-      endDate: new Date('2026-06-23T20:30:00.000Z'),
-      endTime: '00:01',
+      endDate: new Date('2026-06-22T20:30:00.000Z'),
+      endTime: '00:00',
     });
   });
 
@@ -443,7 +443,7 @@ describe('FixedTaskRolloverService', () => {
     expect(scoreService.adjustTaskScore).not.toHaveBeenCalled();
   });
 
-  it('sets configured monthly endDate to the next configured month day', async () => {
+  it('sets configured monthly work to end at the following midnight', async () => {
     const firstDayOfMonth = new Date('2026-06-22T11:05:00.000Z');
     const task = createTask(FixedTaskRecurrence.MONTHLY, FixedTaskStatus.TODO);
     task.scheduleConfig = { monthDays: [1, 5, 27, 28] };
@@ -460,12 +460,12 @@ describe('FixedTaskRolloverService', () => {
     expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
       startDate: new Date('2026-06-21T20:30:00.000Z'),
       startTime: '00:00',
-      endDate: new Date('2026-06-25T20:30:00.000Z'),
-      endTime: '00:01',
+      endDate: new Date('2026-06-22T20:30:00.000Z'),
+      endTime: '00:00',
     });
   });
 
-  it('uses the following configured month day for monthly windows', async () => {
+  it('gives every configured monthly occurrence a one-day window', async () => {
     const dayTwentySeven = new Date('2026-07-18T11:05:00.000Z');
     const task = createTask(FixedTaskRecurrence.MONTHLY, FixedTaskStatus.TODO);
     task.scheduleConfig = { monthDays: [1, 5, 27, 28] };
@@ -483,11 +483,11 @@ describe('FixedTaskRolloverService', () => {
       startDate: new Date('2026-07-17T20:30:00.000Z'),
       startTime: '00:00',
       endDate: new Date('2026-07-18T20:30:00.000Z'),
-      endTime: '00:01',
+      endTime: '00:00',
     });
   });
 
-  it('wraps configured monthly work to the first configured day of next month', async () => {
+  it('ends monthly work the day after its scheduled date regardless of the next run', async () => {
     const dayFifteen = new Date('2026-07-06T11:05:00.000Z');
     const task = createTask(FixedTaskRecurrence.MONTHLY, FixedTaskStatus.TODO);
     task.scheduleConfig = { monthDays: [2, 15] };
@@ -504,12 +504,12 @@ describe('FixedTaskRolloverService', () => {
     expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
       startDate: new Date('2026-07-05T20:30:00.000Z'),
       startTime: '00:00',
-      endDate: new Date('2026-07-23T20:30:00.000Z'),
-      endTime: '00:01',
+      endDate: new Date('2026-07-06T20:30:00.000Z'),
+      endTime: '00:00',
     });
   });
 
-  it('wraps single-day configured monthly work to next month', async () => {
+  it('ends single-day configured monthly work the following day', async () => {
     const dayFifteen = new Date('2026-07-06T11:05:00.000Z');
     const task = createTask(FixedTaskRecurrence.MONTHLY, FixedTaskStatus.TODO);
     task.scheduleConfig = { monthDays: [15] };
@@ -526,8 +526,8 @@ describe('FixedTaskRolloverService', () => {
     expect(repository.createNextOccurrence).toHaveBeenCalledWith(task, {
       startDate: new Date('2026-07-05T20:30:00.000Z'),
       startTime: '00:00',
-      endDate: new Date('2026-08-05T20:30:00.000Z'),
-      endTime: '00:01',
+      endDate: new Date('2026-07-06T20:30:00.000Z'),
+      endTime: '00:00',
     });
   });
 

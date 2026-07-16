@@ -6,11 +6,9 @@ import {
 import { buildFixedTaskSeedSchedule } from './fixed-task-seed.service';
 import {
   addTehranCalendarPeriod,
-  getPersianMonthLength,
   getTehranDateParts,
   getTehranPersianDateParts,
   tehranDateTimeToUtc,
-  tehranPersianDateTimeToUtc,
 } from '../../common/utils/tehran-time.util';
 
 @Injectable()
@@ -46,35 +44,22 @@ export class FixedTaskScheduleService {
   ) {
     const schedule = buildFixedTaskSeedSchedule(candidate.recurrence, now);
 
-    if (candidate.recurrence !== FixedTaskRecurrence.DAILY) {
-      const today = this.getTehranCalendar(now);
-      schedule.startDate = tehranDateTimeToUtc(
-        today.year,
-        today.month,
-        today.day,
-      );
-      schedule.startTime = '00:00';
-    }
-
-    if (
-      candidate.recurrence === FixedTaskRecurrence.WEEKLY &&
-      this.hasConfiguredWeekdays(candidate)
-    ) {
-      schedule.endDate = this.calculateNextConfiguredWeekdayEndDate(
-        candidate,
-        now,
-      );
-    }
-
-    if (
-      candidate.recurrence === FixedTaskRecurrence.MONTHLY &&
-      this.hasConfiguredMonthDays(candidate)
-    ) {
-      schedule.endDate = this.calculateNextConfiguredMonthDayEndDate(
-        candidate,
-        now,
-      );
-    }
+    // Every rollover creates a one-day occurrence. The recurrence controls
+    // which days create an occurrence, not how long that occurrence remains open.
+    const today = this.getTehranCalendar(now);
+    const tomorrow = addTehranCalendarPeriod(now, 1, 0);
+    schedule.startDate = tehranDateTimeToUtc(
+      today.year,
+      today.month,
+      today.day,
+    );
+    schedule.startTime = '00:00';
+    schedule.endDate = tehranDateTimeToUtc(
+      tomorrow.year,
+      tomorrow.month,
+      tomorrow.day,
+    );
+    schedule.endTime = '00:00';
 
     return schedule;
   }
@@ -93,18 +78,6 @@ export class FixedTaskScheduleService {
       candidate.sourceSheet ?? '',
       sourceIdentity,
     ].join('|');
-  }
-
-  private hasConfiguredWeekdays(
-    candidate: FixedTaskTemplateDocument,
-  ): boolean {
-    return Boolean(candidate.scheduleConfig?.weekdays?.length);
-  }
-
-  private hasConfiguredMonthDays(
-    candidate: FixedTaskTemplateDocument,
-  ): boolean {
-    return Boolean(candidate.scheduleConfig?.monthDays?.length);
   }
 
   private shouldRunDefaultSchedule(
@@ -135,72 +108,6 @@ export class FixedTaskScheduleService {
     return Boolean(config?.weekdays?.includes(today.weekday));
   }
 
-  private calculateNextConfiguredWeekdayEndDate(
-    candidate: FixedTaskTemplateDocument,
-    now: Date,
-  ): Date {
-    const weekdays = new Set(candidate.scheduleConfig?.weekdays ?? []);
-    const today = this.getTehranCalendar(now);
-
-    for (let offset = 1; offset <= 7; offset += 1) {
-      const nextWeekday = (today.weekday + offset) % 7;
-      if (!weekdays.has(nextWeekday)) continue;
-
-      const target = addTehranCalendarPeriod(now, offset, 0);
-      return tehranDateTimeToUtc(target.year, target.month, target.day);
-    }
-
-    const fallback = addTehranCalendarPeriod(now, 7, 0);
-    return tehranDateTimeToUtc(fallback.year, fallback.month, fallback.day);
-  }
-
-  private calculateNextConfiguredMonthDayEndDate(
-    candidate: FixedTaskTemplateDocument,
-    now: Date,
-  ): Date {
-    const today = this.getTehranCalendar(now);
-    const monthDays = [...new Set(candidate.scheduleConfig?.monthDays ?? [])]
-      .filter((day) => day >= 1 && day <= 31)
-      .sort((first, second) => first - second);
-
-    const nextDay = monthDays.find((day) => day > today.persianDay);
-    if (nextDay) {
-      const safeDay = this.clampPersianDayToMonth(
-        today.persianYear,
-        today.persianMonth,
-        nextDay,
-      );
-      return tehranPersianDateTimeToUtc(
-        today.persianYear,
-        today.persianMonth,
-        safeDay,
-      );
-    }
-
-    const nextMonth =
-      today.persianMonth === 12 ? 1 : today.persianMonth + 1;
-    const nextYear =
-      today.persianMonth === 12
-        ? today.persianYear + 1
-        : today.persianYear;
-    const firstConfiguredDay = monthDays[0] ?? today.persianDay;
-    const safeDay = this.clampPersianDayToMonth(
-      nextYear,
-      nextMonth,
-      firstConfiguredDay,
-    );
-
-    return tehranPersianDateTimeToUtc(nextYear, nextMonth, safeDay);
-  }
-
-  private clampPersianDayToMonth(
-    year: number,
-    month: number,
-    day: number,
-  ): number {
-    return Math.min(day, getPersianMonthLength(year, month));
-  }
-
   private getTehranCalendar(date: Date) {
     const parts = getTehranDateParts(date);
     const persianParts = getTehranPersianDateParts(date);
@@ -213,8 +120,6 @@ export class FixedTaskScheduleService {
       month: parts.month,
       day: parts.day,
       weekday: calendarDate.getUTCDay(),
-      persianYear: persianParts.year,
-      persianMonth: persianParts.month,
       persianDay: persianParts.day,
     };
   }
