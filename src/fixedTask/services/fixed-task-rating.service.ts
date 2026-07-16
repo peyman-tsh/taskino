@@ -63,8 +63,8 @@ export class FixedTaskRatingService {
   }
 
   private getRatingStatus(score: number): FixedTaskRatingStatus {
-    if (score <= 3) return FixedTaskRatingStatus.WEAK;
-    if (score <= 6) return FixedTaskRatingStatus.NORMAL;
+    if (score <= 1) return FixedTaskRatingStatus.WEAK;
+    if (score <= 3) return FixedTaskRatingStatus.NORMAL;
     return FixedTaskRatingStatus.GOOD;
   }
 

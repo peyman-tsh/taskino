@@ -35,7 +35,7 @@ export class UserProgressCalculatorService {
     );
     const fixedTaskProgressPercentage = this.calculateCompletionPercentage(
       this.sumFixedTaskRatingScores(fixedTasks),
-      fixedTasks.length * 10,
+      fixedTasks.length * 5,
     );
     const progressPercentage = this.calculateOverallProgress(
       taskProgressPercentage,
@@ -103,7 +103,7 @@ export class UserProgressCalculatorService {
       const score = task.ratingScore ?? 0;
       if (!Number.isFinite(score)) return sum;
 
-      return sum + Math.min(Math.max(score, 0), 10);
+      return sum + Math.min(Math.max(score, 0), 5);
     }, 0);
   }
 
