@@ -86,6 +86,9 @@ export class User {
   @Prop({ type: Date, default: Date.now })
   createdAt: Date;
 
+  @Prop({ type: String, default: null })
+  avatarKey?: string;
+
   @Prop({ type: Date, default: Date.now })
   updatedAt: Date;
 }
