@@ -14,8 +14,18 @@ describe('UserProgressCalculatorService', () => {
   it('returns separate percentages and combined overall completion', () => {
     const result = calculator.calculate(
       [
-        { status: TaskStatus.DONE, doneTime, endDate: deadline },
-        { status: TaskStatus.DONE, doneTime, endDate: deadline },
+        {
+          status: TaskStatus.DONE,
+          doneTime,
+          endDate: deadline,
+          ratingScore: 5,
+        },
+        {
+          status: TaskStatus.DONE,
+          doneTime,
+          endDate: deadline,
+          ratingScore: 5,
+        },
         { status: TaskStatus.TODO },
         { status: TaskStatus.TODO },
       ],
@@ -39,15 +49,27 @@ describe('UserProgressCalculatorService', () => {
   it('calculates overall progress from all done work divided by all assigned work', () => {
     const result = calculator.calculate(
       [
-        { status: TaskStatus.DONE, doneTime, endDate: deadline },
-        { status: TaskStatus.DONE, doneTime, endDate: deadline },
-        { status: TaskStatus.DONE, doneTime, endDate: deadline },
+        {
+          status: TaskStatus.DONE,
+          doneTime,
+          endDate: deadline,
+          ratingScore: 5,
+        },
+        {
+          status: TaskStatus.DONE,
+          doneTime,
+          endDate: deadline,
+          ratingScore: 5,
+        },
+        {
+          status: TaskStatus.DONE,
+          doneTime,
+          endDate: deadline,
+          ratingScore: 5,
+        },
         { status: TaskStatus.TODO },
       ],
-      [
-        { status: FixedTaskStatus.TODO },
-        { status: FixedTaskStatus.TODO },
-      ],
+      [{ status: FixedTaskStatus.TODO }, { status: FixedTaskStatus.TODO }],
     );
 
     expect(result.taskProgressPercentage).toBe(75);
@@ -84,12 +106,27 @@ describe('UserProgressCalculatorService', () => {
     expect(result.performanceStatus).toBe(UserPerformanceStatus.WEAK);
   });
 
-  it('uses task progress as overall when the user has no fixed tasks', () => {
+  it('uses task ratings as overall progress when the user has no fixed tasks', () => {
     const result = calculator.calculate(
       [
-        { status: TaskStatus.DONE, doneTime, endDate: deadline },
-        { status: TaskStatus.DONE, doneTime, endDate: deadline },
-        { status: TaskStatus.DONE, doneTime, endDate: deadline },
+        {
+          status: TaskStatus.DONE,
+          doneTime,
+          endDate: deadline,
+          ratingScore: 5,
+        },
+        {
+          status: TaskStatus.DONE,
+          doneTime,
+          endDate: deadline,
+          ratingScore: 5,
+        },
+        {
+          status: TaskStatus.DONE,
+          doneTime,
+          endDate: deadline,
+          ratingScore: 5,
+        },
         { status: TaskStatus.TODO },
       ],
       [],
@@ -147,6 +184,7 @@ describe('UserProgressCalculatorService', () => {
           endDate: deadline,
           endTime: '12:00',
           doneTime: late,
+          ratingScore: 5,
         },
       ],
       [
@@ -171,10 +209,7 @@ describe('UserProgressCalculatorService', () => {
 
   it('calculates weighted progress from fixed-task ratings and task completion', () => {
     const result = calculator.calculate(
-      [
-        { status: TaskStatus.TODO },
-        { status: TaskStatus.TODO },
-      ],
+      [{ status: TaskStatus.TODO }, { status: TaskStatus.TODO }],
       [
         ...Array.from({ length: 5 }, () => ({
           status: FixedTaskStatus.DONE,
@@ -204,10 +239,7 @@ describe('UserProgressCalculatorService', () => {
 
   it('caps full fixed-task score at 80 percent when tasks also exist and are not done', () => {
     const result = calculator.calculate(
-      [
-        { status: TaskStatus.TODO },
-        { status: TaskStatus.TODO },
-      ],
+      [{ status: TaskStatus.TODO }, { status: TaskStatus.TODO }],
       [
         ...Array.from({ length: 10 }, () => ({
           status: FixedTaskStatus.DONE,

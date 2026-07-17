@@ -104,30 +104,14 @@ export class ManagerWorkStatusRepository {
     const filter = this.buildFixedTaskDocumentFilter(
       {
         isTemplate: { $ne: true },
+        status: FixedTaskStatus.TODO,
         startDate: {
           $gte: from,
-        },
-        endDate: {
           $lte: to,
         },
-        $or: [
-          {
-            status: {
-              $in: [FixedTaskStatus.TODO, FixedTaskStatus.IN_PROGRESS],
-            },
-            endDate: {
-              $lt: evaluatedAt,
-            },
-          },
-          {
-            status: { $ne: FixedTaskStatus.TODO },
-            actualDurationMinutes: { $type: 'number' },
-            approvedDurationMinutes: { $type: 'number' },
-            $expr: {
-              $gt: ['$actualDurationMinutes', '$approvedDurationMinutes'],
-            },
-          },
-        ],
+        endDate: {
+          $lt: evaluatedAt,
+        },
       },
       userId,
     );

@@ -239,7 +239,7 @@ export class ManagerController {
   @ApiOperation({
     summary: 'Get overdue fixed-task documents',
     description:
-      'Returns FixedTask documents in the selected date range that are expired while todo/in_progress, or whose actual duration is greater than approved duration except todo tasks. When userId is provided, only that user is returned; otherwise all users are included.',
+      'Returns todo FixedTask documents whose endDate has expired and whose startDate is inside the selected range. When userId is provided, only that user is returned; otherwise all users are included.',
   })
   @ApiOkResponse({
     description: 'Overdue fixed tasks retrieved successfully',

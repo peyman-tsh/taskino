@@ -38,11 +38,7 @@ export class TaskRepository {
     return this.populate(this.model.findById(id)).exec();
   }
 
-  async findPaginated(
-    filter: TaskFilter,
-    page: number,
-    limit: number,
-  ) {
+  async findPaginated(filter: TaskFilter, page: number, limit: number) {
     const [data, total] = await Promise.all([
       this.populate(
         this.model
@@ -110,6 +106,7 @@ export class TaskRepository {
       .populate('createdBy', 'firstName lastName email')
       .populate('assignedTo', 'firstName lastName email')
       .populate('extraTaskApprovedBy', 'firstName lastName email roles')
+      .populate('ratedBy', 'firstName lastName email roles')
       .populate(
         'excelFile',
         'fileName originalName mimeType fileSize type status',

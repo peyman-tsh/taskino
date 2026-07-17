@@ -34,6 +34,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guard/jwt.guard';
 import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
+import { RateTaskDto } from './dto/rate-task.dto';
 import {
   PaginatedTasksResponseDto,
   MyTaskStatusCountsResponseDto,
@@ -225,10 +226,7 @@ export class TaskController {
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
   ) {
-    return this.taskService.findActivePublicTasks(
-      Number(page),
-      Number(limit),
-    );
+    return this.taskService.findActivePublicTasks(Number(page), Number(limit));
   }
 
   @Get('user')
@@ -242,7 +240,10 @@ export class TaskController {
     description: 'Tasks retrieved successfully',
     type: [TaskResponseDto],
   })
-  getUserTasksByName(@Query('userName') userName: string, @Query('lastName') lastName: string) {
+  getUserTasksByName(
+    @Query('userName') userName: string,
+    @Query('lastName') lastName: string,
+  ) {
     return this.taskService.getUserTasksByName(userName, lastName);
   }
 
@@ -284,7 +285,7 @@ export class TaskController {
   }
 
   @Get('me/status-counts')
-  @Roles(UserRole.SPECIALIST,UserRole.SUPERVISOR)
+  @Roles(UserRole.SPECIALIST, UserRole.SUPERVISOR)
   @ApiOperation({
     summary: 'Get current specialist task counts grouped by status',
     description:
@@ -313,7 +314,10 @@ export class TaskController {
     description: 'Task completion file uploaded successfully',
     type: TaskResponseDto,
   })
-  @ApiResponse({ status: 403, description: 'Only the assignee can upload completion file' })
+  @ApiResponse({
+    status: 403,
+    description: 'Only the assignee can upload completion file',
+  })
   @UseInterceptors(FileInterceptor('file'))
   uploadCompletionFile(
     @Param('id') id: string,
@@ -350,7 +354,7 @@ export class TaskController {
   }
 
   @Get('extra/user/:userId')
-  @Roles(UserRole.MANAGER, UserRole.SUPERVISOR,UserRole.SPECIALIST)
+  @Roles(UserRole.MANAGER, UserRole.SUPERVISOR, UserRole.SPECIALIST)
   @ApiOperation({
     summary: 'Get extra tasks for a user',
     description:
@@ -392,6 +396,27 @@ export class TaskController {
     return this.taskService.findById(id);
   }
 
+  @Patch(':id/rating')
+  @Roles(UserRole.MANAGER)
+  @ApiOperation({
+    summary: 'Rate a task as a manager',
+    description:
+      'Stores a 0-5 task rating and optional rating comment, then refreshes the assignee progress.',
+  })
+  @ApiParam({ name: 'id', description: 'Task ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Task rating saved successfully',
+    type: TaskResponseDto,
+  })
+  rate(
+    @CurrentUserId() managerId: string,
+    @Param('id') id: string,
+    @Body() dto: RateTaskDto,
+  ) {
+    return this.taskService.rate(id, managerId, dto);
+  }
+
   @Patch(':id')
   @Roles(UserRole.MANAGER, UserRole.SUPERVISOR, UserRole.SPECIALIST)
   @ApiOperation({
@@ -411,7 +436,7 @@ export class TaskController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.MANAGER,UserRole.SUPERVISOR)
+  @Roles(UserRole.MANAGER, UserRole.SUPERVISOR)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
     summary: 'Delete task',
@@ -425,7 +450,7 @@ export class TaskController {
   }
 
   @Patch(':id/status')
-  @Roles(UserRole.MANAGER,UserRole.SPECIALIST,UserRole.SUPERVISOR)
+  @Roles(UserRole.MANAGER, UserRole.SPECIALIST, UserRole.SUPERVISOR)
   @ApiOperation({
     summary: 'Update task status',
     description: 'Updates the status of a task by its ID',
@@ -446,7 +471,7 @@ export class TaskController {
   }
 
   @Post('completion-stats')
-  @Roles(UserRole.MANAGER,UserRole.SUPERVISOR)
+  @Roles(UserRole.MANAGER, UserRole.SUPERVISOR)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get task completion statistics',

@@ -1,0 +1,25 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+
+export class RateTaskDto {
+  @ApiProperty({
+    description: 'Manager rating for the task. 0-1 weak, 2-3 normal, 4-5 good.',
+    minimum: 0,
+    maximum: 5,
+    example: 4,
+  })
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(5)
+  score: number;
+
+  @ApiPropertyOptional({
+    description: 'Optional manager comment for this task rating.',
+    example: 'Completed with good quality.',
+  })
+  @IsOptional()
+  @IsString()
+  comment?: string;
+}

@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ExtraTaskApprovalStatus,
   TaskRecurrence,
+  TaskRatingStatus,
   TaskStatus,
 } from '../task.schema';
 
@@ -35,6 +36,21 @@ export class TaskResponseDto {
 
   @ApiPropertyOptional()
   taskComment?: string;
+
+  @ApiPropertyOptional({ minimum: 0, maximum: 5 })
+  ratingScore?: number | null;
+
+  @ApiPropertyOptional({ enum: TaskRatingStatus })
+  ratingStatus?: TaskRatingStatus | null;
+
+  @ApiPropertyOptional()
+  ratingComment?: string | null;
+
+  @ApiPropertyOptional({ type: Object })
+  ratedBy?: object | null;
+
+  @ApiPropertyOptional()
+  ratedAt?: Date | null;
 
   @ApiPropertyOptional()
   description?: string;

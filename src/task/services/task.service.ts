@@ -24,6 +24,8 @@ import {
   TaskCreationService,
 } from './task-creation.service';
 import { ExtraTaskApprovalStatus } from '../task.schema';
+import { RateTaskDto } from '../dto/rate-task.dto';
+import { TaskRatingService } from './task-rating.service';
 
 /**
  * Task Service
@@ -39,6 +41,7 @@ export class TaskService {
     private readonly taskQueryService: TaskQueryService,
     private readonly taskUpdateService: TaskUpdateService,
     private readonly taskCreationService: TaskCreationService,
+    private readonly taskRatingService: TaskRatingService,
   ) {}
 
   /**
@@ -55,7 +58,10 @@ export class TaskService {
     createTaskDto: CreateExtraTaskDto,
     specialistId: string,
   ): Promise<TaskDocument> {
-    return this.taskCreationService.createExtraTask(createTaskDto, specialistId);
+    return this.taskCreationService.createExtraTask(
+      createTaskDto,
+      specialistId,
+    );
   }
 
   /**
@@ -252,6 +258,10 @@ export class TaskService {
     return this.taskUpdateService.update(id, { status });
   }
 
+  rate(id: string, managerId: string, dto: RateTaskDto): Promise<TaskDocument> {
+    return this.taskRatingService.rate(id, managerId, dto);
+  }
+
   getStatusCounts() {
     return this.taskReportService.getTaskStatusOverview();
   }
@@ -295,5 +305,4 @@ export class TaskService {
   }> {
     return this.taskReportService.findTasksByUserAndCount(dateCountDto);
   }
-
 }

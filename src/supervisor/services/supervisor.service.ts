@@ -35,6 +35,10 @@ export class SupervisorService {
     return this.workService.findSupervisedFixedTasks(supervisorId, query);
   }
 
+  findLatestSupervisedFixedTasks(query: SupervisorFixedTasksQueryDto) {
+    return this.workService.findLatestSupervisedFixedTasks(query);
+  }
+
   findMembers(supervisorId: string, query: SupervisorPaginationQueryDto) {
     return this.memberService.findMembers(supervisorId, query);
   }

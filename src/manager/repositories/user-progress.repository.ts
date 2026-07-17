@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection, Types } from 'mongoose';
 import { FixedTaskRecurrence } from '../../fixedTask/fixed-task.schema';
-import { UserPerformanceStatus, UserRole } from '../../user/schemas/user.schema';
+import {
+  UserPerformanceStatus,
+  UserRole,
+} from '../../user/schemas/user.schema';
 import {
   ProgressFixedTask,
   ProgressMetrics,
@@ -83,6 +86,8 @@ export class UserProgressRepository {
           endDate: 1,
           endTime: 1,
           doneTime: 1,
+          ratingScore: 1,
+          ratingStatus: 1,
         })
         .toArray(),
       this.connection

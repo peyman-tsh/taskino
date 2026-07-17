@@ -48,9 +48,13 @@ export class SupervisorWorkRepository {
   async findSupervisedFixedTasks(
     supervisorId: Types.ObjectId,
     query: SupervisorFixedTasksQueryDto,
+    periodStart: Date,
+    periodEnd: Date,
   ) {
     const filter: Record<string, unknown> = {
       createdBy: supervisorId,
+      startDate: periodStart,
+      endDate: periodEnd,
       ...(query.status ? { status: query.status } : {}),
       ...(query.isActive !== undefined ? { isActive: query.isActive } : {}),
       ...(query.recurrence
@@ -71,6 +75,59 @@ export class SupervisorWorkRepository {
     ]);
 
     return { data, total, page: query.page, limit: query.limit };
+  }
+
+  async findLatestSupervisedFixedTasks(query: SupervisorFixedTasksQueryDto) {
+    const filter: Record<string, unknown> = {
+      ...(query.recurrence
+        ? {
+            recurrence: query.recurrence as unknown as FixedTaskRecurrence,
+          }
+        : {}),
+    };
+    const occurrences = await this.fixedTaskModel
+      .find(filter)
+      .sort({ createdAt: -1, _id: -1 })
+      .populate('assignedTo', 'firstName lastName email roles workField')
+      .exec();
+
+    const latestBySeries = new Map<string, FixedTaskTemplateDocument>();
+    for (const occurrence of occurrences) {
+      const seriesKey = this.getFixedTaskSeriesKey(occurrence);
+      if (!latestBySeries.has(seriesKey)) {
+        latestBySeries.set(seriesKey, occurrence);
+      }
+    }
+
+    const latestOccurrences = [...latestBySeries.values()].filter(
+      (occurrence) =>
+        (query.status === undefined || occurrence.status === query.status) &&
+        (query.isActive === undefined ||
+          occurrence.isActive === query.isActive),
+    );
+    const total = latestOccurrences.length;
+    const skip = this.getSkip(query.page, query.limit);
+    const data = latestOccurrences.slice(skip, skip + query.limit);
+
+    return { data, total, page: query.page, limit: query.limit };
+  }
+
+  private getFixedTaskSeriesKey(
+    occurrence: FixedTaskTemplateDocument,
+  ): string {
+    const sourceIdentity =
+      occurrence.originalSourceRow ??
+      occurrence.sourceRow ??
+      `${occurrence.title}:${occurrence.description}`;
+
+    return [
+      occurrence.recurrence,
+      occurrence.assignedTo.toString(),
+      occurrence.createdBy.toString(),
+      occurrence.sourceExcel ?? '',
+      occurrence.sourceSheet ?? '',
+      sourceIdentity,
+    ].join('|');
   }
 
   private getSkip(page: number, limit: number): number {

@@ -39,6 +39,7 @@ export class ManagerWorkStatusService {
       evaluatedAt,
       from,
       to,
+      true,
     );
 
     return {
@@ -197,6 +198,7 @@ export class ManagerWorkStatusService {
     now: Date,
     from: Date,
     to: Date,
+    isFixedTask = false,
   ): WorkStatusCounts {
     const counts: WorkStatusCounts = {
       total: 0,
@@ -213,7 +215,10 @@ export class ManagerWorkStatusService {
         continue;
       }
 
-      if (!this.isInSelectedRange(item, from, to)) continue;
+      const isInRange = isFixedTask
+        ? this.isStartedInSelectedRange(item, from, to)
+        : this.isInSelectedRange(item, from, to);
+      if (!isInRange) continue;
 
       counts.total += 1;
 
@@ -225,7 +230,10 @@ export class ManagerWorkStatusService {
         continue;
       }
 
-      if (this.isOverdueInRange(item, now, from, to)) {
+      if (
+        (isFixedTask && this.isFixedTaskTodoExpired(item, now)) ||
+        (!isFixedTask && this.isOverdueInRange(item, now, from, to))
+      ) {
         counts.overdueUnfinished += 1;
         continue;
       }
@@ -344,13 +352,10 @@ export class ManagerWorkStatusService {
     from: Date,
     to: Date,
   ): void {
-    if (this.isFixedTaskDurationOverdue(item) && this.isInSelectedRange(item, from, to)) {
-      counts.overdueUnfinished += 1;
-      counts.total += 1;
-      return;
-    }
-
-    if (this.isUnfinishedFixedTask(item) && this.isOverdueInRange(item, now, from, to)) {
+    if (
+      this.isFixedTaskTodoExpired(item, now) &&
+      this.isStartedInSelectedRange(item, from, to)
+    ) {
       counts.overdueUnfinished += 1;
       counts.total += 1;
       return;
@@ -404,19 +409,11 @@ export class ManagerWorkStatusService {
     );
   }
 
-  private isUnfinishedFixedTask(item: WorkStatusItem): boolean {
+  private isFixedTaskTodoExpired(item: WorkStatusItem, now: Date): boolean {
     return (
-      item.status === FixedTaskStatus.TODO ||
-      item.status === FixedTaskStatus.IN_PROGRESS
-    );
-  }
-
-  private isFixedTaskDurationOverdue(item: WorkStatusItem): boolean {
-    return (
-      item.status !== FixedTaskStatus.TODO &&
-      typeof item.actualDurationMinutes === 'number' &&
-      typeof item.approvedDurationMinutes === 'number' &&
-      item.actualDurationMinutes > item.approvedDurationMinutes
+      item.status === FixedTaskStatus.TODO &&
+      item.endDate instanceof Date &&
+      item.endDate.getTime() < now.getTime()
     );
   }
 

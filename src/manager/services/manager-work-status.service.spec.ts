@@ -240,7 +240,7 @@ describe('ManagerWorkStatusService', () => {
     });
   });
 
-  it('counts unfinished fixed tasks as overdue when their end date is expired', async () => {
+  it('counts only todo fixed tasks as overdue when their end date is expired', async () => {
     const user = {
       userId: '6a39043bfc4f15b8c14eb3df',
       firstName: 'Ali',
@@ -274,11 +274,11 @@ describe('ManagerWorkStatusService', () => {
     );
 
     expect(result.users[0].fixedTasks).toEqual({
-      total: 2,
+      total: 1,
       done: 0,
       inProgress: 0,
       todo: 0,
-      overdueUnfinished: 2,
+      overdueUnfinished: 1,
     });
   });
 
@@ -316,7 +316,7 @@ describe('ManagerWorkStatusService', () => {
     });
   });
 
-  it('counts fixed task duration overruns as overdue except todo status', async () => {
+  it('does not count fixed task duration overruns as overdue', async () => {
     const user = {
       userId: '6a39043bfc4f15b8c14eb3df',
       firstName: 'Ali',
@@ -366,10 +366,10 @@ describe('ManagerWorkStatusService', () => {
 
     expect(result.users[0].fixedTasks).toEqual({
       total: 3,
-      done: 0,
-      inProgress: 0,
+      done: 1,
+      inProgress: 1,
       todo: 1,
-      overdueUnfinished: 2,
+      overdueUnfinished: 0,
     });
   });
 

@@ -15,10 +15,7 @@ export class UserProgressCalculatorService {
     fixedTasks: ProgressFixedTask[],
   ): ProgressMetrics {
     const completedTasks = this.countByStatus(tasks, TaskStatus.DONE);
-    const inProgressTasks = this.countByStatus(
-      tasks,
-      TaskStatus.IN_PROGRESS,
-    );
+    const inProgressTasks = this.countByStatus(tasks, TaskStatus.IN_PROGRESS);
     const completedFixedTasks = this.countByStatus(
       fixedTasks,
       FixedTaskStatus.DONE,
@@ -30,8 +27,8 @@ export class UserProgressCalculatorService {
     const onTimeTasks = this.countOnTimeTasks(tasks);
     const onTimeFixedTasks = this.countOnTimeFixedTasks(fixedTasks);
     const taskProgressPercentage = this.calculateCompletionPercentage(
-      completedTasks,
-      tasks.length,
+      this.sumTaskRatingScores(tasks),
+      tasks.length * 5,
     );
     const fixedTaskProgressPercentage = this.calculateCompletionPercentage(
       this.sumFixedTaskRatingScores(fixedTasks),
@@ -107,6 +104,15 @@ export class UserProgressCalculatorService {
     }, 0);
   }
 
+  private sumTaskRatingScores(tasks: ProgressTask[]): number {
+    return tasks.reduce((sum, task) => {
+      const score = task.ratingScore ?? 0;
+      if (!Number.isFinite(score)) return sum;
+
+      return sum + Math.min(Math.max(score, 0), 5);
+    }, 0);
+  }
+
   private calculateOverallProgress(
     taskProgressPercentage: number,
     fixedTaskProgressPercentage: number,
@@ -125,10 +131,7 @@ export class UserProgressCalculatorService {
     return 0;
   }
 
-  private getFixedTaskDeadline(
-    endDate?: Date,
-    endTime?: string,
-  ): Date | null {
+  private getFixedTaskDeadline(endDate?: Date, endTime?: string): Date | null {
     if (!(endDate instanceof Date)) return null;
 
     const deadline = new Date(endDate);
@@ -156,5 +159,4 @@ export class UserProgressCalculatorService {
     deadline.setHours(hours, minutes, 0, 0);
     return deadline;
   }
-
 }

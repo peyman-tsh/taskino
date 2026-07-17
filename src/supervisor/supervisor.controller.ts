@@ -97,11 +97,24 @@ export class SupervisorController {
     return this.supervisorService.findSupervisedTasks(supervisorId, query);
   }
 
+  @Get('fixed-tasks/latest')
+  @ApiOperation({
+    summary: 'Get latest fixed-task occurrence for each supervised series',
+    description:
+      'Returns one newest fixed-task occurrence per unique series in the system, before applying pagination. Latest occurrences can be active or inactive.',
+  })
+  @ApiOkResponse({ type: PaginatedFixedTasksResponseDto })
+  findLatestSupervisedFixedTasks(
+    @Query() query: SupervisorFixedTasksQueryDto,
+  ) {
+    return this.supervisorService.findLatestSupervisedFixedTasks(query);
+  }
+
   @Get('fixed-tasks')
   @ApiOperation({
     summary: 'Get fixed tasks supervised by current supervisor',
     description:
-      'Returns fixed tasks created by the current supervisor with optional filters.',
+      'Returns fixed tasks created by the current supervisor that run from today at 00:00 through tomorrow at 00:00, in the Tehran timezone, with optional filters.',
   })
   @ApiOkResponse({ type: PaginatedFixedTasksResponseDto })
   findSupervisedFixedTasks(

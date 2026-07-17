@@ -22,6 +22,12 @@ export enum ExtraTaskApprovalStatus {
   REJECTED = 'rejected',
 }
 
+export enum TaskRatingStatus {
+  WEAK = 'weak',
+  NORMAL = 'normal',
+  GOOD = 'good',
+}
+
 @Schema({ timestamps: true })
 export class Task {
   @Prop({ required: true })
@@ -70,6 +76,25 @@ export class Task {
 
   @Prop({ type: String, default: null })
   taskComment?: string;
+
+  @Prop({ type: Number, min: 0, max: 5, default: null })
+  ratingScore?: number | null;
+
+  @Prop({
+    type: String,
+    enum: TaskRatingStatus,
+    default: null,
+  })
+  ratingStatus?: TaskRatingStatus | null;
+
+  @Prop({ type: String, default: null })
+  ratingComment?: string | null;
+
+  @Prop({ type: Types.ObjectId, ref: User.name, default: null })
+  ratedBy?: Types.ObjectId | null;
+
+  @Prop({ type: Date, default: null })
+  ratedAt?: Date | null;
 
   @Prop({ type: String, default: '' })
   description?: string;
