@@ -138,7 +138,7 @@ describe('UserProgressCalculatorService', () => {
     expect(result.performanceStatus).toBe(UserPerformanceStatus.GOOD);
   });
 
-  it('gives regular tasks 100 percent progress when all are done regardless of rating', () => {
+  it('uses manager ratings for done regular tasks', () => {
     const result = calculator.calculate(
       [
         {
@@ -157,8 +157,8 @@ describe('UserProgressCalculatorService', () => {
       [],
     );
 
-    expect(result.taskProgressPercentage).toBe(100);
-    expect(result.progressPercentage).toBe(100);
+    expect(result.taskProgressPercentage).toBe(40);
+    expect(result.progressPercentage).toBe(40);
   });
 
   it('uses fixed-task progress as overall when the user has no tasks', () => {
