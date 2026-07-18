@@ -292,7 +292,7 @@ export class TaskService {
 
   /**
    * Find tasks by user within a date range and return count statistics
-   * A task overlaps with the date range if: task.startDate <= range.end AND task.dueDate >= range.start
+   * A task is included when its startDate is within the requested date range.
    */
   async findTasksByUserAndCount(dateCountDto: DateCountDto): Promise<{
     userId: string;
