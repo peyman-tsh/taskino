@@ -53,7 +53,6 @@ export class ManagerTasksRepository {
   ): Promise<number> {
     const fixedTaskFilter: Record<string, unknown> = {
       status: FixedTaskStatus.DONE,
-      actualDurationMinutes: { $type: 'number' },
       approvedDurationMinutes: { $type: 'number' },
       $or: [
         {
@@ -95,12 +94,7 @@ export class ManagerTasksRepository {
             $group: {
               _id: null,
               totalActualDurationMinutes: {
-                $sum: {
-                  $min: [
-                    '$actualDurationMinutes',
-                    '$approvedDurationMinutes',
-                  ],
-                },
+                $sum: '$approvedDurationMinutes',
               },
             },
           },

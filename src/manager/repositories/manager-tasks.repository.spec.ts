@@ -37,7 +37,6 @@ describe('ManagerTasksRepository', () => {
       {
         $match: {
           status: FixedTaskStatus.DONE,
-          actualDurationMinutes: { $type: 'number' },
           approvedDurationMinutes: { $type: 'number' },
           $or: [
             {
@@ -61,12 +60,7 @@ describe('ManagerTasksRepository', () => {
         $group: {
           _id: null,
           totalActualDurationMinutes: {
-            $sum: {
-              $min: [
-                '$actualDurationMinutes',
-                '$approvedDurationMinutes',
-              ],
-            },
+            $sum: '$approvedDurationMinutes',
           },
         },
       },
