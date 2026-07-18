@@ -12,15 +12,9 @@ import {
 
 @Injectable()
 export class ManagerWorkStatusService {
-  constructor(
-    private readonly repository: ManagerWorkStatusRepository,
-  ) {}
+  constructor(private readonly repository: ManagerWorkStatusRepository) {}
 
-  async getStatusCounts(
-    managerId: string,
-    fromValue: string,
-    toValue: string,
-  ) {
+  async getStatusCounts(managerId: string, fromValue: string, toValue: string) {
     const from = this.parseBoundary(fromValue, false);
     const to = this.parseBoundary(toValue, true);
     if (to.getTime() < from.getTime()) {
@@ -85,6 +79,13 @@ export class ManagerWorkStatusService {
     };
   }
 
+  async getFixedTasksByDateRange(fromValue: string, toValue: string) {
+    const { from, to } = this.parseDateRange(fromValue, toValue);
+    const data = await this.repository.findFixedTasksByDateRange(from, to);
+
+    return { from, to, evaluatedAt: new Date(), total: data.length, data };
+  }
+
   async getOverdueFixedTasks(
     _managerId: string,
     fromValue: string,
@@ -130,11 +131,7 @@ export class ManagerWorkStatusService {
     return { evaluatedAt, total: data.length, userId, data };
   }
 
-  async getOverdueTasks(
-    fromValue: string,
-    toValue: string,
-    userId?: string,
-  ) {
+  async getOverdueTasks(fromValue: string, toValue: string, userId?: string) {
     const { from, to } = this.parseDateRange(fromValue, toValue);
     const evaluatedAt = new Date();
     const data = await this.repository.findOverdueTasks(
@@ -147,11 +144,7 @@ export class ManagerWorkStatusService {
     return { from, to, evaluatedAt, total: data.length, userId, data };
   }
 
-  async getDoneTasks(
-    fromValue: string,
-    toValue: string,
-    userId?: string,
-  ) {
+  async getDoneTasks(fromValue: string, toValue: string, userId?: string) {
     const { from, to } = this.parseDateRange(fromValue, toValue);
     const evaluatedAt = new Date();
     const data = await this.repository.findDoneTasks(from, to, userId);
@@ -176,11 +169,7 @@ export class ManagerWorkStatusService {
     return { from, to, evaluatedAt, total: data.length, userId, data };
   }
 
-  async getTodoTasks(
-    fromValue: string,
-    toValue: string,
-    userId?: string,
-  ) {
+  async getTodoTasks(fromValue: string, toValue: string, userId?: string) {
     const { from, to } = this.parseDateRange(fromValue, toValue);
     const evaluatedAt = new Date();
     const data = await this.repository.findTodoTasks(

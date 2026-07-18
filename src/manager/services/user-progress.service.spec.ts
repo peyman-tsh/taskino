@@ -64,4 +64,38 @@ describe('UserProgressService', () => {
       expect.any(Date),
     );
   });
+
+  it('recalculates progress for the supplied historical Tehran day', async () => {
+    const userId = new Types.ObjectId();
+    const taskStartDate = new Date('2026-07-15T13:45:00.000Z');
+    repository.findEvaluableUserById.mockResolvedValue({
+      _id: userId,
+      roles: UserRole.SPECIALIST,
+    });
+    repository.findAssignedWork.mockResolvedValue({
+      tasks: [],
+      fixedTasks: [],
+    });
+    calculator.calculate.mockReturnValue({
+      totalTasks: 0,
+      completedTasks: 0,
+      totalFixedTasks: 1,
+      completedFixedTasks: 1,
+      taskProgressPercentage: 0,
+      fixedTaskProgressPercentage: 80,
+      progressPercentage: 80,
+      performanceStatus: 'good',
+    });
+
+    await service.refreshUsers([userId.toString()], taskStartDate);
+
+    const [, periodStart] = repository.findAssignedWork.mock.calls[0];
+    expect(periodStart).toEqual(new Date('2026-07-14T20:30:00.000Z'));
+    expect(repository.saveEvaluation).toHaveBeenCalledWith(
+      userId,
+      new Date('2026-07-14T20:30:00.000Z'),
+      expect.anything(),
+      expect.any(Date),
+    );
+  });
 });

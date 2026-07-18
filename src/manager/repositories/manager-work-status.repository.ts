@@ -33,7 +33,9 @@ export class ManagerWorkStatusRepository {
     const fixedTaskFilter = {
       $and: [
         fixedTaskDateFilter,
-        { timingApprovalStatus: { $ne: FixedTaskTimingApprovalStatus.REJECTED } },
+        {
+          timingApprovalStatus: { $ne: FixedTaskTimingApprovalStatus.REJECTED },
+        },
       ],
     };
     const [tasks, fixedTasks] = await Promise.all([
@@ -44,7 +46,9 @@ export class ManagerWorkStatusRepository {
         .exec(),
       this.fixedTaskModel
         .find(fixedTaskFilter)
-        .select('status startDate endDate endTime actualDurationMinutes approvedDurationMinutes')
+        .select(
+          'status startDate endDate endTime actualDurationMinutes approvedDurationMinutes',
+        )
         .lean()
         .exec(),
     ]);
@@ -83,7 +87,9 @@ export class ManagerWorkStatusRepository {
         .exec(),
       this.fixedTaskModel
         .find(fixedTaskFilter)
-        .select('status startDate endDate endTime assignedTo isActive actualDurationMinutes approvedDurationMinutes')
+        .select(
+          'status startDate endDate endTime assignedTo isActive actualDurationMinutes approvedDurationMinutes',
+        )
         .populate('assignedTo', 'firstName lastName email')
         .lean()
         .exec(),
@@ -118,7 +124,10 @@ export class ManagerWorkStatusRepository {
 
     return this.fixedTaskModel
       .find(filter)
-      .populate('assignedTo', 'firstName lastName email mobile roles workField isActive')
+      .populate(
+        'assignedTo',
+        'firstName lastName email mobile roles workField isActive',
+      )
       .populate('createdBy', 'firstName lastName email roles workField')
       .populate('timingApprovedBy', 'firstName lastName email roles')
       .sort({ endDate: 1, startDate: 1, _id: 1 })
@@ -142,10 +151,31 @@ export class ManagerWorkStatusRepository {
 
     return this.fixedTaskModel
       .find(filter)
-      .populate('assignedTo', 'firstName lastName email mobile roles workField isActive')
+      .populate(
+        'assignedTo',
+        'firstName lastName email mobile roles workField isActive',
+      )
       .populate('createdBy', 'firstName lastName email roles workField')
       .populate('timingApprovedBy', 'firstName lastName email roles')
       .sort({ endDate: 1, startDate: 1, _id: 1 })
+      .lean()
+      .exec();
+  }
+
+  async findFixedTasksByDateRange(from: Date, to: Date) {
+    return this.fixedTaskModel
+      .find({
+        isTemplate: { $ne: true },
+        startDate: { $gte: from, $lte: to },
+      })
+      .populate(
+        'assignedTo',
+        'firstName lastName email mobile roles workField isActive',
+      )
+      .populate('createdBy', 'firstName lastName email roles workField')
+      .populate('timingApprovedBy', 'firstName lastName email roles')
+      .populate('ratedBy', 'firstName lastName email roles')
+      .sort({ startDate: 1, endDate: 1, _id: 1 })
       .lean()
       .exec();
   }
@@ -296,10 +326,7 @@ export class ManagerWorkStatusRepository {
     if (!userId) return dateFilter;
 
     return {
-      $and: [
-        dateFilter,
-        { assignedTo: new Types.ObjectId(userId) },
-      ],
+      $and: [dateFilter, { assignedTo: new Types.ObjectId(userId) }],
     };
   }
 
@@ -310,17 +337,17 @@ export class ManagerWorkStatusRepository {
     if (!userId) return filter;
 
     return {
-      $and: [
-        filter,
-        { assignedTo: new Types.ObjectId(userId) },
-      ],
+      $and: [filter, { assignedTo: new Types.ObjectId(userId) }],
     };
   }
 
   private findTaskDocuments(filter: Record<string, unknown>) {
     return this.taskModel
       .find(filter)
-      .populate('assignedTo', 'firstName lastName email mobile roles workField isActive')
+      .populate(
+        'assignedTo',
+        'firstName lastName email mobile roles workField isActive',
+      )
       .populate('createdBy', 'firstName lastName email roles workField')
       .populate('excelFile')
       .populate('completionExcelFile')
@@ -346,9 +373,7 @@ export class ManagerWorkStatusRepository {
     }
 
     return {
-      $and: [
-        ...filters,
-      ],
+      $and: [...filters],
     };
   }
 
@@ -383,7 +408,10 @@ export class ManagerWorkStatusRepository {
 
     return this.fixedTaskModel
       .find(filter)
-      .populate('assignedTo', 'firstName lastName email mobile roles workField isActive')
+      .populate(
+        'assignedTo',
+        'firstName lastName email mobile roles workField isActive',
+      )
       .populate('createdBy', 'firstName lastName email roles workField')
       .populate('timingApprovedBy', 'firstName lastName email roles')
       .sort({ startDate: 1, endDate: 1, _id: 1 })

@@ -8,6 +8,7 @@ describe('ManagerWorkStatusService', () => {
   const repository = {
     findByDateRange: jest.fn(),
     findByDateRangeForUsers: jest.fn(),
+    findFixedTasksByDateRange: jest.fn(),
   };
   const service = new ManagerWorkStatusService(
     repository as unknown as ManagerWorkStatusRepository,
@@ -111,6 +112,28 @@ describe('ManagerWorkStatusService', () => {
       ),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(repository.findByDateRange).not.toHaveBeenCalled();
+  });
+
+  it('returns non-template fixed-task documents in the selected range', async () => {
+    const data = [{ _id: 'fixed-task-id', title: 'Daily report' }];
+    repository.findFixedTasksByDateRange.mockResolvedValue(data);
+
+    const result = await service.getFixedTasksByDateRange(
+      '2026-07-01',
+      '2026-07-31',
+    );
+
+    expect(repository.findFixedTasksByDateRange).toHaveBeenCalledWith(
+      expect.any(Date),
+      expect.any(Date),
+    );
+    expect(result).toEqual(
+      expect.objectContaining({
+        total: 1,
+        data,
+        evaluatedAt: expect.any(Date),
+      }),
+    );
   });
 
   it('counts per-user overdue items only when their deadline is inside the range', async () => {

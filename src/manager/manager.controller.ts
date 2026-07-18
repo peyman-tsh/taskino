@@ -55,6 +55,7 @@ import { FixedTaskDurationBalanceQueryDto } from './dto/fixed-task-duration-bala
 import { PaginatedTasksResponseDto } from '../task/dto/task-response.dto';
 import { FixedTaskUserFilterQueryDto } from './dto/fixed-task-user-filter-query.dto';
 import { DailyProgressRangeQueryDto } from './dto/daily-progress-range-query.dto';
+import { FixedTaskDateRangeQueryDto } from './dto/fixed-task-date-range-query.dto';
 
 @ApiTags('Manager')
 @ApiBearerAuth()
@@ -116,7 +117,9 @@ export class ManagerController {
   @ApiParam({ name: 'id', description: 'Specialist or supervisor user ID' })
   @ApiOkResponse({ type: UserResponseDto })
   @ApiBadRequestResponse({ description: 'Score must be a non-zero integer' })
-  @ApiNotFoundResponse({ description: 'Specialist or supervisor user not found' })
+  @ApiNotFoundResponse({
+    description: 'Specialist or supervisor user not found',
+  })
   adjustSpecialistScore(
     @Param() params: MongoIdParamDto,
     @Body() dto: AdjustSpecialistScoreDto,
@@ -135,7 +138,9 @@ export class ManagerController {
   })
   @ApiParam({ name: 'id', description: 'Specialist or supervisor user ID' })
   @ApiOkResponse({ type: UserScoreResponseDto })
-  @ApiNotFoundResponse({ description: 'Specialist or supervisor user not found' })
+  @ApiNotFoundResponse({
+    description: 'Specialist or supervisor user not found',
+  })
   getUserScore(@Param() params: MongoIdParamDto) {
     return this.managerService.getUserScore(params.id);
   }
@@ -233,6 +238,21 @@ export class ManagerController {
       query.to,
       query.userId,
     );
+  }
+
+  @Get('fixed-tasks')
+  @ApiOperation({
+    summary: 'Get fixed-task occurrences in a date range',
+    description:
+      'Returns non-template fixed-task occurrences whose startDate is within the inclusive selected range.',
+  })
+  @ApiOkResponse({
+    description: 'Fixed tasks retrieved successfully',
+    type: FixedTaskDocumentListResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Invalid date range' })
+  getFixedTasksByDateRange(@Query() query: FixedTaskDateRangeQueryDto) {
+    return this.managerService.getFixedTasksByDateRange(query.from, query.to);
   }
 
   @Get('fixed-tasks/overdue')
@@ -349,11 +369,7 @@ export class ManagerController {
   })
   @ApiBadRequestResponse({ description: 'Invalid date range or user ID' })
   getDoneTasks(@Query() query: WorkStatusRangeQueryDto) {
-    return this.managerService.getDoneTasks(
-      query.from,
-      query.to,
-      query.userId,
-    );
+    return this.managerService.getDoneTasks(query.from, query.to, query.userId);
   }
 
   @Get('tasks/in-progress')
@@ -387,11 +403,7 @@ export class ManagerController {
   })
   @ApiBadRequestResponse({ description: 'Invalid date range or user ID' })
   getTodoTasks(@Query() query: WorkStatusRangeQueryDto) {
-    return this.managerService.getTodoTasks(
-      query.from,
-      query.to,
-      query.userId,
-    );
+    return this.managerService.getTodoTasks(query.from, query.to, query.userId);
   }
 
   @Get('tasks')

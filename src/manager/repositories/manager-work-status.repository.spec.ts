@@ -79,7 +79,9 @@ describe('ManagerWorkStatusRepository', () => {
             $lt: evaluatedAt,
           },
         },
-        { timingApprovalStatus: { $ne: FixedTaskTimingApprovalStatus.REJECTED } },
+        {
+          timingApprovalStatus: { $ne: FixedTaskTimingApprovalStatus.REJECTED },
+        },
       ],
     });
   });
@@ -126,7 +128,9 @@ describe('ManagerWorkStatusRepository', () => {
     const fixedTaskFilter = {
       $and: [
         fixedFilter,
-        { timingApprovalStatus: { $ne: FixedTaskTimingApprovalStatus.REJECTED } },
+        {
+          timingApprovalStatus: { $ne: FixedTaskTimingApprovalStatus.REJECTED },
+        },
       ],
     };
 
@@ -134,6 +138,37 @@ describe('ManagerWorkStatusRepository', () => {
 
     expect(taskFind).toHaveBeenCalledWith(taskFilter);
     expect(fixedFind).toHaveBeenCalledWith(fixedTaskFilter);
+  });
+
+  it('finds non-template fixed-task occurrences by inclusive start-date range', async () => {
+    const taskFind = jest.fn();
+    const fixedExec = jest.fn().mockResolvedValue([]);
+    const fixedLean = jest.fn().mockReturnValue({ exec: fixedExec });
+    const fixedSort = jest.fn().mockReturnValue({ lean: fixedLean });
+    const fixedPopulate = jest.fn();
+    fixedPopulate.mockReturnValue({
+      populate: fixedPopulate,
+      sort: fixedSort,
+    });
+    const fixedFind = jest.fn().mockReturnValue({ populate: fixedPopulate });
+    const repository = new ManagerWorkStatusRepository(
+      { find: taskFind } as unknown as Model<TaskDocument>,
+      { find: fixedFind } as unknown as Model<FixedTaskTemplateDocument>,
+    );
+    const from = new Date('2026-07-01T00:00:00.000Z');
+    const to = new Date('2026-07-31T23:59:59.999Z');
+
+    await repository.findFixedTasksByDateRange(from, to);
+
+    expect(fixedFind).toHaveBeenCalledWith({
+      isTemplate: { $ne: true },
+      startDate: { $gte: from, $lte: to },
+    });
+    expect(fixedSort).toHaveBeenCalledWith({
+      startDate: 1,
+      endDate: 1,
+      _id: 1,
+    });
   });
 
   it('excludes template fixed tasks from per-user work status summary', async () => {
@@ -159,9 +194,7 @@ describe('ManagerWorkStatusRepository', () => {
 
     expect(fixedFind).toHaveBeenCalledWith(
       expect.objectContaining({
-        $and: expect.arrayContaining([
-          { isTemplate: { $ne: true } },
-        ]),
+        $and: expect.arrayContaining([{ isTemplate: { $ne: true } }]),
       }),
     );
   });

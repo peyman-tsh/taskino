@@ -7,7 +7,9 @@ import {
 import { UserProgressService } from './services/user-progress.service';
 
 @Injectable()
-export class UserProgressEventListener implements OnModuleInit, OnModuleDestroy {
+export class UserProgressEventListener
+  implements OnModuleInit, OnModuleDestroy
+{
   private unsubscribe?: () => void;
 
   constructor(
@@ -19,7 +21,8 @@ export class UserProgressEventListener implements OnModuleInit, OnModuleDestroy 
     this.unsubscribe =
       this.eventBus.subscribe<UserProgressRefreshRequestedEvent>(
         UserProgressEvents.REFRESH_REQUESTED,
-        (event) => this.progressService.refreshUsers(event.userIds),
+        (event) =>
+          this.progressService.refreshUsers(event.userIds, event.progressDate),
       );
   }
 

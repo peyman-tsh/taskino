@@ -43,6 +43,7 @@ describe('FixedTaskRatingService', () => {
       _id: fixedTaskId,
       title: 'Daily report',
       assignedTo: assigneeId,
+      startDate: new Date('2026-07-15T13:45:00.000Z'),
     } as FixedTaskTemplateDocument;
     const ratedTask = {
       ...fixedTask,
@@ -79,6 +80,7 @@ describe('FixedTaskRatingService', () => {
       UserProgressEvents.REFRESH_REQUESTED,
       expect.objectContaining({
         userIds: [assigneeId.toString()],
+        progressDate: fixedTask.startDate,
       }),
     );
   });

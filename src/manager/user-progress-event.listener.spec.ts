@@ -32,8 +32,14 @@ describe('UserProgressEventListener', () => {
     );
 
     listener.onModuleInit();
-    await handler?.(new UserProgressRefreshRequestedEvent(['user-id']));
+    const progressDate = new Date('2026-07-15T13:45:00.000Z');
+    await handler?.(
+      new UserProgressRefreshRequestedEvent(['user-id'], progressDate),
+    );
 
-    expect(progressService.refreshUsers).toHaveBeenCalledWith(['user-id']);
+    expect(progressService.refreshUsers).toHaveBeenCalledWith(
+      ['user-id'],
+      progressDate,
+    );
   });
 });

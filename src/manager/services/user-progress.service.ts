@@ -28,27 +28,33 @@ export class UserProgressService {
     );
   }
 
-  async refreshUsers(userIds: string[]): Promise<void> {
+  async refreshUsers(userIds: string[], progressDate?: Date): Promise<void> {
     const uniqueValidUserIds = [...new Set(userIds)].filter(
       Types.ObjectId.isValid,
     );
 
     await Promise.all(
-      uniqueValidUserIds.map((userId) => this.refreshUser(userId)),
+      uniqueValidUserIds.map((userId) =>
+        this.refreshUser(userId, progressDate),
+      ),
     );
   }
 
-  async refreshUser(userId: string): Promise<void> {
+  async refreshUser(userId: string, progressDate?: Date): Promise<void> {
     const user = await this.repository.findEvaluableUserById(
       new Types.ObjectId(userId),
     );
     if (!user) return;
 
-    await this.evaluateUser(user, new Date());
+    await this.evaluateUser(user, new Date(), progressDate);
   }
 
-  private async evaluateUser(user: ProgressUser, evaluatedAt: Date) {
-    const { periodStart, periodEnd } = getTehranDayRange(evaluatedAt);
+  private async evaluateUser(
+    user: ProgressUser,
+    evaluatedAt: Date,
+    progressDate = evaluatedAt,
+  ) {
+    const { periodStart, periodEnd } = getTehranDayRange(progressDate);
     const { tasks, fixedTasks } = await this.repository.findAssignedWork(
       user._id,
       periodStart,
@@ -75,11 +81,7 @@ export class UserProgressService {
     };
   }
 
-  async getDailyProgress(
-    userId: string,
-    fromValue: string,
-    toValue: string,
-  ) {
+  async getDailyProgress(userId: string, fromValue: string, toValue: string) {
     if (!Types.ObjectId.isValid(userId)) {
       throw new BadRequestException('Invalid user ID');
     }

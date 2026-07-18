@@ -95,6 +95,10 @@ export class ManagerService extends BaseManagerService {
     );
   }
 
+  getFixedTasksByDateRange(from: string, to: string) {
+    return this.managerWorkStatusService.getFixedTasksByDateRange(from, to);
+  }
+
   getOverdueFixedTasks(
     managerId: string,
     from: string,
@@ -200,11 +204,7 @@ export class ManagerService extends BaseManagerService {
     return this.taskService.findAllExtraTasks(page, limit);
   }
 
-  getDailyFixedTaskDurationBalance(
-    from: string,
-    to: string,
-    userId?: string,
-  ) {
+  getDailyFixedTaskDurationBalance(from: string, to: string, userId?: string) {
     return this.managerTasksService.getDailyFixedTaskDurationBalance(
       from,
       to,

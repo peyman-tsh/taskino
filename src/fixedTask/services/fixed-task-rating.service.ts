@@ -25,7 +25,10 @@ export class FixedTaskRatingService {
 
   async rate(id: string, managerId: string, dto: RateFixedTaskDto) {
     const fixedTaskId = this.policy.toObjectId(id, 'fixed task ID');
-    const managerObjectId = this.policy.toObjectId(managerId, 'manager user ID');
+    const managerObjectId = this.policy.toObjectId(
+      managerId,
+      'manager user ID',
+    );
     const fixedTask = await this.repository.findRawById(fixedTaskId);
 
     if (!fixedTask) {
@@ -56,7 +59,10 @@ export class FixedTaskRatingService {
 
     await this.eventBus.publishAndWait(
       UserProgressEvents.REFRESH_REQUESTED,
-      new UserProgressRefreshRequestedEvent([assigneeId]),
+      new UserProgressRefreshRequestedEvent(
+        [assigneeId],
+        fixedTask.startDate ?? new Date(),
+      ),
     );
 
     return ratedTask;
