@@ -3,6 +3,8 @@ import { LeaveRecurrence } from '../LeaveRequest.schema';
 import { LeaveRequestRepository } from '../repositories/leave-request.repository';
 import { LeaveRequestCreationService } from './leave-request-creation.service';
 import { LeaveRequestPolicyService } from './leave-request-policy.service';
+import { UserService } from '../../user/services/user.service';
+import { NotificationService } from '../../notification/services/notification.service';
 
 describe('LeaveRequestCreationService', () => {
   const userId = new Types.ObjectId();
@@ -14,10 +16,28 @@ describe('LeaveRequestCreationService', () => {
     assertHourlyLeaveTimes: jest.fn(),
     assertValidTimeRange: jest.fn(),
   };
+  const userService = { findById: jest.fn() };
+  const notificationService = {
+    createLeaveRequestNotificationsForManagersAndSupervisors: jest.fn(),
+  };
   const service = new LeaveRequestCreationService(
     repository as unknown as LeaveRequestRepository,
     policy as unknown as LeaveRequestPolicyService,
+    userService as unknown as UserService,
+    notificationService as unknown as NotificationService,
   );
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    userService.findById.mockResolvedValue({
+      firstName: 'Sina',
+      lastName: 'Alalaei',
+      workField: 'operations',
+    });
+    notificationService.createLeaveRequestNotificationsForManagersAndSupervisors.mockResolvedValue(
+      [],
+    );
+  });
 
   it('creates a recurring leave request with date and time range', async () => {
     const startDate = '2026-06-14T09:00:00.000Z';
@@ -43,6 +63,9 @@ describe('LeaveRequestCreationService', () => {
         endTime: '17:00',
       }),
     );
+    expect(
+      notificationService.createLeaveRequestNotificationsForManagersAndSupervisors,
+    ).toHaveBeenCalledWith('operations', 'Sina Alalaei');
   });
 
   it('validates hourly leave time fields before creation', async () => {

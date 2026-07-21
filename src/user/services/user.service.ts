@@ -110,6 +110,14 @@ export class UserService {
     return this.userRepository.findActiveManagerIdsByWorkField(workField);
   }
 
+  findActiveManagerAndSupervisorIdsByWorkField(
+    workField: WorkField,
+  ): Promise<string[]> {
+    return this.userRepository.findActiveManagerAndSupervisorIdsByWorkField(
+      workField,
+    );
+  }
+
   async findActiveManagerIdsForUser(userId: string): Promise<string[]> {
     if (!Types.ObjectId.isValid(userId)) {
       throw new NotFoundException('Invalid user ID');
@@ -172,6 +180,47 @@ export class UserService {
     }
 
     return this.userRepository.findByWorkField(manager.workField, page, limit);
+  }
+
+  async getCompletionRatings(managerId: string) {
+    if (!Types.ObjectId.isValid(managerId)) {
+      throw new NotFoundException('Invalid manager ID');
+    }
+
+    const manager = await this.userRepository.findRawById(managerId);
+    if (!manager) {
+      throw new NotFoundException('Manager not found');
+    }
+
+    const users = await this.userRepository.findCompletionCountsByWorkField(
+      manager.workField,
+    );
+    const sortedUsers = users
+      .map((user) => ({
+        ...user,
+        totalCompleted: user.completedTasks + user.completedFixedTasks,
+      }))
+      .sort(
+        (first, second) =>
+          second.totalCompleted - first.totalCompleted ||
+          first.firstName.localeCompare(second.firstName) ||
+          first.lastName.localeCompare(second.lastName),
+      );
+    const highestCompleted = sortedUsers[0]?.totalCompleted ?? 0;
+
+    return {
+      total: sortedUsers.length,
+      data: sortedUsers.map((user, index) => ({
+        ...user,
+        rank: index + 1,
+        completionRate:
+          highestCompleted === 0
+            ? 0
+            : Number(
+                ((user.totalCompleted / highestCompleted) * 100).toFixed(2),
+              ),
+      })),
+    };
   }
 
   findIdsByWorkField(workField: WorkField): Promise<string[]> {
@@ -332,6 +381,7 @@ export class UserService {
         (record) => record.doneFixedTaskProgressPercentage,
       ),
       progressPercentage,
+      startScore: this.calculateStartScore(progressPercentage),
       performanceStatus: calculatePerformanceStatus(progressPercentage),
     };
   }
@@ -415,6 +465,15 @@ export class UserService {
 
     const doneCount = items.filter((item) => item.status === doneStatus).length;
     return Math.round((doneCount / items.length) * 100);
+  }
+
+  private calculateStartScore(progressPercentage: number): number {
+    if (progressPercentage <= 0) return 0;
+    if (progressPercentage <= 20) return 1;
+    if (progressPercentage <= 40) return 2;
+    if (progressPercentage <= 60) return 3;
+    if (progressPercentage <= 80) return 4;
+    return 5;
   }
 
   /**

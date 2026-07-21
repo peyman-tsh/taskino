@@ -32,6 +32,7 @@ import {
   PaginatedUsersResponseDto,
   SpecialistProgressResponseDto,
   UserDailyProgressListResponseDto,
+  UserCompletionRatingListResponseDto,
   UserWorkSummaryResponseDto,
   UserResponseDto,
 } from './dto/user-response.dto';
@@ -178,6 +179,22 @@ export class UserController {
       Number(page),
       Number(limit),
     );
+  }
+
+  @Get('manager/completion-ratings')
+  @Roles(UserRole.MANAGER)
+  @ApiOperation({
+    summary: 'Rank users by all-time completed work',
+    description:
+      'Ranks active specialists and supervisors in the manager work field by completed regular tasks plus completed fixed-task occurrences. The highest total receives a completion rate of 100.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User completion ratings retrieved successfully',
+    type: UserCompletionRatingListResponseDto,
+  })
+  getCompletionRatings(@CurrentUserId() managerId: string) {
+    return this.userService.getCompletionRatings(managerId);
   }
 
   @Get(':id')

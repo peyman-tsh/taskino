@@ -11,9 +11,15 @@ import { LeaveRequestQueryService } from './services/leave-request-query.service
 import { LeaveRequestUpdateDataBuilder } from './services/leave-request-update-data.builder';
 import { LeaveRequestUpdateService } from './services/leave-request-update.service';
 import { LeaveRequestDeleteService } from './services/leave-request-delete.service';
+import { UserModule } from '../user/user.module';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
-  imports: [MongooseModule.forFeature([{ name: Leave.name, schema: LeaveSchema }])],
+  imports: [
+    MongooseModule.forFeature([{ name: Leave.name, schema: LeaveSchema }]),
+    UserModule,
+    NotificationModule,
+  ],
   controllers: [LeaveRequestController],
   providers: [
     LeaveRequestService,

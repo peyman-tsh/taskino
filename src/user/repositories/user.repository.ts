@@ -167,6 +167,85 @@ export class UserRepository {
     return managers.map((manager) => manager._id.toString());
   }
 
+  async findActiveManagerAndSupervisorIdsByWorkField(
+    workField: WorkField,
+  ): Promise<string[]> {
+    const users = await this.userModel
+      .find({
+        roles: { $in: [UserRole.MANAGER, UserRole.SUPERVISOR] },
+        workField,
+        isActive: true,
+      })
+      .select('_id')
+      .lean()
+      .exec();
+
+    return users.map((user) => user._id.toString());
+  }
+
+  async findCompletionCountsByWorkField(workField: WorkField): Promise<
+    Array<{
+      userId: string;
+      firstName: string;
+      lastName: string;
+      completedTasks: number;
+      completedFixedTasks: number;
+    }>
+  > {
+    const users = await this.userModel
+      .find({
+        roles: { $in: [UserRole.SPECIALIST, UserRole.SUPERVISOR] },
+        workField,
+        isActive: true,
+      })
+      .select('_id firstName lastName')
+      .lean()
+      .exec();
+    const userIds = users.map((user) => user._id);
+    if (userIds.length === 0) return [];
+
+    const [taskCounts, fixedTaskCounts] = await Promise.all([
+      this.connection
+        .collection('tasks')
+        .aggregate([
+          { $match: { assignedTo: { $in: userIds }, status: 'done' } },
+          { $unwind: '$assignedTo' },
+          { $group: { _id: '$assignedTo', count: { $sum: 1 } } },
+        ])
+        .toArray(),
+      this.connection
+        .collection('fixedtasktemplates')
+        .aggregate([
+          {
+            $match: {
+              assignedTo: { $in: userIds },
+              isTemplate: { $ne: true },
+              status: 'done',
+            },
+          },
+          { $group: { _id: '$assignedTo', count: { $sum: 1 } } },
+        ])
+        .toArray(),
+    ]);
+    const taskCountByUserId = new Map(
+      taskCounts.map((item) => [item._id.toString(), item.count as number]),
+    );
+    const fixedTaskCountByUserId = new Map(
+      fixedTaskCounts.map((item) => [
+        item._id.toString(),
+        item.count as number,
+      ]),
+    );
+
+    return users.map((user) => ({
+      userId: user._id.toString(),
+      firstName: user.firstName,
+      lastName: user.lastName,
+      completedTasks: taskCountByUserId.get(user._id.toString()) ?? 0,
+      completedFixedTasks: fixedTaskCountByUserId.get(user._id.toString()) ?? 0,
+    }));
+  }
+
   async findProfilesByIds(userIds: string[]) {
     const validUserIds = userIds.filter(Types.ObjectId.isValid);
     if (validUserIds.length === 0) {

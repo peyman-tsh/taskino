@@ -17,6 +17,23 @@ export class GeneralNotificationCommandService {
     return this.writer.create(this.templates.leaveRequest(userId, title));
   }
 
+  async createLeaveRequestForManagersAndSupervisors(
+    workField: WorkField,
+    requesterName: string,
+  ): Promise<NotificationDocument[]> {
+    const recipientIds =
+      await this.userService.findActiveManagerAndSupervisorIdsByWorkField(
+        workField,
+      );
+    if (recipientIds.length === 0) return [];
+
+    return this.writer.createBulk(
+      recipientIds.map((userId) =>
+        this.templates.leaveRequest(userId, requesterName),
+      ),
+    );
+  }
+
   createLeaveApproved(userId: string, leaveType: string) {
     return this.writer.create(this.templates.leaveApproved(userId, leaveType));
   }

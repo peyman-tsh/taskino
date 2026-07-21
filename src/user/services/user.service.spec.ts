@@ -9,8 +9,10 @@ import { UserProgressEvents } from '../../common/events/user-progress.events';
 describe('UserService user progress', () => {
   const repository = {
     findSpecialistProgressById: jest.fn(),
+    findRawById: jest.fn(),
     findUserWorkSummary: jest.fn(),
     findWorkForDailyProgressRange: jest.fn(),
+    findCompletionCountsByWorkField: jest.fn(),
     updatePerformanceStatus: jest.fn(),
   };
   const configService = {
@@ -143,6 +145,7 @@ describe('UserService user progress', () => {
       doneFixedTaskProgressPercentage: 90,
       progressPercentage: 75,
       averageProgressPercentage: 75,
+      startScore: 4,
       performanceStatus: 'good',
     });
     expect(repository.findWorkForDailyProgressRange).toHaveBeenCalledWith(
@@ -176,6 +179,54 @@ describe('UserService user progress', () => {
       fixedTaskProgressPercentage: 100,
       progressPercentage: 75,
       averageProgressPercentage: 75,
+      startScore: 4,
+    });
+  });
+
+  it('ranks users by all-time completed regular and fixed tasks', async () => {
+    const managerId = new Types.ObjectId().toString();
+    repository.findRawById.mockResolvedValue({ workField: 'it' });
+    repository.findCompletionCountsByWorkField.mockResolvedValue([
+      {
+        userId: 'first-user',
+        firstName: 'Ali',
+        lastName: 'Ahmadi',
+        completedTasks: 3,
+        completedFixedTasks: 2,
+      },
+      {
+        userId: 'second-user',
+        firstName: 'Sara',
+        lastName: 'Karimi',
+        completedTasks: 2,
+        completedFixedTasks: 8,
+      },
+    ]);
+
+    await expect(service.getCompletionRatings(managerId)).resolves.toEqual({
+      total: 2,
+      data: [
+        {
+          userId: 'second-user',
+          firstName: 'Sara',
+          lastName: 'Karimi',
+          completedTasks: 2,
+          completedFixedTasks: 8,
+          totalCompleted: 10,
+          rank: 1,
+          completionRate: 100,
+        },
+        {
+          userId: 'first-user',
+          firstName: 'Ali',
+          lastName: 'Ahmadi',
+          completedTasks: 3,
+          completedFixedTasks: 2,
+          totalCompleted: 5,
+          rank: 2,
+          completionRate: 50,
+        },
+      ],
     });
   });
 });

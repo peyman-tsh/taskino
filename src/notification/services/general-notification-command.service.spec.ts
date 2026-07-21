@@ -9,7 +9,10 @@ import { GeneralNotificationTemplateFactory } from '../factories/general-notific
 
 describe('GeneralNotificationCommandService', () => {
   const writer = { createBulk: jest.fn() };
-  const userService = { findActiveManagerIdsByWorkField: jest.fn() };
+  const userService = {
+    findActiveManagerIdsByWorkField: jest.fn(),
+    findActiveManagerAndSupervisorIdsByWorkField: jest.fn(),
+  };
   const service = new GeneralNotificationCommandService(
     writer as unknown as NotificationWriteService,
     userService as unknown as UserService,
@@ -52,5 +55,31 @@ describe('GeneralNotificationCommandService', () => {
     );
 
     expect(writer.createBulk).not.toHaveBeenCalled();
+  });
+
+  it('notifies active managers and supervisors when a leave request is created', async () => {
+    userService.findActiveManagerAndSupervisorIdsByWorkField.mockResolvedValue([
+      '507f1f77bcf86cd799439011',
+      '507f1f77bcf86cd799439012',
+    ]);
+
+    await service.createLeaveRequestForManagersAndSupervisors(
+      WorkField.IT,
+      'Ali Ahmadi',
+    );
+
+    expect(
+      userService.findActiveManagerAndSupervisorIdsByWorkField,
+    ).toHaveBeenCalledWith(WorkField.IT);
+    expect(writer.createBulk).toHaveBeenCalledWith([
+      expect.objectContaining({
+        user: '507f1f77bcf86cd799439011',
+        message: expect.stringContaining('Ali Ahmadi'),
+      }),
+      expect.objectContaining({
+        user: '507f1f77bcf86cd799439012',
+        message: expect.stringContaining('Ali Ahmadi'),
+      }),
+    ]);
   });
 });

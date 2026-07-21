@@ -110,6 +110,16 @@ export class NotificationService {
     return this.generalCommands.createLeaveRequest(userId, title);
   }
 
+  createLeaveRequestNotificationsForManagersAndSupervisors(
+    workField: WorkField,
+    requesterName: string,
+  ) {
+    return this.generalCommands.createLeaveRequestForManagersAndSupervisors(
+      workField,
+      requesterName,
+    );
+  }
+
   createLeaveApprovedNotification(userId: string, leaveType: string) {
     return this.generalCommands.createLeaveApproved(userId, leaveType);
   }

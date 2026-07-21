@@ -114,6 +114,40 @@ export class UserWorkSummaryResponseDto {
   score: number;
 }
 
+export class UserCompletionRatingResponseDto {
+  @ApiProperty()
+  userId: string;
+
+  @ApiProperty()
+  firstName: string;
+
+  @ApiProperty()
+  lastName: string;
+
+  @ApiProperty({ example: 12 })
+  completedTasks: number;
+
+  @ApiProperty({ example: 8 })
+  completedFixedTasks: number;
+
+  @ApiProperty({ example: 20 })
+  totalCompleted: number;
+
+  @ApiProperty({ example: 1 })
+  rank: number;
+
+  @ApiProperty({ minimum: 0, maximum: 100, example: 100 })
+  completionRate: number;
+}
+
+export class UserCompletionRatingListResponseDto {
+  @ApiProperty()
+  total: number;
+
+  @ApiProperty({ type: [UserCompletionRatingResponseDto] })
+  data: UserCompletionRatingResponseDto[];
+}
+
 export class UserDailyProgressListResponseDto {
   @ApiProperty()
   userId: string;
@@ -162,6 +196,15 @@ export class UserDailyProgressListResponseDto {
 
   @ApiProperty({ minimum: 0, maximum: 100, example: 65 })
   progressPercentage: number;
+
+  @ApiProperty({
+    minimum: 0,
+    maximum: 5,
+    example: 4,
+    description:
+      'Progress score band: 0 for zero progress, then 1-5 for each 20-point progress range.',
+  })
+  startScore: number;
 
   @ApiProperty({ enum: UserPerformanceStatus })
   performanceStatus: UserPerformanceStatus;
