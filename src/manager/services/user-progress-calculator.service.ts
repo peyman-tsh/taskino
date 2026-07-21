@@ -27,12 +27,12 @@ export class UserProgressCalculatorService {
     const onTimeTasks = this.countOnTimeTasks(tasks);
     const onTimeFixedTasks = this.countOnTimeFixedTasks(fixedTasks);
     const taskProgressPercentage = this.calculateCompletionPercentage(
-      this.sumTaskRatingScores(tasks),
-      tasks.length * 5,
+      completedTasks,
+      tasks.length,
     );
     const fixedTaskProgressPercentage = this.calculateCompletionPercentage(
-      this.sumFixedTaskRatingScores(fixedTasks),
-      fixedTasks.length * 5,
+      completedFixedTasks,
+      fixedTasks.length,
     );
     const progressPercentage = this.calculateOverallProgress(
       taskProgressPercentage,
@@ -93,24 +93,6 @@ export class UserProgressCalculatorService {
     total: number,
   ): number {
     return total === 0 ? 0 : Math.round((completed / total) * 100);
-  }
-
-  private sumFixedTaskRatingScores(fixedTasks: ProgressFixedTask[]): number {
-    return fixedTasks.reduce((sum, task) => {
-      const score = task.ratingScore ?? 0;
-      if (!Number.isFinite(score)) return sum;
-
-      return sum + Math.min(Math.max(score, 0), 5);
-    }, 0);
-  }
-
-  private sumTaskRatingScores(tasks: ProgressTask[]): number {
-    return tasks.reduce((sum, task) => {
-      const score = task.ratingScore ?? 0;
-      if (!Number.isFinite(score)) return sum;
-
-      return sum + Math.min(Math.max(score, 0), 5);
-    }, 0);
   }
 
   private calculateOverallProgress(

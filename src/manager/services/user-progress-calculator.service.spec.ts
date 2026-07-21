@@ -77,7 +77,7 @@ describe('UserProgressCalculatorService', () => {
     expect(result.progressPercentage).toBe(38);
   });
 
-  it('calculates fixed-task progress from manager rating score divided by max score', () => {
+  it('calculates fixed-task progress from completed fixed tasks', () => {
     const result = calculator.calculate(
       [],
       [
@@ -138,7 +138,7 @@ describe('UserProgressCalculatorService', () => {
     expect(result.performanceStatus).toBe(UserPerformanceStatus.GOOD);
   });
 
-  it('uses manager ratings for done regular tasks', () => {
+  it('gives fully completed regular tasks 100 percent progress regardless of rating', () => {
     const result = calculator.calculate(
       [
         {
@@ -157,8 +157,8 @@ describe('UserProgressCalculatorService', () => {
       [],
     );
 
-    expect(result.taskProgressPercentage).toBe(40);
-    expect(result.progressPercentage).toBe(40);
+    expect(result.taskProgressPercentage).toBe(100);
+    expect(result.progressPercentage).toBe(100);
   });
 
   it('uses fixed-task progress as overall when the user has no tasks', () => {
@@ -230,7 +230,7 @@ describe('UserProgressCalculatorService', () => {
     expect(result.progressPercentage).toBe(100);
   });
 
-  it('averages fixed-task and task progress', () => {
+  it('averages fixed-task and task completion progress', () => {
     const result = calculator.calculate(
       [{ status: TaskStatus.TODO }, { status: TaskStatus.TODO }],
       [
@@ -255,9 +255,9 @@ describe('UserProgressCalculatorService', () => {
 
     expect(result.totalTasks).toBe(2);
     expect(result.totalFixedTasks).toBe(10);
-    expect(result.fixedTaskProgressPercentage).toBe(62);
+    expect(result.fixedTaskProgressPercentage).toBe(70);
     expect(result.taskProgressPercentage).toBe(0);
-    expect(result.progressPercentage).toBe(31);
+    expect(result.progressPercentage).toBe(35);
   });
 
   it('gives equal weight to fixed-task and task progress', () => {
@@ -300,8 +300,8 @@ describe('UserProgressCalculatorService', () => {
       ],
     );
 
-    expect(result.fixedTaskProgressPercentage).toBe(80);
-    expect(result.progressPercentage).toBe(80);
+    expect(result.fixedTaskProgressPercentage).toBe(100);
+    expect(result.progressPercentage).toBe(100);
   });
 
   it('treats unrated fixed tasks as zero score', () => {

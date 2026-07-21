@@ -138,12 +138,39 @@ describe('UserService user progress', () => {
       completedTasks: 1,
       totalFixedTasks: 2,
       completedFixedTasks: 2,
-      taskProgressPercentage: 40,
-      fixedTaskProgressPercentage: 90,
+      taskProgressPercentage: 50,
+      fixedTaskProgressPercentage: 100,
       doneFixedTaskProgressPercentage: 90,
-      progressPercentage: 65,
-      averageProgressPercentage: 65,
-      performanceStatus: 'normal',
+      progressPercentage: 75,
+      averageProgressPercentage: 75,
+      performanceStatus: 'good',
+    });
+  });
+
+  it('calculates range progress from the range task and fixed-task averages', async () => {
+    const userId = new Types.ObjectId().toString();
+    const firstDay = new Date('2026-07-17T20:30:00.000Z');
+    const secondDay = new Date('2026-07-18T20:30:00.000Z');
+    repository.findSpecialistProgressById.mockResolvedValue({ userId });
+    repository.findWorkForDailyProgressRange.mockResolvedValue({
+      tasks: [{ startDate: firstDay, status: 'done', ratingScore: 5 }],
+      fixedTasks: [
+        { startDate: firstDay, status: 'done', ratingScore: 5 },
+        { startDate: secondDay, status: 'done', ratingScore: 5 },
+      ],
+    });
+
+    const result = await service.getMyDailyProgress(
+      userId,
+      '2026-07-18',
+      '2026-07-19',
+    );
+
+    expect(result).toMatchObject({
+      taskProgressPercentage: 50,
+      fixedTaskProgressPercentage: 100,
+      progressPercentage: 75,
+      averageProgressPercentage: 75,
     });
   });
 });

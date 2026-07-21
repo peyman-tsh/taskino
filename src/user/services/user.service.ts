@@ -294,9 +294,20 @@ export class UserService {
           data.length
         ).toFixed(2),
       );
-    const progressPercentage = average(
-      (record) => record.progressPercentage ?? 0,
+    const taskProgressPercentage = average(
+      (record) => record.taskProgressPercentage ?? 0,
     );
+    const fixedTaskProgressPercentage = average(
+      (record) => record.fixedTaskProgressPercentage ?? 0,
+    );
+    const progressPercentage =
+      work.tasks.length > 0 && work.fixedTasks.length > 0
+        ? Math.round(
+            (taskProgressPercentage + fixedTaskProgressPercentage) / 2,
+          )
+        : work.tasks.length > 0
+          ? taskProgressPercentage
+          : fixedTaskProgressPercentage;
     const doneTaskPercentage = this.calculateRatingPercentage(
       work.tasks.filter((task) => task.status === TaskStatus.DONE),
     );
@@ -314,12 +325,8 @@ export class UserService {
       completedFixedTasks: average(
         (record) => record.completedFixedTasks ?? 0,
       ),
-      taskProgressPercentage: average(
-        (record) => record.taskProgressPercentage ?? 0,
-      ),
-      fixedTaskProgressPercentage: average(
-        (record) => record.fixedTaskProgressPercentage ?? 0,
-      ),
+      taskProgressPercentage,
+      fixedTaskProgressPercentage,
       doneFixedTaskProgressPercentage: average(
         (record) => record.doneFixedTaskProgressPercentage,
       ),
@@ -352,11 +359,13 @@ export class UserService {
       ratingScore?: number | null;
     }>,
   ) {
-    const taskProgressPercentage = Math.round(
-      this.calculateRatingPercentage(tasks),
+    const taskProgressPercentage = this.calculateWorkProgressPercentage(
+      tasks,
+      TaskStatus.DONE,
     );
-    const fixedTaskProgressPercentage = Math.round(
-      this.calculateRatingPercentage(fixedTasks),
+    const fixedTaskProgressPercentage = this.calculateWorkProgressPercentage(
+      fixedTasks,
+      FixedTaskStatus.DONE,
     );
     const hasTasks = tasks.length > 0;
     const hasFixedTasks = fixedTasks.length > 0;
@@ -395,6 +404,16 @@ export class UserService {
     }, 0);
 
     return Number(((totalRating / (items.length * 5)) * 100).toFixed(2));
+  }
+
+  private calculateWorkProgressPercentage(
+    items: Array<{ status: string; ratingScore?: number | null }>,
+    doneStatus: TaskStatus.DONE | FixedTaskStatus.DONE,
+  ): number {
+    if (items.length === 0) return 0;
+
+    const doneCount = items.filter((item) => item.status === doneStatus).length;
+    return Math.round((doneCount / items.length) * 100);
   }
 
   /**
