@@ -282,7 +282,7 @@ export class ManagerController {
   @ApiOperation({
     summary: 'Get done fixed-task documents',
     description:
-      'Returns completed FixedTask documents in the selected date range. When userId is provided, only that user is returned; otherwise all users are included.',
+      'Returns completed FixedTask documents in the selected date range, including occurrences that end at Tehran midnight immediately after the selected end date. When userId is provided, only that user is returned; otherwise all users are included.',
   })
   @ApiOkResponse({
     description: 'Done fixed tasks retrieved successfully',

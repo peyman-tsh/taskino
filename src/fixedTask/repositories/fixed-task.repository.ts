@@ -44,7 +44,7 @@ export class FixedTaskRepository {
       this.populate(
         this.model
           .find(filter)
-          .sort({ createdAt: -1, _id: -1  })
+          .sort({ createdAt: -1, _id: -1 })
           .skip((page - 1) * limit)
           .limit(limit),
       ).exec(),
@@ -113,9 +113,7 @@ export class FixedTaskRepository {
     return this.populate(this.model.find(filter)).exec();
   }
 
-  findActiveRolloverCandidates(
-    recurrence: FixedTaskRecurrence,
-  ) {
+  findActiveRolloverCandidates(recurrence: FixedTaskRecurrence) {
     return this.model
       .find({
         isActive: true,
@@ -137,9 +135,7 @@ export class FixedTaskRepository {
       .exec();
   }
 
-  findConfiguredRolloverCandidates(
-    recurrence: FixedTaskRecurrence,
-  ) {
+  findConfiguredRolloverCandidates(recurrence: FixedTaskRecurrence) {
     return this.model
       .find({
         recurrence,
@@ -182,9 +178,18 @@ export class FixedTaskRepository {
 
   activateOccurrence(id: Types.ObjectId) {
     return this.model
-      .updateOne(
-        { _id: id, isActive: false },
-        { $set: { isActive: true } },
+      .updateOne({ _id: id, isActive: false }, { $set: { isActive: true } })
+      .exec();
+  }
+
+  deactivateActiveOccurrencesOutsideDay(startDate: Date) {
+    return this.model
+      .updateMany(
+        {
+          isActive: true,
+          startDate: { $ne: startDate },
+        },
+        { $set: { isActive: false } },
       )
       .exec();
   }
@@ -199,11 +204,9 @@ export class FixedTaskRepository {
       16,
     );
     const timingApproved =
-      previous.timingApprovalStatus ===
-      FixedTaskTimingApprovalStatus.APPROVED;
+      previous.timingApprovalStatus === FixedTaskTimingApprovalStatus.APPROVED;
     const timingRejected =
-      previous.timingApprovalStatus ===
-      FixedTaskTimingApprovalStatus.REJECTED;
+      previous.timingApprovalStatus === FixedTaskTimingApprovalStatus.REJECTED;
 
     return new this.model({
       _id: occurrenceId,
@@ -258,8 +261,7 @@ export class FixedTaskRepository {
     );
     const timingApproved =
       update.timingApprovalStatus === FixedTaskTimingApprovalStatus.APPROVED ||
-      previous.timingApprovalStatus ===
-        FixedTaskTimingApprovalStatus.APPROVED;
+      previous.timingApprovalStatus === FixedTaskTimingApprovalStatus.APPROVED;
 
     return new this.model({
       _id: occurrenceId,

@@ -21,6 +21,7 @@ describe('FixedTaskRolloverService', () => {
     createNextOccurrence: jest.fn(),
     reactivateOccurrence: jest.fn(),
     activateOccurrence: jest.fn(),
+    deactivateActiveOccurrencesOutsideDay: jest.fn(),
   };
   const scoreService = {
     adjustTaskScore: jest.fn(),
@@ -90,7 +91,9 @@ describe('FixedTaskRolloverService', () => {
     task.scheduleConfig = { weekdays: [5] };
     repository.findDailyRolloverCandidates.mockResolvedValue([task]);
     repository.claimExpiredOccurrence.mockResolvedValue(task);
-    repository.createNextOccurrence.mockResolvedValue({ _id: new Types.ObjectId() });
+    repository.createNextOccurrence.mockResolvedValue({
+      _id: new Types.ObjectId(),
+    });
 
     await expect(
       service.runForRecurrence(FixedTaskRecurrence.DAILY, now),
@@ -109,6 +112,9 @@ describe('FixedTaskRolloverService', () => {
       endDate: new Date('2026-06-19T20:30:00.000Z'),
       endTime: '00:00',
     });
+    expect(
+      repository.deactivateActiveOccurrencesOutsideDay,
+    ).toHaveBeenCalledWith(new Date('2026-06-18T20:30:00.000Z'));
     expect(eventBus.publish).toHaveBeenCalledWith(
       UserProgressEvents.REFRESH_REQUESTED,
       expect.objectContaining({
@@ -532,14 +538,13 @@ describe('FixedTaskRolloverService', () => {
   });
 
   it('reactivates the old occurrence when creating the next one fails', async () => {
-    const task = createTask(
-      FixedTaskRecurrence.MONTHLY,
-      FixedTaskStatus.DONE,
-    );
+    const task = createTask(FixedTaskRecurrence.MONTHLY, FixedTaskStatus.DONE);
     task.scheduleConfig = { monthDays: [29] };
     repository.findConfiguredRolloverCandidates.mockResolvedValue([task]);
     repository.claimExpiredOccurrence.mockResolvedValue(task);
-    repository.createNextOccurrence.mockRejectedValue(new Error('create failed'));
+    repository.createNextOccurrence.mockRejectedValue(
+      new Error('create failed'),
+    );
 
     await expect(
       service.runForRecurrence(FixedTaskRecurrence.MONTHLY, now),

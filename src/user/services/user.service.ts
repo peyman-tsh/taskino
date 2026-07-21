@@ -270,12 +270,23 @@ export class UserService {
       throw new BadRequestException('to must be on or after from');
     }
 
-    const records = await this.userRepository.findDailyProgressByUser(
-      new Types.ObjectId(userId),
-      from,
-      to,
-    );
+    const objectId = new Types.ObjectId(userId);
+    const [records, doneFixedTaskRatingAverages] = await Promise.all([
+      this.userRepository.findDailyProgressByUser(objectId, from, to),
+      this.userRepository.findDoneFixedTaskRatingAverages(objectId, from, to),
+    ]);
     const range = buildDailyProgressRange(from, to, records);
+    const doneFixedTaskProgressByDay = new Map(
+      doneFixedTaskRatingAverages.map((item) => [
+        item.date.toISOString(),
+        item.averageRating,
+      ]),
+    );
+    const data = range.data.map((record) => ({
+      ...record,
+      doneFixedTaskProgressPercentage:
+        doneFixedTaskProgressByDay.get(record.date.toISOString()) ?? 0,
+    }));
 
     return {
       userId,
@@ -283,8 +294,8 @@ export class UserService {
       to,
       dayCount: range.dayCount,
       averageProgressPercentage: range.averageProgressPercentage,
-      total: range.data.length,
-      data: range.data,
+      total: data.length,
+      data,
     };
   }
 

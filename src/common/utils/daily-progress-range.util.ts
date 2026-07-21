@@ -14,6 +14,7 @@ export interface DailyProgressRecord {
   completedFixedTasks?: number;
   taskProgressPercentage?: number;
   fixedTaskProgressPercentage?: number;
+  doneFixedTaskProgressPercentage?: number;
   progressPercentage?: number;
   performanceStatus?: UserPerformanceStatus;
   evaluatedAt?: Date;
@@ -95,6 +96,7 @@ function createEmptyDailyProgress(date: Date): DailyProgressRecord {
     completedFixedTasks: 0,
     taskProgressPercentage: 0,
     fixedTaskProgressPercentage: 0,
+    doneFixedTaskProgressPercentage: 0,
     progressPercentage: 0,
     performanceStatus: UserPerformanceStatus.WEAK,
   };

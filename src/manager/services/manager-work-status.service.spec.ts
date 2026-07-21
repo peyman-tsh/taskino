@@ -9,6 +9,7 @@ describe('ManagerWorkStatusService', () => {
     findByDateRange: jest.fn(),
     findByDateRangeForUsers: jest.fn(),
     findFixedTasksByDateRange: jest.fn(),
+    findDoneFixedTasks: jest.fn(),
   };
   const service = new ManagerWorkStatusService(
     repository as unknown as ManagerWorkStatusRepository,
@@ -133,6 +134,24 @@ describe('ManagerWorkStatusService', () => {
         data,
         evaluatedAt: expect.any(Date),
       }),
+    );
+  });
+
+  it('includes done fixed tasks that end at Tehran midnight after the selected day', async () => {
+    const userId = '6a39043bfc4f15b8c14eb3df';
+    repository.findDoneFixedTasks.mockResolvedValue([]);
+
+    await service.getDoneFixedTasks(
+      '6a39043bfc4f15b8c14eb3de',
+      '2026-07-18',
+      '2026-07-18',
+      userId,
+    );
+
+    expect(repository.findDoneFixedTasks).toHaveBeenCalledWith(
+      new Date('2026-07-17T20:30:00.000Z'),
+      new Date('2026-07-18T20:30:00.000Z'),
+      userId,
     );
   });
 

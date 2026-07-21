@@ -13,6 +13,12 @@ import {
 } from '../schemas/user.schema';
 import { WorkField } from '../../common/enums/work-field.enum';
 import { DailyProgressRecord } from '../../common/utils/daily-progress-range.util';
+import { FixedTaskStatus } from '../../fixedTask/fixed-task.schema';
+
+interface DoneFixedTaskRatingAverage {
+  date: Date;
+  averageRating: number;
+}
 
 @Injectable()
 export class UserRepository {
@@ -353,6 +359,46 @@ export class UserRepository {
       .toArray();
 
     return records as unknown as DailyProgressRecord[];
+  }
+
+  async findDoneFixedTaskRatingAverages(
+    userId: Types.ObjectId,
+    from: Date,
+    to: Date,
+  ): Promise<DoneFixedTaskRatingAverage[]> {
+    const fixedTasks = await this.connection
+      .collection('fixedtasktemplates')
+      .find({
+        assignedTo: userId,
+        status: FixedTaskStatus.DONE,
+        isTemplate: { $ne: true },
+        startDate: { $gte: from, $lte: to },
+      })
+      .project({ startDate: 1, ratingScore: 1 })
+      .toArray();
+
+    const ratingsByDay = new Map<string, { date: Date; total: number; count: number }>();
+
+    for (const fixedTask of fixedTasks) {
+      if (!(fixedTask.startDate instanceof Date)) continue;
+
+      const key = fixedTask.startDate.toISOString();
+      const rating = Number(fixedTask.ratingScore);
+      const item = ratingsByDay.get(key) ?? {
+        date: fixedTask.startDate,
+        total: 0,
+        count: 0,
+      };
+
+      item.total += Number.isFinite(rating) ? Math.min(Math.max(rating, 0), 5) : 0;
+      item.count += 1;
+      ratingsByDay.set(key, item);
+    }
+
+    return [...ratingsByDay.values()].map(({ date, total, count }) => ({
+      date,
+      averageRating: Number((total / count).toFixed(2)),
+    }));
   }
 
   updatePerformanceStatus(

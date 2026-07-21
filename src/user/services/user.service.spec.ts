@@ -10,6 +10,8 @@ describe('UserService user progress', () => {
   const repository = {
     findSpecialistProgressById: jest.fn(),
     findUserWorkSummary: jest.fn(),
+    findDailyProgressByUser: jest.fn(),
+    findDoneFixedTaskRatingAverages: jest.fn(),
     updatePerformanceStatus: jest.fn(),
   };
   const configService = {
@@ -106,5 +108,30 @@ describe('UserService user progress', () => {
       completedFixedTasks: 4,
       score: 20,
     });
+  });
+
+  it('includes the average rating of done fixed tasks for each Tehran day', async () => {
+    const userId = new Types.ObjectId().toString();
+    const date = new Date('2026-07-17T20:30:00.000Z');
+    repository.findSpecialistProgressById.mockResolvedValue({ userId });
+    repository.findDailyProgressByUser.mockResolvedValue([
+      { date, progressPercentage: 60 },
+    ]);
+    repository.findDoneFixedTaskRatingAverages.mockResolvedValue([
+      { date, averageRating: 4.25 },
+    ]);
+
+    const result = await service.getMyDailyProgress(
+      userId,
+      '2026-07-18',
+      '2026-07-18',
+    );
+
+    expect(result.data).toEqual([
+      expect.objectContaining({
+        date,
+        doneFixedTaskProgressPercentage: 4.25,
+      }),
+    ]);
   });
 });

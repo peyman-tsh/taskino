@@ -66,6 +66,25 @@ describe('FixedTaskRepository rollover', () => {
     );
   });
 
+  it('deactivates active occurrences outside the newly generated day', () => {
+    const exec = jest.fn();
+    const updateMany = jest.fn().mockReturnValue({ exec });
+    const repository = new FixedTaskRepository({
+      updateMany,
+    } as unknown as Model<FixedTaskTemplateDocument>);
+    const startDate = new Date('2026-07-18T20:30:00.000Z');
+
+    repository.deactivateActiveOccurrencesOutsideDay(startDate);
+
+    expect(updateMany).toHaveBeenCalledWith(
+      {
+        isActive: true,
+        startDate: { $ne: startDate },
+      },
+      { $set: { isActive: false } },
+    );
+  });
+
   it('creates a unique numeric source row for the next occurrence', async () => {
     const save = jest.fn().mockResolvedValue({});
     const model = jest.fn().mockImplementation((data) => ({ ...data, save }));

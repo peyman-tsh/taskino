@@ -60,7 +60,9 @@ export class FixedTaskRolloverService {
       return;
     }
 
-    const createdCount = await this.runForRecurrence(FixedTaskRecurrence.WEEKLY);
+    const createdCount = await this.runForRecurrence(
+      FixedTaskRecurrence.WEEKLY,
+    );
     this.logger.log(
       `Weekly fixed task rollover finished. Created ${createdCount} new occurrence(s)`,
     );
@@ -70,7 +72,9 @@ export class FixedTaskRolloverService {
   async handleMonthlyRollover(): Promise<void> {
     this.logger.log('Monthly fixed task rollover started');
 
-    const createdCount = await this.runForRecurrence(FixedTaskRecurrence.MONTHLY);
+    const createdCount = await this.runForRecurrence(
+      FixedTaskRecurrence.MONTHLY,
+    );
     this.logger.log(
       `Monthly fixed task rollover finished. Created ${createdCount} new occurrence(s)`,
     );
@@ -91,10 +95,7 @@ export class FixedTaskRolloverService {
         if (!this.hasScheduleConfig(candidate)) continue;
 
         const shouldGenerateToday =
-          await this.scheduleService.shouldGenerateTodayForCron(
-            candidate,
-            now,
-          );
+          await this.scheduleService.shouldGenerateTodayForCron(candidate, now);
 
         if (!shouldGenerateToday) {
           await this.deactivateExpiredUnfinishedMonthlyTask(candidate, now);
@@ -110,6 +111,12 @@ export class FixedTaskRolloverService {
           : await this.createNextOccurrenceFromPrevious(candidate, now);
         if (!created) continue;
         createdCount += 1;
+      }
+
+      if (createdCount > 0) {
+        await this.repository.deactivateActiveOccurrencesOutsideDay(
+          this.getTehranDayStart(now),
+        );
       }
 
       return createdCount;
@@ -207,10 +214,7 @@ export class FixedTaskRolloverService {
     );
   }
 
-  private isExpired(
-    candidate: FixedTaskTemplateDocument,
-    now: Date,
-  ): boolean {
+  private isExpired(candidate: FixedTaskTemplateDocument, now: Date): boolean {
     const deadline = this.getDeadline(candidate);
     return Boolean(deadline && deadline.getTime() < now.getTime());
   }
@@ -291,6 +295,11 @@ export class FixedTaskRolloverService {
     now: Date,
   ) {
     return this.scheduleService.buildRolloverSchedule(candidate, now);
+  }
+
+  private getTehranDayStart(now: Date): Date {
+    const today = getTehranDateParts(now);
+    return tehranDateTimeToUtc(today.year, today.month, today.day);
   }
 
   private publishProgressRefresh(candidate: FixedTaskTemplateDocument): void {

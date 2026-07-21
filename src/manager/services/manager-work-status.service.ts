@@ -2,6 +2,11 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { FixedTaskStatus } from '../../fixedTask/fixed-task.schema';
 import { TaskStatus } from '../../task/task.schema';
 import { ManagerWorkStatusRepository } from '../repositories/manager-work-status.repository';
+import { parseTehranDayBoundary } from '../../common/utils/daily-progress-range.util';
+import {
+  addTehranCalendarPeriod,
+  tehranDateTimeToUtc,
+} from '../../common/utils/tehran-time.util';
 import {
   UserWorkStatusCounts,
   WorkStatusCounts,
@@ -110,7 +115,7 @@ export class ManagerWorkStatusService {
     toValue: string,
     userId?: string,
   ) {
-    const { from, to } = this.parseDateRange(fromValue, toValue);
+    const { from, to } = this.parseDoneFixedTaskDateRange(fromValue, toValue);
     const evaluatedAt = new Date();
     const data = await this.repository.findDoneFixedTasks(from, to, userId);
 
@@ -486,6 +491,22 @@ export class ManagerWorkStatusService {
     if (to.getTime() < from.getTime()) {
       throw new BadRequestException('to must be on or after from');
     }
+
+    return { from, to };
+  }
+
+  private parseDoneFixedTaskDateRange(
+    fromValue: string,
+    toValue: string,
+  ): { from: Date; to: Date } {
+    const from = parseTehranDayBoundary(fromValue);
+    const selectedTo = parseTehranDayBoundary(toValue);
+    if (selectedTo.getTime() < from.getTime()) {
+      throw new BadRequestException('to must be on or after from');
+    }
+
+    const nextDay = addTehranCalendarPeriod(selectedTo, 1, 0);
+    const to = tehranDateTimeToUtc(nextDay.year, nextDay.month, nextDay.day);
 
     return { from, to };
   }
