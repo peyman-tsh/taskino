@@ -383,7 +383,7 @@ export class UserRepository {
         .collection('tasks')
         .find({
           assignedTo: userId,
-          startDate: { $gte: from, $lte: to },
+          startDate: { $gte: from, $lt: to },
         })
         .project({ startDate: 1, status: 1, ratingScore: 1 })
         .toArray(),
@@ -392,7 +392,7 @@ export class UserRepository {
         .find({
           assignedTo: userId,
           isTemplate: { $ne: true },
-          startDate: { $gte: from, $lte: to },
+          startDate: { $gte: from, $lt: to },
         })
         .project({ startDate: 1, status: 1, ratingScore: 1 })
         .toArray(),

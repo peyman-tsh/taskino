@@ -273,10 +273,11 @@ export class UserService {
       throw new BadRequestException('to must be on or after from');
     }
 
+    const rangeEnd = getTehranDayRange(to).periodEnd;
     const work = await this.userRepository.findWorkForDailyProgressRange(
       new Types.ObjectId(userId),
       from,
-      to,
+      rangeEnd,
     );
     const tasksByDay = this.groupWorkByTehranDay(work.tasks);
     const fixedTasksByDay = this.groupWorkByTehranDay(work.fixedTasks);

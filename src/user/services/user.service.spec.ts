@@ -145,6 +145,11 @@ describe('UserService user progress', () => {
       averageProgressPercentage: 75,
       performanceStatus: 'good',
     });
+    expect(repository.findWorkForDailyProgressRange).toHaveBeenCalledWith(
+      expect.any(Types.ObjectId),
+      new Date('2026-07-17T20:30:00.000Z'),
+      new Date('2026-07-18T20:30:00.000Z'),
+    );
   });
 
   it('calculates range progress from the range task and fixed-task averages', async () => {
