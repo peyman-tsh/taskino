@@ -14,10 +14,11 @@ import {
 import { WorkField } from '../../common/enums/work-field.enum';
 import { DailyProgressRecord } from '../../common/utils/daily-progress-range.util';
 import { FixedTaskStatus } from '../../fixedTask/fixed-task.schema';
+import { TaskStatus } from '../../task/task.schema';
 
-interface DoneFixedTaskRatingAverage {
+interface DoneFixedTaskRatingProgress {
   date: Date;
-  averageRating: number;
+  averagePercentage: number;
 }
 
 @Injectable()
@@ -361,11 +362,11 @@ export class UserRepository {
     return records as unknown as DailyProgressRecord[];
   }
 
-  async findDoneFixedTaskRatingAverages(
+  async findDoneFixedTaskRatingProgress(
     userId: Types.ObjectId,
     from: Date,
     to: Date,
-  ): Promise<DoneFixedTaskRatingAverage[]> {
+  ): Promise<DoneFixedTaskRatingProgress[]> {
     const fixedTasks = await this.connection
       .collection('fixedtasktemplates')
       .find({
@@ -390,15 +391,43 @@ export class UserRepository {
         count: 0,
       };
 
-      item.total += Number.isFinite(rating) ? Math.min(Math.max(rating, 0), 5) : 0;
+      item.total += Number.isFinite(rating)
+        ? Math.min(Math.max(rating, 0), 5)
+        : 0;
       item.count += 1;
       ratingsByDay.set(key, item);
     }
 
     return [...ratingsByDay.values()].map(({ date, total, count }) => ({
       date,
-      averageRating: Number((total / count).toFixed(2)),
+      averagePercentage: Number(((total / count / 5) * 100).toFixed(2)),
     }));
+  }
+
+  async calculateDoneTaskPercentage(
+    userId: Types.ObjectId,
+    from: Date,
+    to: Date,
+  ): Promise<number> {
+    const tasks = await this.connection
+      .collection('tasks')
+      .find({
+        assignedTo: userId,
+        status: TaskStatus.DONE,
+        startDate: { $gte: from, $lte: to },
+      })
+      .project({ ratingScore: 1 })
+      .toArray();
+
+    if (tasks.length === 0) return 0;
+
+    const totalRating = tasks.reduce((sum, task) => {
+      const rating = Number(task.ratingScore);
+      return sum +
+        (Number.isFinite(rating) ? Math.min(Math.max(rating, 0), 5) : 0);
+    }, 0);
+
+    return Number(((totalRating / (tasks.length * 5)) * 100).toFixed(2));
   }
 
   updatePerformanceStatus(

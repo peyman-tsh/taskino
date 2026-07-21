@@ -11,7 +11,8 @@ describe('UserService user progress', () => {
     findSpecialistProgressById: jest.fn(),
     findUserWorkSummary: jest.fn(),
     findDailyProgressByUser: jest.fn(),
-    findDoneFixedTaskRatingAverages: jest.fn(),
+    findDoneFixedTaskRatingProgress: jest.fn(),
+    calculateDoneTaskPercentage: jest.fn(),
     updatePerformanceStatus: jest.fn(),
   };
   const configService = {
@@ -117,9 +118,10 @@ describe('UserService user progress', () => {
     repository.findDailyProgressByUser.mockResolvedValue([
       { date, progressPercentage: 60 },
     ]);
-    repository.findDoneFixedTaskRatingAverages.mockResolvedValue([
-      { date, averageRating: 4.25 },
+    repository.findDoneFixedTaskRatingProgress.mockResolvedValue([
+      { date, averagePercentage: 85 },
     ]);
+    repository.calculateDoneTaskPercentage.mockResolvedValue(78);
 
     const result = await service.getMyDailyProgress(
       userId,
@@ -130,8 +132,9 @@ describe('UserService user progress', () => {
     expect(result.data).toEqual([
       expect.objectContaining({
         date,
-        doneFixedTaskProgressPercentage: 4.25,
+        doneFixedTaskProgressPercentage: 85,
       }),
     ]);
+    expect(result.doneTaskPercentage).toBe(78);
   });
 });

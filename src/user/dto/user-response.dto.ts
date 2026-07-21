@@ -130,13 +130,22 @@ export class UserDailyProgressListResponseDto {
   @ApiProperty({ minimum: 0, maximum: 100, example: 67 })
   averageProgressPercentage: number;
 
+  @ApiProperty({
+    minimum: 0,
+    maximum: 100,
+    example: 78,
+    description:
+      'The 0-100 average manager-rating percentage of done regular tasks in the selected date range.',
+  })
+  doneTaskPercentage: number;
+
   @ApiProperty()
   total: number;
 
   @ApiProperty({
     type: [Object],
     description:
-      'Daily progress records. doneFixedTaskProgressPercentage is the 0-5 average manager rating of done fixed-task occurrences for that Tehran day.',
+      'Daily progress records. doneFixedTaskProgressPercentage is the 0-100 average manager-rating percentage of done fixed-task occurrences for that Tehran day.',
   })
   data: object[];
 }

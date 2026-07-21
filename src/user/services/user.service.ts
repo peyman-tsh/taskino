@@ -271,15 +271,17 @@ export class UserService {
     }
 
     const objectId = new Types.ObjectId(userId);
-    const [records, doneFixedTaskRatingAverages] = await Promise.all([
+    const [records, doneFixedTaskRatingProgress, doneTaskPercentage] =
+      await Promise.all([
       this.userRepository.findDailyProgressByUser(objectId, from, to),
-      this.userRepository.findDoneFixedTaskRatingAverages(objectId, from, to),
+      this.userRepository.findDoneFixedTaskRatingProgress(objectId, from, to),
+      this.userRepository.calculateDoneTaskPercentage(objectId, from, to),
     ]);
     const range = buildDailyProgressRange(from, to, records);
     const doneFixedTaskProgressByDay = new Map(
-      doneFixedTaskRatingAverages.map((item) => [
+      doneFixedTaskRatingProgress.map((item) => [
         item.date.toISOString(),
-        item.averageRating,
+        item.averagePercentage,
       ]),
     );
     const data = range.data.map((record) => ({
@@ -294,6 +296,7 @@ export class UserService {
       to,
       dayCount: range.dayCount,
       averageProgressPercentage: range.averageProgressPercentage,
+      doneTaskPercentage,
       total: data.length,
       data,
     };
