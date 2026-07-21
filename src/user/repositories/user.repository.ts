@@ -362,6 +362,56 @@ export class UserRepository {
     return records as unknown as DailyProgressRecord[];
   }
 
+  async findWorkForDailyProgressRange(
+    userId: Types.ObjectId,
+    from: Date,
+    to: Date,
+  ): Promise<{
+    tasks: Array<{
+      startDate?: Date;
+      status: TaskStatus;
+      ratingScore?: number | null;
+    }>;
+    fixedTasks: Array<{
+      startDate?: Date;
+      status: FixedTaskStatus;
+      ratingScore?: number | null;
+    }>;
+  }> {
+    const [tasks, fixedTasks] = await Promise.all([
+      this.connection
+        .collection('tasks')
+        .find({
+          assignedTo: userId,
+          startDate: { $gte: from, $lte: to },
+        })
+        .project({ startDate: 1, status: 1, ratingScore: 1 })
+        .toArray(),
+      this.connection
+        .collection('fixedtasktemplates')
+        .find({
+          assignedTo: userId,
+          isTemplate: { $ne: true },
+          startDate: { $gte: from, $lte: to },
+        })
+        .project({ startDate: 1, status: 1, ratingScore: 1 })
+        .toArray(),
+    ]);
+
+    return {
+      tasks: tasks as Array<{
+        startDate?: Date;
+        status: TaskStatus;
+        ratingScore?: number | null;
+      }>,
+      fixedTasks: fixedTasks as Array<{
+        startDate?: Date;
+        status: FixedTaskStatus;
+        ratingScore?: number | null;
+      }>,
+    };
+  }
+
   async findDoneFixedTaskRatingProgress(
     userId: Types.ObjectId,
     from: Date,

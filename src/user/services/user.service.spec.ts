@@ -10,9 +10,7 @@ describe('UserService user progress', () => {
   const repository = {
     findSpecialistProgressById: jest.fn(),
     findUserWorkSummary: jest.fn(),
-    findDailyProgressByUser: jest.fn(),
-    findDoneFixedTaskRatingProgress: jest.fn(),
-    calculateDoneTaskPercentage: jest.fn(),
+    findWorkForDailyProgressRange: jest.fn(),
     updatePerformanceStatus: jest.fn(),
   };
   const configService = {
@@ -47,6 +45,7 @@ describe('UserService user progress', () => {
       taskProgressPercentage: 60,
       fixedTaskProgressPercentage: 90,
       progressPercentage: 75,
+      progressDate: undefined,
       performanceStatus: 'good',
       score: 30,
     });
@@ -76,6 +75,7 @@ describe('UserService user progress', () => {
       taskProgressPercentage: 60,
       fixedTaskProgressPercentage: 90,
       progressPercentage: 75,
+      progressDate: undefined,
       performanceStatus: 'good',
       score: 20,
     });
@@ -111,17 +111,20 @@ describe('UserService user progress', () => {
     });
   });
 
-  it('includes the average rating of done fixed tasks for each Tehran day', async () => {
+  it('calculates the range summary from task and fixed-task documents', async () => {
     const userId = new Types.ObjectId().toString();
     const date = new Date('2026-07-17T20:30:00.000Z');
     repository.findSpecialistProgressById.mockResolvedValue({ userId });
-    repository.findDailyProgressByUser.mockResolvedValue([
-      { date, progressPercentage: 60 },
-    ]);
-    repository.findDoneFixedTaskRatingProgress.mockResolvedValue([
-      { date, averagePercentage: 85 },
-    ]);
-    repository.calculateDoneTaskPercentage.mockResolvedValue(78);
+    repository.findWorkForDailyProgressRange.mockResolvedValue({
+      tasks: [
+        { startDate: date, status: 'done', ratingScore: 4 },
+        { startDate: date, status: 'todo', ratingScore: null },
+      ],
+      fixedTasks: [
+        { startDate: date, status: 'done', ratingScore: 5 },
+        { startDate: date, status: 'done', ratingScore: 4 },
+      ],
+    });
 
     const result = await service.getMyDailyProgress(
       userId,
@@ -129,12 +132,18 @@ describe('UserService user progress', () => {
       '2026-07-18',
     );
 
-    expect(result.data).toEqual([
-      expect.objectContaining({
-        date,
-        doneFixedTaskProgressPercentage: 85,
-      }),
-    ]);
-    expect(result.doneTaskPercentage).toBe(78);
+    expect(result.doneTaskPercentage).toBe(80);
+    expect(result).toMatchObject({
+      totalTasks: 2,
+      completedTasks: 1,
+      totalFixedTasks: 2,
+      completedFixedTasks: 2,
+      taskProgressPercentage: 40,
+      fixedTaskProgressPercentage: 90,
+      doneFixedTaskProgressPercentage: 90,
+      progressPercentage: 65,
+      averageProgressPercentage: 65,
+      performanceStatus: 'normal',
+    });
   });
 });

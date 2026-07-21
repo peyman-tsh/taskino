@@ -111,7 +111,7 @@ export class UserController {
   @ApiOperation({
     summary: 'Get current user daily progress in a date range',
     description:
-      'Returns one progress item per Tehran calendar day and averages the daily progress percentages across the selected range.',
+      'Returns one range summary whose count and progress fields are averaged across the selected Tehran calendar days.',
   })
   @ApiResponse({
     status: 200,

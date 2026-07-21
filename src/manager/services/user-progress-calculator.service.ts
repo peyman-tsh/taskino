@@ -121,7 +121,7 @@ export class UserProgressCalculatorService {
   ): number {
     if (hasTasks && hasFixedTasks) {
       return Math.round(
-        fixedTaskProgressPercentage * 0.8 + taskProgressPercentage * 0.2,
+        (fixedTaskProgressPercentage + taskProgressPercentage) / 2,
       );
     }
 

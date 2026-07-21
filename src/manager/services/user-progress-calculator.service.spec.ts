@@ -46,7 +46,7 @@ describe('UserProgressCalculatorService', () => {
     expect(result.performanceStatus).toBe(UserPerformanceStatus.NORMAL);
   });
 
-  it('calculates overall progress from all done work divided by all assigned work', () => {
+  it('averages task and fixed-task progress when both exist', () => {
     const result = calculator.calculate(
       [
         {
@@ -74,7 +74,7 @@ describe('UserProgressCalculatorService', () => {
 
     expect(result.taskProgressPercentage).toBe(75);
     expect(result.fixedTaskProgressPercentage).toBe(0);
-    expect(result.progressPercentage).toBe(15);
+    expect(result.progressPercentage).toBe(38);
   });
 
   it('calculates fixed-task progress from manager rating score divided by max score', () => {
@@ -230,7 +230,7 @@ describe('UserProgressCalculatorService', () => {
     expect(result.progressPercentage).toBe(100);
   });
 
-  it('calculates weighted progress from fixed-task ratings and task completion', () => {
+  it('averages fixed-task and task progress', () => {
     const result = calculator.calculate(
       [{ status: TaskStatus.TODO }, { status: TaskStatus.TODO }],
       [
@@ -257,10 +257,10 @@ describe('UserProgressCalculatorService', () => {
     expect(result.totalFixedTasks).toBe(10);
     expect(result.fixedTaskProgressPercentage).toBe(62);
     expect(result.taskProgressPercentage).toBe(0);
-    expect(result.progressPercentage).toBe(50);
+    expect(result.progressPercentage).toBe(31);
   });
 
-  it('caps full fixed-task score at 80 percent when tasks also exist and are not done', () => {
+  it('gives equal weight to fixed-task and task progress', () => {
     const result = calculator.calculate(
       [{ status: TaskStatus.TODO }, { status: TaskStatus.TODO }],
       [
@@ -276,7 +276,7 @@ describe('UserProgressCalculatorService', () => {
 
     expect(result.fixedTaskProgressPercentage).toBe(100);
     expect(result.taskProgressPercentage).toBe(0);
-    expect(result.progressPercentage).toBe(80);
+    expect(result.progressPercentage).toBe(50);
   });
 
   it('uses fixed-task score as overall progress when no tasks exist', () => {

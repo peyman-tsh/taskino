@@ -25,8 +25,11 @@ import {
 import { calculatePerformanceStatus } from '../../common/utils/performance-status.util';
 import {
   buildDailyProgressRange,
+  getTehranDayRange,
   parseTehranDayBoundary,
 } from '../../common/utils/daily-progress-range.util';
+import { TaskStatus } from '../../task/task.schema';
+import { FixedTaskStatus } from '../../fixedTask/fixed-task.schema';
 
 @Injectable()
 export class UserService {
@@ -270,36 +273,128 @@ export class UserService {
       throw new BadRequestException('to must be on or after from');
     }
 
-    const objectId = new Types.ObjectId(userId);
-    const [records, doneFixedTaskRatingProgress, doneTaskPercentage] =
-      await Promise.all([
-      this.userRepository.findDailyProgressByUser(objectId, from, to),
-      this.userRepository.findDoneFixedTaskRatingProgress(objectId, from, to),
-      this.userRepository.calculateDoneTaskPercentage(objectId, from, to),
-    ]);
-    const range = buildDailyProgressRange(from, to, records);
-    const doneFixedTaskProgressByDay = new Map(
-      doneFixedTaskRatingProgress.map((item) => [
-        item.date.toISOString(),
-        item.averagePercentage,
-      ]),
+    const work = await this.userRepository.findWorkForDailyProgressRange(
+      new Types.ObjectId(userId),
+      from,
+      to,
     );
-    const data = range.data.map((record) => ({
-      ...record,
-      doneFixedTaskProgressPercentage:
-        doneFixedTaskProgressByDay.get(record.date.toISOString()) ?? 0,
-    }));
+    const tasksByDay = this.groupWorkByTehranDay(work.tasks);
+    const fixedTasksByDay = this.groupWorkByTehranDay(work.fixedTasks);
+    const dailyDates = buildDailyProgressRange(from, to, []).data;
+    const data = dailyDates.map((day) =>
+      this.calculateDailyProgress(
+        tasksByDay.get(day.date.toISOString()) ?? [],
+        fixedTasksByDay.get(day.date.toISOString()) ?? [],
+      ),
+    );
+    const average = (selector: (record: (typeof data)[number]) => number) =>
+      Number(
+        (
+          data.reduce((sum, record) => sum + selector(record), 0) /
+          data.length
+        ).toFixed(2),
+      );
+    const progressPercentage = average(
+      (record) => record.progressPercentage ?? 0,
+    );
+    const doneTaskPercentage = this.calculateRatingPercentage(
+      work.tasks.filter((task) => task.status === TaskStatus.DONE),
+    );
 
     return {
       userId,
       from,
       to,
-      dayCount: range.dayCount,
-      averageProgressPercentage: range.averageProgressPercentage,
+      dayCount: data.length,
+      averageProgressPercentage: progressPercentage,
       doneTaskPercentage,
-      total: data.length,
-      data,
+      totalTasks: average((record) => record.totalTasks ?? 0),
+      completedTasks: average((record) => record.completedTasks ?? 0),
+      totalFixedTasks: average((record) => record.totalFixedTasks ?? 0),
+      completedFixedTasks: average(
+        (record) => record.completedFixedTasks ?? 0,
+      ),
+      taskProgressPercentage: average(
+        (record) => record.taskProgressPercentage ?? 0,
+      ),
+      fixedTaskProgressPercentage: average(
+        (record) => record.fixedTaskProgressPercentage ?? 0,
+      ),
+      doneFixedTaskProgressPercentage: average(
+        (record) => record.doneFixedTaskProgressPercentage,
+      ),
+      progressPercentage,
+      performanceStatus: calculatePerformanceStatus(progressPercentage),
     };
+  }
+
+  private groupWorkByTehranDay<
+    T extends { startDate?: Date; status: string; ratingScore?: number | null },
+  >(items: T[]): Map<string, T[]> {
+    const workByDay = new Map<string, T[]>();
+
+    for (const item of items) {
+      if (!(item.startDate instanceof Date)) continue;
+
+      const key = getTehranDayRange(item.startDate).periodStart.toISOString();
+      const dayItems = workByDay.get(key) ?? [];
+      dayItems.push(item);
+      workByDay.set(key, dayItems);
+    }
+
+    return workByDay;
+  }
+
+  private calculateDailyProgress(
+    tasks: Array<{ status: TaskStatus; ratingScore?: number | null }>,
+    fixedTasks: Array<{
+      status: FixedTaskStatus;
+      ratingScore?: number | null;
+    }>,
+  ) {
+    const taskProgressPercentage = Math.round(
+      this.calculateRatingPercentage(tasks),
+    );
+    const fixedTaskProgressPercentage = Math.round(
+      this.calculateRatingPercentage(fixedTasks),
+    );
+    const hasTasks = tasks.length > 0;
+    const hasFixedTasks = fixedTasks.length > 0;
+    const progressPercentage = hasTasks && hasFixedTasks
+      ? Math.round((taskProgressPercentage + fixedTaskProgressPercentage) / 2)
+      : hasTasks
+        ? taskProgressPercentage
+        : fixedTaskProgressPercentage;
+
+    return {
+      totalTasks: tasks.length,
+      completedTasks: tasks.filter((task) => task.status === TaskStatus.DONE)
+        .length,
+      totalFixedTasks: fixedTasks.length,
+      completedFixedTasks: fixedTasks.filter(
+        (task) => task.status === FixedTaskStatus.DONE,
+      ).length,
+      taskProgressPercentage,
+      fixedTaskProgressPercentage,
+      doneFixedTaskProgressPercentage: this.calculateRatingPercentage(
+        fixedTasks.filter((task) => task.status === FixedTaskStatus.DONE),
+      ),
+      progressPercentage,
+    };
+  }
+
+  private calculateRatingPercentage(
+    items: Array<{ ratingScore?: number | null }>,
+  ): number {
+    if (items.length === 0) return 0;
+
+    const totalRating = items.reduce((sum, item) => {
+      const rating = Number(item.ratingScore);
+      return sum +
+        (Number.isFinite(rating) ? Math.min(Math.max(rating, 0), 5) : 0);
+    }, 0);
+
+    return Number(((totalRating / (items.length * 5)) * 100).toFixed(2));
   }
 
   /**
