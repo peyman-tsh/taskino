@@ -76,11 +76,34 @@ export class ManagerController {
   }
 
   @Get('users')
-  @ApiOperation({ summary: 'Get users list' })
+  @ApiOperation({
+    summary: 'Get active users in the current manager work field',
+  })
   @ApiOkResponse({ type: PaginatedUsersResponseDto })
   @ApiBadRequestResponse({ description: 'Invalid query parameters' })
-  findUsers(@Query() query: ManagerUsersQueryDto) {
-    return this.managerService.findUsers(query);
+  findUsers(
+    @CurrentUserId() managerId: string,
+    @Query() query: ManagerUsersQueryDto,
+  ) {
+    return this.managerService.findUsers(managerId, query);
+  }
+
+  @Get('users/all')
+  @ApiOperation({
+    summary: 'Get all users in the current manager work field',
+    description:
+      'Returns users in the authenticated manager work field regardless of active status.',
+  })
+  @ApiOkResponse({ type: PaginatedUsersResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid query parameters' })
+  findAllUsersInManagerWorkField(
+    @CurrentUserId() managerId: string,
+    @Query() query: ManagerUsersQueryDto,
+  ) {
+    return this.managerService.findAllUsersInManagerWorkField(
+      managerId,
+      query,
+    );
   }
 
   @Get('users/by-name')

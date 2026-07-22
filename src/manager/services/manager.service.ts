@@ -41,11 +41,24 @@ export class ManagerService extends BaseManagerService {
     return { openTasks, activeUsers };
   }
 
-  findUsers(query: ManagerUsersQueryDto) {
+  findUsers(managerId: string, query: ManagerUsersQueryDto) {
+    this.toObjectId(managerId, 'manager ID');
     const { page, limit } = this.getPagination(query);
 
-    return this.userService.findForManager(page, limit, {
-      isActive: query.isActive,
+    return this.userService.findForManagerWorkField(managerId, page, limit, {
+      role: query.role,
+      name: query.name,
+    });
+  }
+
+  findAllUsersInManagerWorkField(
+    managerId: string,
+    query: ManagerUsersQueryDto,
+  ) {
+    this.toObjectId(managerId, 'manager ID');
+    const { page, limit } = this.getPagination(query);
+
+    return this.userService.findAllForManagerWorkField(managerId, page, limit, {
       role: query.role,
       name: query.name,
     });

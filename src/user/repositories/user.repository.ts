@@ -319,11 +319,17 @@ export class UserRepository {
   async findForManager(
     page = 1,
     limit = 10,
-    filters?: { isActive?: boolean; role?: UserRole; name?: string },
+    filters?: {
+      isActive?: boolean;
+      role?: UserRole;
+      name?: string;
+      workField?: WorkField;
+    },
   ) {
     const query: Record<string, unknown> = {};
     if (filters?.isActive !== undefined) query.isActive = filters.isActive;
     if (filters?.role) query.roles = filters.role;
+    if (filters?.workField) query.workField = filters.workField;
 
     const terms = filters?.name?.trim().split(/\s+/).filter(Boolean) ?? [];
     if (terms.length > 0) {

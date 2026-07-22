@@ -6,10 +6,13 @@ import { UserProgressService } from './user-progress.service';
 import { ManagerLeaveRequestService } from './manager-leave-request.service';
 import { ManagerWorkStatusService } from './manager-work-status.service';
 import { FixedTaskService } from '../../fixedTask/services/fixed-task.service';
+import { Types } from 'mongoose';
 
 describe('ManagerService', () => {
   const userService = {
     findByName: jest.fn(),
+    findForManagerWorkField: jest.fn(),
+    findAllForManagerWorkField: jest.fn(),
   };
   const service = new ManagerService(
     userService as unknown as UserService,
@@ -33,5 +36,47 @@ describe('ManagerService', () => {
 
     expect(userService.findByName).toHaveBeenCalledWith('سینا', 'اعلایی');
     expect(result).toBe(user);
+  });
+
+  it('returns only active users in the manager work field', async () => {
+    const managerId = new Types.ObjectId().toString();
+    userService.findForManagerWorkField.mockResolvedValue({
+      data: [],
+      total: 0,
+      page: 1,
+      limit: 10,
+    });
+
+    await service.findUsers(managerId, { page: 1, limit: 10 });
+
+    expect(userService.findForManagerWorkField).toHaveBeenCalledWith(
+      managerId,
+      1,
+      10,
+      { role: undefined, name: undefined },
+    );
+  });
+
+  it('returns active and inactive users in the manager work field', async () => {
+    const managerId = new Types.ObjectId().toString();
+    userService.findAllForManagerWorkField.mockResolvedValue({
+      data: [],
+      total: 0,
+      page: 1,
+      limit: 10,
+    });
+
+    await service.findAllUsersInManagerWorkField(managerId, {
+      page: 1,
+      limit: 10,
+      isActive: false,
+    });
+
+    expect(userService.findAllForManagerWorkField).toHaveBeenCalledWith(
+      managerId,
+      1,
+      10,
+      { role: undefined, name: undefined },
+    );
   });
 });

@@ -160,6 +160,59 @@ export class UserService {
     return this.userRepository.findForManager(page, limit, filters);
   }
 
+  async findForManagerWorkField(
+    managerId: string,
+    page: number = 1,
+    limit: number = 10,
+    filters?: { role?: UserRole; name?: string },
+  ): Promise<{
+    data: Omit<UserDocument, 'password'>[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    if (!Types.ObjectId.isValid(managerId)) {
+      throw new NotFoundException('Invalid manager ID');
+    }
+
+    const manager = await this.userRepository.findRawById(managerId);
+    if (!manager) {
+      throw new NotFoundException('Manager not found');
+    }
+
+    return this.userRepository.findForManager(page, limit, {
+      ...filters,
+      isActive: true,
+      workField: manager.workField,
+    });
+  }
+
+  async findAllForManagerWorkField(
+    managerId: string,
+    page: number = 1,
+    limit: number = 10,
+    filters?: { role?: UserRole; name?: string },
+  ): Promise<{
+    data: Omit<UserDocument, 'password'>[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    if (!Types.ObjectId.isValid(managerId)) {
+      throw new NotFoundException('Invalid manager ID');
+    }
+
+    const manager = await this.userRepository.findRawById(managerId);
+    if (!manager) {
+      throw new NotFoundException('Manager not found');
+    }
+
+    return this.userRepository.findForManager(page, limit, {
+      ...filters,
+      workField: manager.workField,
+    });
+  }
+
   async findUsersByManagerWorkField(
     managerId: string,
     page: number = 1,
