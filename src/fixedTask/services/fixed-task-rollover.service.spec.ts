@@ -47,37 +47,31 @@ describe('FixedTaskRolloverService', () => {
     holidayService.isNonWorkingDay.mockResolvedValue(false);
   });
 
-  it('runs daily rollover through the daily scheduled handler', async () => {
+  it('runs every recurrence through the scheduled handler', async () => {
     repository.findDailyRolloverCandidates.mockResolvedValue([]);
+    repository.findConfiguredRolloverCandidates.mockResolvedValue([]);
 
     await service.handleDailyRollover();
 
     expect(repository.findDailyRolloverCandidates).toHaveBeenCalled();
-  });
-
-  it('skips daily rollover on non-working days', async () => {
-    holidayService.isNonWorkingDay.mockResolvedValue(true);
-
-    await service.handleDailyRollover();
-
-    expect(repository.findActiveRolloverCandidates).not.toHaveBeenCalled();
-  });
-
-  it('runs weekly rollover through the weekly scheduled handler', async () => {
-    repository.findConfiguredRolloverCandidates.mockResolvedValue([]);
-
-    await service.handleWeeklyRollover();
-
     expect(repository.findConfiguredRolloverCandidates).toHaveBeenCalledWith(
       FixedTaskRecurrence.WEEKLY,
     );
+    expect(repository.findConfiguredRolloverCandidates).toHaveBeenCalledWith(
+      FixedTaskRecurrence.MONTHLY,
+    );
   });
 
-  it('runs monthly rollover through the monthly scheduled handler', async () => {
+  it('skips daily and weekly rollover, but runs monthly rollover, on non-working days', async () => {
+    holidayService.isNonWorkingDay.mockResolvedValue(true);
     repository.findConfiguredRolloverCandidates.mockResolvedValue([]);
 
-    await service.handleMonthlyRollover();
+    await service.handleDailyRollover();
 
+    expect(repository.findDailyRolloverCandidates).not.toHaveBeenCalled();
+    expect(repository.findConfiguredRolloverCandidates).not.toHaveBeenCalledWith(
+      FixedTaskRecurrence.WEEKLY,
+    );
     expect(repository.findConfiguredRolloverCandidates).toHaveBeenCalledWith(
       FixedTaskRecurrence.MONTHLY,
     );
@@ -114,13 +108,45 @@ describe('FixedTaskRolloverService', () => {
     });
     expect(
       repository.deactivateActiveOccurrencesOutsideDay,
-    ).toHaveBeenCalledWith(new Date('2026-06-18T20:30:00.000Z'));
+    ).not.toHaveBeenCalled();
     expect(eventBus.publish).toHaveBeenCalledWith(
       UserProgressEvents.REFRESH_REQUESTED,
       expect.objectContaining({
         userIds: [task.assignedTo.toString()],
       }),
     );
+  });
+
+  it('creates all recurrence types before deactivating old active occurrences', async () => {
+    const runForRecurrence = jest
+      .spyOn(service, 'runForRecurrence')
+      .mockResolvedValueOnce(2)
+      .mockResolvedValueOnce(3)
+      .mockResolvedValueOnce(4);
+
+    await expect(service.runOnce(now)).resolves.toBe(9);
+
+    expect(runForRecurrence).toHaveBeenNthCalledWith(
+      1,
+      FixedTaskRecurrence.DAILY,
+      now,
+    );
+    expect(runForRecurrence).toHaveBeenNthCalledWith(
+      2,
+      FixedTaskRecurrence.WEEKLY,
+      now,
+    );
+    expect(runForRecurrence).toHaveBeenNthCalledWith(
+      3,
+      FixedTaskRecurrence.MONTHLY,
+      now,
+    );
+    expect(
+      repository.deactivateActiveOccurrencesOutsideDay,
+    ).toHaveBeenCalledTimes(1);
+    expect(
+      repository.deactivateActiveOccurrencesOutsideDay,
+    ).toHaveBeenCalledWith(new Date('2026-06-18T20:30:00.000Z'));
   });
 
   it('rolls over a completed occurrence regardless of its deadline', async () => {

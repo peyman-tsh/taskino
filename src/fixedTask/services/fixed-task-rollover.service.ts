@@ -34,49 +34,30 @@ export class FixedTaskRolloverService {
 
   @Cron('08 0 * * *', { timeZone: 'Asia/Tehran' })
   async handleDailyRollover(): Promise<void> {
-    this.logger.log('Daily fixed task rollover started');
+    const now = new Date();
+    this.logger.log('Fixed task rollover started');
 
-    if (await this.holidayService.isNonWorkingDay(new Date())) {
+    const isNonWorkingDay = await this.holidayService.isNonWorkingDay(now);
+    const recurrences = isNonWorkingDay
+      ? [FixedTaskRecurrence.MONTHLY]
+      : [
+          FixedTaskRecurrence.DAILY,
+          FixedTaskRecurrence.WEEKLY,
+          FixedTaskRecurrence.MONTHLY,
+        ];
+
+    if (isNonWorkingDay) {
       this.logger.log(
-        'Daily fixed task rollover skipped on official holiday or Friday',
+        'Daily and weekly fixed task rollover skipped on official holiday or Friday',
       );
-      return;
     }
 
-    const createdCount = await this.runForRecurrence(FixedTaskRecurrence.DAILY);
-    this.logger.log(
-      `Daily fixed task rollover finished. Created ${createdCount} new occurrence(s)`,
-    );
-  }
-
-  @Cron('08 0 * * *', { timeZone: 'Asia/Tehran' })
-  async handleWeeklyRollover(): Promise<void> {
-    this.logger.log('Weekly fixed task rollover started');
-
-    if (await this.holidayService.isNonWorkingDay(new Date())) {
-      this.logger.log(
-        'Weekly fixed task rollover skipped on official holiday or Friday',
-      );
-      return;
-    }
-
-    const createdCount = await this.runForRecurrence(
-      FixedTaskRecurrence.WEEKLY,
+    const createdCount = await this.runRecurrencesSequentially(
+      recurrences,
+      now,
     );
     this.logger.log(
-      `Weekly fixed task rollover finished. Created ${createdCount} new occurrence(s)`,
-    );
-  }
-
-  @Cron('08 0 * * *', { timeZone: 'Asia/Tehran' })
-  async handleMonthlyRollover(): Promise<void> {
-    this.logger.log('Monthly fixed task rollover started');
-
-    const createdCount = await this.runForRecurrence(
-      FixedTaskRecurrence.MONTHLY,
-    );
-    this.logger.log(
-      `Monthly fixed task rollover finished. Created ${createdCount} new occurrence(s)`,
+      `Fixed task rollover finished. Created ${createdCount} new occurrence(s)`,
     );
   }
 
@@ -113,12 +94,6 @@ export class FixedTaskRolloverService {
         createdCount += 1;
       }
 
-      if (createdCount > 0) {
-        await this.repository.deactivateActiveOccurrencesOutsideDay(
-          this.getTehranDayStart(now),
-        );
-      }
-
       return createdCount;
     } finally {
       this.runningRecurrences.delete(recurrence);
@@ -126,12 +101,29 @@ export class FixedTaskRolloverService {
   }
 
   async runOnce(now = new Date()): Promise<number> {
-    const counts = await Promise.all(
-      Object.values(FixedTaskRecurrence).map((recurrence) =>
-        this.runForRecurrence(recurrence, now),
-      ),
+    return this.runRecurrencesSequentially(
+      Object.values(FixedTaskRecurrence),
+      now,
     );
-    return counts.reduce((total, count) => total + count, 0);
+  }
+
+  private async runRecurrencesSequentially(
+    recurrences: FixedTaskRecurrence[],
+    now: Date,
+  ): Promise<number> {
+    let createdCount = 0;
+
+    for (const recurrence of recurrences) {
+      createdCount += await this.runForRecurrence(recurrence, now);
+    }
+
+    if (createdCount > 0) {
+      await this.repository.deactivateActiveOccurrencesOutsideDay(
+        this.getTehranDayStart(now),
+      );
+    }
+
+    return createdCount;
   }
 
   private async findRolloverCandidates(
