@@ -521,12 +521,7 @@ export class UserService {
   }
 
   private calculateStartScore(progressPercentage: number): number {
-    if (progressPercentage <= 0) return 0;
-    if (progressPercentage <= 20) return 1;
-    if (progressPercentage <= 40) return 2;
-    if (progressPercentage <= 60) return 3;
-    if (progressPercentage <= 80) return 4;
-    return 5;
+    return progressPercentage / 20;
   }
 
   /**

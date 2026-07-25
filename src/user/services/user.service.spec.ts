@@ -145,7 +145,7 @@ describe('UserService user progress', () => {
       doneFixedTaskProgressPercentage: 90,
       progressPercentage: 75,
       averageProgressPercentage: 75,
-      startScore: 4,
+      startScore: 3.75,
       performanceStatus: 'good',
     });
     expect(repository.findWorkForDailyProgressRange).toHaveBeenCalledWith(
@@ -179,7 +179,7 @@ describe('UserService user progress', () => {
       fixedTaskProgressPercentage: 100,
       progressPercentage: 75,
       averageProgressPercentage: 75,
-      startScore: 4,
+      startScore: 3.75,
     });
   });
 

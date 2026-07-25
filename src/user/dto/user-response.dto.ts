@@ -200,9 +200,9 @@ export class UserDailyProgressListResponseDto {
   @ApiProperty({
     minimum: 0,
     maximum: 5,
-    example: 4,
+    example: 3.75,
     description:
-      'Progress score band: 0 for zero progress, then 1-5 for each 20-point progress range.',
+      'Decimal score out of 5, calculated as progressPercentage divided by 20.',
   })
   startScore: number;
 
