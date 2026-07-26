@@ -1,4 +1,4 @@
-name: Test NestJS
+name: Deploy
 
 on:
   push:
@@ -6,7 +6,9 @@ on:
       - master
 
 jobs:
+
   test:
+
     runs-on: ubuntu-latest
 
     steps:
@@ -22,6 +24,7 @@ jobs:
       - run: npm run build
 
   deploy:
+
     needs: test
 
     runs-on:
@@ -30,7 +33,13 @@ jobs:
       - X64
 
     steps:
-      - name: Deploy Taskino
+
+      - name: Update repository
+        shell: powershell
+        run: |
+          git -C "C:\Users\Administrator\Desktop\backend2\taskino" pull --ff-only origin master
+
+      - name: Deploy
         shell: powershell
         run: |
           & "C:\Users\Administrator\Desktop\backend2\taskino\deploy.ps1"
