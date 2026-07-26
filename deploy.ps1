@@ -1,4 +1,6 @@
-
+Write-Host "PSScriptRoot = $PSScriptRoot"
+Write-Host "Env file exists = $(Test-Path (Join-Path $PSScriptRoot '.env'))"
+exit 1
 # Load .env
 $envFile = Join-Path $PSScriptRoot ".env"
 
