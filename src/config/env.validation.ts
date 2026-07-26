@@ -58,6 +58,10 @@ export class EnvironmentVariables {
 
   @IsString()
   @IsOptional()
+  MAINTENANCE_DEPLOY_TOKEN?: string;
+
+  @IsString()
+  @IsOptional()
   SMTP_HOST?: string;
 
   @IsInt()
