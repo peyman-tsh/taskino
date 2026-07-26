@@ -59,7 +59,7 @@ Start-Sleep 60
 
 try {
 
-    Invoke-CheckedCommand "npm.cmd" @("ci")
+   Invoke-CheckedCommand "npm.cmd" @("install")
 
     Invoke-CheckedCommand "npm.cmd" @("run","build")
 
