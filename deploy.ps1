@@ -1,3 +1,20 @@
+
+# Load .env
+$envFile = Join-Path $PSScriptRoot ".env"
+
+Get-Content $envFile | ForEach-Object {
+    if ($_ -match '^\s*([^#=]+)=(.*)$') {
+        $name = $matches[1].Trim()
+        $value = $matches[2].Trim()
+
+        [Environment]::SetEnvironmentVariable($name, $value)
+    }
+}
+
+$maintenanceApiUrl = $env:MAINTENANCE_API_URL
+$maintenanceFinishApiUrl = $env:MAINTENANCE_FINISH_API_URL
+$pm2AppName = $env:PM2_APP_NAME
+
 Write-Host 'Broadcasting the 60-second maintenance warning...'
 
 Invoke-RestMethod `
