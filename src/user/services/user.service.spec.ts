@@ -117,16 +117,24 @@ describe('UserService user progress', () => {
     const userId = new Types.ObjectId().toString();
     const date = new Date('2026-07-17T20:30:00.000Z');
     repository.findSpecialistProgressById.mockResolvedValue({ userId });
-    repository.findWorkForDailyProgressRange.mockResolvedValue({
-      tasks: [
-        { startDate: date, status: 'done', ratingScore: 4 },
-        { startDate: date, status: 'todo', ratingScore: null },
-      ],
-      fixedTasks: [
-        { startDate: date, status: 'done', ratingScore: 5 },
-        { startDate: date, status: 'done', ratingScore: 4 },
-      ],
-    });
+    repository.findWorkForDailyProgressRange
+      .mockResolvedValueOnce({
+        tasks: [
+          { startDate: date, status: 'done', ratingScore: 4 },
+          { startDate: date, status: 'todo', ratingScore: null },
+        ],
+        fixedTasks: [
+          { startDate: date, status: 'done', ratingScore: 5 },
+          { startDate: date, status: 'done', ratingScore: 4 },
+        ],
+      })
+      .mockResolvedValueOnce({
+        tasks: [
+          { startDate: date, status: 'done', ratingScore: 4 },
+          { startDate: date, status: 'todo', ratingScore: null },
+        ],
+        fixedTasks: [],
+      });
 
     const result = await service.getMyDailyProgress(
       userId,
@@ -145,13 +153,18 @@ describe('UserService user progress', () => {
       doneFixedTaskProgressPercentage: 90,
       progressPercentage: 75,
       averageProgressPercentage: 75,
-      startScore: 3.75,
+      startScore: 2.5,
       performanceStatus: 'good',
     });
     expect(repository.findWorkForDailyProgressRange).toHaveBeenCalledWith(
       expect.any(Types.ObjectId),
       new Date('2026-07-17T20:30:00.000Z'),
       new Date('2026-07-18T20:30:00.000Z'),
+    );
+    expect(repository.findWorkForDailyProgressRange).toHaveBeenCalledWith(
+      expect.any(Types.ObjectId),
+      new Date(0),
+      expect.any(Date),
     );
   });
 
@@ -160,13 +173,21 @@ describe('UserService user progress', () => {
     const firstDay = new Date('2026-07-17T20:30:00.000Z');
     const secondDay = new Date('2026-07-18T20:30:00.000Z');
     repository.findSpecialistProgressById.mockResolvedValue({ userId });
-    repository.findWorkForDailyProgressRange.mockResolvedValue({
-      tasks: [{ startDate: firstDay, status: 'done', ratingScore: 5 }],
-      fixedTasks: [
-        { startDate: firstDay, status: 'done', ratingScore: 5 },
-        { startDate: secondDay, status: 'done', ratingScore: 5 },
-      ],
-    });
+    repository.findWorkForDailyProgressRange
+      .mockResolvedValueOnce({
+        tasks: [{ startDate: firstDay, status: 'done', ratingScore: 5 }],
+        fixedTasks: [
+          { startDate: firstDay, status: 'done', ratingScore: 5 },
+          { startDate: secondDay, status: 'done', ratingScore: 5 },
+        ],
+      })
+      .mockResolvedValueOnce({
+        tasks: [
+          { startDate: firstDay, status: 'done', ratingScore: 5 },
+          { startDate: secondDay, status: 'todo', ratingScore: null },
+        ],
+        fixedTasks: [],
+      });
 
     const result = await service.getMyDailyProgress(
       userId,
@@ -179,7 +200,7 @@ describe('UserService user progress', () => {
       fixedTaskProgressPercentage: 100,
       progressPercentage: 75,
       averageProgressPercentage: 75,
-      startScore: 3.75,
+      startScore: 2.5,
     });
   });
 

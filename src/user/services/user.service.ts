@@ -381,6 +381,11 @@ export class UserService {
       from,
       rangeEnd,
     );
+    const allTimeWork = await this.userRepository.findWorkForDailyProgressRange(
+      new Types.ObjectId(userId),
+      new Date(0),
+      new Date(),
+    );
     const tasksByDay = this.groupWorkByTehranDay(work.tasks);
     const fixedTasksByDay = this.groupWorkByTehranDay(work.fixedTasks);
     const dailyDates = buildDailyProgressRange(from, to, []).data;
@@ -414,6 +419,25 @@ export class UserService {
     const doneTaskPercentage = this.calculateRatingPercentage(
       work.tasks.filter((task) => task.status === TaskStatus.DONE),
     );
+    const allTimeTaskProgressPercentage = this.calculateWorkProgressPercentage(
+      allTimeWork.tasks,
+      TaskStatus.DONE,
+    );
+    const allTimeFixedTaskProgressPercentage =
+      this.calculateWorkProgressPercentage(
+        allTimeWork.fixedTasks,
+        FixedTaskStatus.DONE,
+      );
+    const allTimeProgressPercentage =
+      allTimeWork.tasks.length > 0 && allTimeWork.fixedTasks.length > 0
+        ? Math.round(
+            (allTimeTaskProgressPercentage +
+              allTimeFixedTaskProgressPercentage) /
+              2,
+          )
+        : allTimeWork.tasks.length > 0
+          ? allTimeTaskProgressPercentage
+          : allTimeFixedTaskProgressPercentage;
 
     return {
       userId,
@@ -434,7 +458,7 @@ export class UserService {
         (record) => record.doneFixedTaskProgressPercentage,
       ),
       progressPercentage,
-      startScore: this.calculateStartScore(progressPercentage),
+      startScore: this.calculateStartScore(allTimeProgressPercentage),
       performanceStatus: calculatePerformanceStatus(progressPercentage),
     };
   }
