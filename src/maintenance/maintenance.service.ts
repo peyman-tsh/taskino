@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import {
   MaintenanceGateway,
+  MaintenanceFinishedNotification,
   MaintenanceRestartWarning,
 } from './maintenance.gateway';
 
@@ -14,5 +15,9 @@ export class MaintenanceService {
     return this.gateway.broadcastRestartWarning(
       MaintenanceService.RESTART_WARNING_SECONDS,
     );
+  }
+
+  notifyMaintenanceFinished(): MaintenanceFinishedNotification {
+    return this.gateway.broadcastMaintenanceFinished();
   }
 }

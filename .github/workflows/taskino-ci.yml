@@ -52,4 +52,4 @@ jobs:
           VPS_APP_PATH: ${{ secrets.VPS_APP_PATH }}
         run: |
           ssh -p "${VPS_PORT:-22}" "$VPS_USER@$VPS_HOST" \
-            "cd '$VPS_APP_PATH' && if [ -f deploy.sh ]; then bash deploy.sh; else git pull --ff-only origin master && npm ci && npm run build && pm2 reload taskino --update-env; fi"
+            "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"Set-Location -LiteralPath '$VPS_APP_PATH'; if (Test-Path -LiteralPath '.\\deploy.ps1') { & '.\\deploy.ps1' } else { git pull --ff-only origin master; npm.cmd ci; npm.cmd run build; pm2.cmd reload taskino --update-env }\""

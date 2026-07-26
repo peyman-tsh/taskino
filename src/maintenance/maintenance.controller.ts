@@ -12,6 +12,7 @@ import { Roles } from '../user/roles.decorator';
 import { RolesGuard } from '../user/roles.guard';
 import { UserRole } from '../user/schemas/user.schema';
 import { RestartWarningResponseDto } from './dto/restart-warning-response.dto';
+import { MaintenanceFinishedResponseDto } from './dto/maintenance-finished-response.dto';
 import { MaintenanceDeployTokenGuard } from './guards/maintenance-deploy-token.guard';
 import { MaintenanceService } from './maintenance.service';
 
@@ -52,5 +53,24 @@ export class MaintenanceController {
   @ApiUnauthorizedResponse({ description: 'Invalid maintenance deployment token' })
   sendDeploymentRestartWarning() {
     return this.maintenanceService.notifyRestartInSixtySeconds();
+  }
+
+  @Post('restart-warning/finish')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(MaintenanceDeployTokenGuard)
+  @ApiHeader({
+    name: 'x-maintenance-deploy-token',
+    required: true,
+    description: 'Deployment secret configured as MAINTENANCE_DEPLOY_TOKEN.',
+  })
+  @ApiOperation({
+    summary: 'Notify clients that deployment maintenance has finished',
+    description:
+      'For the VPS deployment script. Broadcasts a maintenance.finished event after the application reload succeeds.',
+  })
+  @ApiOkResponse({ type: MaintenanceFinishedResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Invalid maintenance deployment token' })
+  finishDeploymentMaintenance() {
+    return this.maintenanceService.notifyMaintenanceFinished();
   }
 }

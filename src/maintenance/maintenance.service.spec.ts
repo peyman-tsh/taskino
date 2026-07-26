@@ -19,4 +19,20 @@ describe('MaintenanceService', () => {
     });
     expect(gateway.broadcastRestartWarning).toHaveBeenCalledWith(60);
   });
+
+  it('broadcasts that maintenance has finished', () => {
+    const gateway = {
+      broadcastMaintenanceFinished: jest.fn().mockReturnValue({
+        event: 'maintenance.finished',
+      }),
+    };
+    const service = new MaintenanceService(
+      gateway as unknown as MaintenanceGateway,
+    );
+
+    expect(service.notifyMaintenanceFinished()).toEqual({
+      event: 'maintenance.finished',
+    });
+    expect(gateway.broadcastMaintenanceFinished).toHaveBeenCalledTimes(1);
+  });
 });
