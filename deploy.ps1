@@ -50,6 +50,7 @@ Push-Location $PSScriptRoot
 Write-Host "Working directory: $(Get-Location)"
 
 Write-Host "Broadcasting maintenance..."
+Write-Host "Calling: $maintenanceApiUrl"
 
 Invoke-RestMethod `
     -Method Post `
@@ -59,13 +60,16 @@ Invoke-RestMethod `
     } | Out-Null
 
 Write-Host "Waiting 60 seconds..."
-Start-Sleep 60
+Start-Sleep -Seconds 60
 
 try {
 
-   Invoke-CheckedCommand "npm.cmd" @("install")
+    Invoke-CheckedCommand "npm.cmd" @("install")
 
-    Invoke-CheckedCommand "npm.cmd" @("run","build")
+    Invoke-CheckedCommand "npm.cmd" @(
+        "run",
+        "build"
+    )
 
     $migrationScript = Join-Path $PSScriptRoot "scripts\migrate.ps1"
 
@@ -91,14 +95,39 @@ try {
 finally {
 
     Write-Host "Finishing maintenance..."
+    Write-Host "Calling: $maintenanceFinishApiUrl"
 
-    Invoke-RestMethod `
-        -Method Post `
-        -Uri $maintenanceFinishApiUrl `
-        -Headers @{
-            "x-maintenance-deploy-token" = $env:MAINTENANCE_DEPLOY_TOKEN
-        } | Out-Null
+    $maxRetries = 10
+    $delaySeconds = 3
 
-    Write-Host "Maintenance finished."
+    for ($i = 1; $i -le $maxRetries; $i++) {
 
+        try {
+
+            Invoke-RestMethod `
+                -Method Post `
+                -Uri $maintenanceFinishApiUrl `
+                -Headers @{
+                    "x-maintenance-deploy-token" = $env:MAINTENANCE_DEPLOY_TOKEN
+                } | Out-Null
+
+            Write-Host "Maintenance finished."
+            break
+
+        }
+        catch {
+
+            Write-Warning "Attempt $i/$maxRetries failed."
+            Write-Warning $_.Exception.Message
+
+            if ($i -eq $maxRetries) {
+                throw
+            }
+
+            Start-Sleep -Seconds $delaySeconds
+        }
+
+    }
+
+    Pop-Location
 }
