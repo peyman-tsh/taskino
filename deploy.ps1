@@ -1,79 +1,100 @@
-Write-Host "PSScriptRoot = $PSScriptRoot"
-Write-Host "Env file exists = $(Test-Path (Join-Path $PSScriptRoot '.env'))"
-exit 1
-# Load .env
-$envFile = Join-Path $PSScriptRoot ".env"
+$ErrorActionPreference = "Stop"
 
-Get-Content $envFile | ForEach-Object {
-    if ($_ -match '^\s*([^#=]+)=(.*)$') {
-        $name = $matches[1].Trim()
-        $value = $matches[2].Trim()
+function Invoke-CheckedCommand {
+    param(
+        [string]$Command,
+        [string[]]$Arguments
+    )
 
-        [Environment]::SetEnvironmentVariable($name, $value)
+    Write-Host ">> $Command $($Arguments -join ' ')"
+
+    & $Command @Arguments
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "$Command failed with exit code $LASTEXITCODE"
     }
 }
 
-$maintenanceApiUrl = $env:MAINTENANCE_API_URL
-$maintenanceFinishApiUrl = $env:MAINTENANCE_FINISH_API_URL
-$pm2AppName = $env:PM2_APP_NAME
+# ------------------------
+# Load .env
+# ------------------------
 
-Write-Host 'Broadcasting the 60-second maintenance warning...'
+$envFile = Join-Path $PSScriptRoot ".env"
+
+if (!(Test-Path $envFile)) {
+    throw ".env file not found."
+}
+
+Get-Content $envFile | ForEach-Object {
+
+    if ($_ -match '^\s*#') { return }
+    if ([string]::IsNullOrWhiteSpace($_)) { return }
+
+    if ($_ -match '^\s*([^=]+)=(.*)$') {
+
+        [Environment]::SetEnvironmentVariable(
+            $matches[1].Trim(),
+            $matches[2].Trim(),
+            "Process"
+        )
+
+    }
+}
+
+$maintenanceApiUrl       = $env:MAINTENANCE_API_URL
+$maintenanceFinishApiUrl = $env:MAINTENANCE_FINISH_API_URL
+$pm2AppName              = $env:PM2_APP_NAME
+
+Write-Host "Broadcasting maintenance..."
 
 Invoke-RestMethod `
-  -Method Post `
-  -Uri $maintenanceApiUrl `
-  -Headers @{ 'x-maintenance-deploy-token' = $env:MAINTENANCE_DEPLOY_TOKEN } |
-  Out-Null
+    -Method Post `
+    -Uri $maintenanceApiUrl `
+    -Headers @{
+        "x-maintenance-deploy-token" = $env:MAINTENANCE_DEPLOY_TOKEN
+    } | Out-Null
 
-Write-Host 'Waiting 60 seconds before deployment...'
-Start-Sleep -Seconds 60
+Write-Host "Waiting 60 seconds..."
+Start-Sleep 60
 
 try {
 
-    Invoke-CheckedCommand 'git' @('pull', '--ff-only', 'origin', 'master')
+    Invoke-CheckedCommand "npm.cmd" @("ci")
 
-    Invoke-CheckedCommand 'npm.cmd' @('ci')
+    Invoke-CheckedCommand "npm.cmd" @("run","build")
 
-    Invoke-CheckedCommand 'npm.cmd' @('run', 'build')
+    $migrationScript = Join-Path $PSScriptRoot "scripts\migrate.ps1"
 
-    $migrationScript = Join-Path $PSScriptRoot 'scripts\migrate.ps1'
-    if (Test-Path -LiteralPath $migrationScript) {
+    if (Test-Path $migrationScript) {
+
         & $migrationScript
+
+        if ($LASTEXITCODE -ne 0) {
+            throw "Migration failed."
+        }
+
     }
 
-    Invoke-CheckedCommand 'pm2.cmd' @('reload', $pm2AppName, '--update-env')
+    Invoke-CheckedCommand "pm2.cmd" @(
+        "reload",
+        $pm2AppName,
+        "--update-env"
+    )
 
-    Write-Host 'Deployment completed.'
+    Write-Host "Deployment completed."
 
 }
 finally {
 
-    Write-Host 'Finishing maintenance...'
+    Write-Host "Finishing maintenance..."
 
-    for ($attempt = 1; $attempt -le 12; $attempt++) {
+    Invoke-RestMethod `
+        -Method Post `
+        -Uri $maintenanceFinishApiUrl `
+        -Headers @{
+            "x-maintenance-deploy-token" = $env:MAINTENANCE_DEPLOY_TOKEN
+        } | Out-Null
 
-        try {
+    Write-Host "Maintenance finished."
 
-            Invoke-RestMethod `
-                -Method Post `
-                -Uri $maintenanceFinishApiUrl `
-                -Headers @{
-                    'x-maintenance-deploy-token' = $env:MAINTENANCE_DEPLOY_TOKEN
-                } |
-                Out-Null
-
-            Write-Host 'Maintenance finished.'
-
-            break
-
-        }
-        catch {
-
-            if ($attempt -eq 12) {
-                Write-Warning 'Failed to finish maintenance.'
-            }
-
-            Start-Sleep -Seconds 5
-        }
-    }
 }
