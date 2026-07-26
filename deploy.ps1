@@ -45,6 +45,10 @@ $maintenanceApiUrl       = $env:MAINTENANCE_API_URL
 $maintenanceFinishApiUrl = $env:MAINTENANCE_FINISH_API_URL
 $pm2AppName              = $env:PM2_APP_NAME
 
+Push-Location $PSScriptRoot
+
+Write-Host "Working directory: $(Get-Location)"
+
 Write-Host "Broadcasting maintenance..."
 
 Invoke-RestMethod `
