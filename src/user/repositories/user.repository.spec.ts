@@ -27,7 +27,7 @@ describe('UserRepository score adjustment', () => {
     );
   });
 
-  it('adjusts score only when the target user is a specialist', async () => {
+  it('adjusts score only when the target user is a specialist or supervisor', async () => {
     const exec = jest.fn().mockResolvedValue({ score: 10 });
     const findOneAndUpdate = jest.fn().mockReturnValue({ exec });
     const repository = new UserRepository({
@@ -37,7 +37,10 @@ describe('UserRepository score adjustment', () => {
     await repository.adjustSpecialistScoreWithFloor('user-id', 10);
 
     expect(findOneAndUpdate).toHaveBeenCalledWith(
-      { _id: 'user-id', roles: UserRole.SPECIALIST },
+      {
+        _id: 'user-id',
+        roles: { $in: [UserRole.SPECIALIST, UserRole.SUPERVISOR] },
+      },
       [
         {
           $set: {

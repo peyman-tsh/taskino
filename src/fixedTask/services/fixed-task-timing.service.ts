@@ -52,6 +52,7 @@ export class FixedTaskTimingService {
       startedAt,
       doneTime: null,
       actualDurationMinutes: null,
+      timingApprovalStatus: FixedTaskTimingApprovalStatus.PENDING,
     });
 
     return this.queryService.findById(id);
