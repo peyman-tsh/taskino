@@ -13,6 +13,7 @@ describe('ManagerService', () => {
     findByName: jest.fn(),
     findForManagerWorkField: jest.fn(),
     findAllForManagerWorkField: jest.fn(),
+    getAllTimeStartScoresForManager: jest.fn(),
   };
   const service = new ManagerService(
     userService as unknown as UserService,
@@ -77,6 +78,20 @@ describe('ManagerService', () => {
       1,
       10,
       { role: undefined, name: undefined },
+    );
+  });
+
+  it('returns all-time start scores for the manager work field', async () => {
+    const managerId = new Types.ObjectId().toString();
+    userService.getAllTimeStartScoresForManager.mockResolvedValue({
+      total: 0,
+      data: [],
+    });
+
+    await service.getAllTimeStartScores(managerId);
+
+    expect(userService.getAllTimeStartScoresForManager).toHaveBeenCalledWith(
+      managerId,
     );
   });
 });

@@ -142,6 +142,49 @@ export class UserProgressResponseDto {
   performanceEvaluatedAt: Date;
 }
 
+export class ManagerUserStartScoreItemResponseDto {
+  @ApiProperty({ example: 1 })
+  rank: number;
+
+  @ApiProperty()
+  userId: string;
+
+  @ApiProperty()
+  firstName: string;
+
+  @ApiProperty()
+  lastName: string;
+
+  @ApiProperty()
+  email: string;
+
+  @ApiProperty({ enum: UserRole })
+  role: UserRole;
+
+  @ApiProperty()
+  isActive: boolean;
+
+  @ApiProperty({ minimum: 0, maximum: 5, example: 3.75 })
+  startScore: number;
+
+  @ApiProperty({
+    minimum: 0,
+    maximum: 5,
+    example: 4.25,
+    description:
+      'Average manager rating across all completed regular and fixed tasks; an unrated completed task counts as zero.',
+  })
+  managerRatingAverage: number;
+}
+
+export class ManagerUserStartScoreListResponseDto {
+  @ApiProperty()
+  total: number;
+
+  @ApiProperty({ type: [ManagerUserStartScoreItemResponseDto] })
+  data: ManagerUserStartScoreItemResponseDto[];
+}
+
 export class WorkStatusCountsResponseDto {
   @ApiProperty()
   total: number;

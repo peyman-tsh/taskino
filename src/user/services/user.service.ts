@@ -276,6 +276,59 @@ export class UserService {
     };
   }
 
+  async getAllTimeStartScoresForManager(managerId: string) {
+    if (!Types.ObjectId.isValid(managerId)) {
+      throw new NotFoundException('Invalid manager ID');
+    }
+
+    const manager = await this.userRepository.findRawById(managerId);
+    if (!manager) {
+      throw new NotFoundException('Manager not found');
+    }
+
+    const users =
+      await this.userRepository.findSpecialistsAndSupervisorsByWorkField(
+        manager.workField,
+      );
+    const now = new Date();
+    const data = await Promise.all(
+      users.map(async (user) => {
+        const work = await this.userRepository.findWorkForDailyProgressRange(
+          new Types.ObjectId(user.userId),
+          new Date(0),
+          now,
+        );
+        const progressPercentage = this.calculateAllTimeProgressPercentage(
+          work.tasks,
+          work.fixedTasks,
+        );
+
+        return {
+          ...user,
+          startScore: this.calculateStartScore(progressPercentage),
+          managerRatingAverage: this.calculateManagerRatingAverage([
+            ...work.tasks.filter((task) => task.status === TaskStatus.DONE),
+            ...work.fixedTasks.filter(
+              (task) => task.status === FixedTaskStatus.DONE,
+            ),
+          ]),
+        };
+      }),
+    );
+
+    const rankedData = data
+      .sort(
+        (first, second) =>
+          second.startScore - first.startScore ||
+          second.managerRatingAverage - first.managerRatingAverage ||
+          first.firstName.localeCompare(second.firstName) ||
+          first.lastName.localeCompare(second.lastName),
+      )
+      .map((user, index) => ({ ...user, rank: index + 1 }));
+
+    return { total: rankedData.length, data: rankedData };
+  }
+
   findIdsByWorkField(workField: WorkField): Promise<string[]> {
     return this.userRepository.findIdsByWorkField(workField);
   }
@@ -419,25 +472,10 @@ export class UserService {
     const doneTaskPercentage = this.calculateRatingPercentage(
       work.tasks.filter((task) => task.status === TaskStatus.DONE),
     );
-    const allTimeTaskProgressPercentage = this.calculateWorkProgressPercentage(
+    const allTimeProgressPercentage = this.calculateAllTimeProgressPercentage(
       allTimeWork.tasks,
-      TaskStatus.DONE,
+      allTimeWork.fixedTasks,
     );
-    const allTimeFixedTaskProgressPercentage =
-      this.calculateWorkProgressPercentage(
-        allTimeWork.fixedTasks,
-        FixedTaskStatus.DONE,
-      );
-    const allTimeProgressPercentage =
-      allTimeWork.tasks.length > 0 && allTimeWork.fixedTasks.length > 0
-        ? Math.round(
-            (allTimeTaskProgressPercentage +
-              allTimeFixedTaskProgressPercentage) /
-              2,
-          )
-        : allTimeWork.tasks.length > 0
-          ? allTimeTaskProgressPercentage
-          : allTimeFixedTaskProgressPercentage;
 
     return {
       userId,
@@ -520,6 +558,30 @@ export class UserService {
     };
   }
 
+  private calculateAllTimeProgressPercentage(
+    tasks: Array<{ status: TaskStatus }>,
+    fixedTasks: Array<{ status: FixedTaskStatus }>,
+  ): number {
+    const taskProgressPercentage = this.calculateWorkProgressPercentage(
+      tasks,
+      TaskStatus.DONE,
+    );
+    const fixedTaskProgressPercentage = this.calculateWorkProgressPercentage(
+      fixedTasks,
+      FixedTaskStatus.DONE,
+    );
+
+    if (tasks.length > 0 && fixedTasks.length > 0) {
+      return Math.round(
+        (taskProgressPercentage + fixedTaskProgressPercentage) / 2,
+      );
+    }
+
+    return tasks.length > 0
+      ? taskProgressPercentage
+      : fixedTaskProgressPercentage;
+  }
+
   private calculateRatingPercentage(
     items: Array<{ ratingScore?: number | null }>,
   ): number {
@@ -532,6 +594,20 @@ export class UserService {
     }, 0);
 
     return Number(((totalRating / (items.length * 5)) * 100).toFixed(2));
+  }
+
+  private calculateManagerRatingAverage(
+    items: Array<{ ratingScore?: number | null }>,
+  ): number {
+    if (items.length === 0) return 0;
+
+    const totalRating = items.reduce((sum, item) => {
+      const rating = Number(item.ratingScore);
+      return sum +
+        (Number.isFinite(rating) ? Math.min(Math.max(rating, 0), 5) : 0);
+    }, 0);
+
+    return Number((totalRating / items.length).toFixed(2));
   }
 
   private calculateWorkProgressPercentage(

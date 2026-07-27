@@ -183,6 +183,37 @@ export class UserRepository {
     return users.map((user) => user._id.toString());
   }
 
+  async findSpecialistsAndSupervisorsByWorkField(workField: WorkField): Promise<
+    Array<{
+      userId: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+      role: UserRole;
+      isActive: boolean;
+    }>
+  > {
+    const users = await this.userModel
+      .find({
+        workField,
+        roles: { $in: [UserRole.SPECIALIST, UserRole.SUPERVISOR] },
+        isActive: true,
+      })
+      .select('_id firstName lastName email roles isActive')
+      .sort({ firstName: 1, lastName: 1, _id: 1 })
+      .lean()
+      .exec();
+
+    return users.map((user) => ({
+      userId: user._id.toString(),
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.roles as UserRole,
+      isActive: user.isActive,
+    }));
+  }
+
   async findCompletionCountsByWorkField(workField: WorkField): Promise<
     Array<{
       userId: string;
