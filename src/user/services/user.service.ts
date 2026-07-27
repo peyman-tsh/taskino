@@ -276,6 +276,43 @@ export class UserService {
     };
   }
 
+  async getAllTimeStartScoresForManager(managerId: string) {
+    if (!Types.ObjectId.isValid(managerId)) {
+      throw new NotFoundException('Invalid manager ID');
+    }
+
+    const manager = await this.userRepository.findRawById(managerId);
+    if (!manager) {
+      throw new NotFoundException('Manager not found');
+    }
+
+    const users =
+      await this.userRepository.findSpecialistsAndSupervisorsByWorkField(
+        manager.workField,
+      );
+    const now = new Date();
+    const data = await Promise.all(
+      users.map(async (user) => {
+        const work = await this.userRepository.findWorkForDailyProgressRange(
+          new Types.ObjectId(user.userId),
+          new Date(0),
+          now,
+        );
+        const progressPercentage = this.calculateAllTimeProgressPercentage(
+          work.tasks,
+          work.fixedTasks,
+        );
+
+        return {
+          ...user,
+          startScore: this.calculateStartScore(progressPercentage),
+        };
+      }),
+    );
+
+    return { total: data.length, data };
+  }
+
   findIdsByWorkField(workField: WorkField): Promise<string[]> {
     return this.userRepository.findIdsByWorkField(workField);
   }
@@ -419,25 +456,10 @@ export class UserService {
     const doneTaskPercentage = this.calculateRatingPercentage(
       work.tasks.filter((task) => task.status === TaskStatus.DONE),
     );
-    const allTimeTaskProgressPercentage = this.calculateWorkProgressPercentage(
+    const allTimeProgressPercentage = this.calculateAllTimeProgressPercentage(
       allTimeWork.tasks,
-      TaskStatus.DONE,
+      allTimeWork.fixedTasks,
     );
-    const allTimeFixedTaskProgressPercentage =
-      this.calculateWorkProgressPercentage(
-        allTimeWork.fixedTasks,
-        FixedTaskStatus.DONE,
-      );
-    const allTimeProgressPercentage =
-      allTimeWork.tasks.length > 0 && allTimeWork.fixedTasks.length > 0
-        ? Math.round(
-            (allTimeTaskProgressPercentage +
-              allTimeFixedTaskProgressPercentage) /
-              2,
-          )
-        : allTimeWork.tasks.length > 0
-          ? allTimeTaskProgressPercentage
-          : allTimeFixedTaskProgressPercentage;
 
     return {
       userId,
@@ -518,6 +540,30 @@ export class UserService {
       ),
       progressPercentage,
     };
+  }
+
+  private calculateAllTimeProgressPercentage(
+    tasks: Array<{ status: TaskStatus }>,
+    fixedTasks: Array<{ status: FixedTaskStatus }>,
+  ): number {
+    const taskProgressPercentage = this.calculateWorkProgressPercentage(
+      tasks,
+      TaskStatus.DONE,
+    );
+    const fixedTaskProgressPercentage = this.calculateWorkProgressPercentage(
+      fixedTasks,
+      FixedTaskStatus.DONE,
+    );
+
+    if (tasks.length > 0 && fixedTasks.length > 0) {
+      return Math.round(
+        (taskProgressPercentage + fixedTaskProgressPercentage) / 2,
+      );
+    }
+
+    return tasks.length > 0
+      ? taskProgressPercentage
+      : fixedTaskProgressPercentage;
   }
 
   private calculateRatingPercentage(

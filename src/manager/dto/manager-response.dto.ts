@@ -142,6 +142,37 @@ export class UserProgressResponseDto {
   performanceEvaluatedAt: Date;
 }
 
+export class ManagerUserStartScoreItemResponseDto {
+  @ApiProperty()
+  userId: string;
+
+  @ApiProperty()
+  firstName: string;
+
+  @ApiProperty()
+  lastName: string;
+
+  @ApiProperty()
+  email: string;
+
+  @ApiProperty({ enum: UserRole })
+  role: UserRole;
+
+  @ApiProperty()
+  isActive: boolean;
+
+  @ApiProperty({ minimum: 0, maximum: 5, example: 3.75 })
+  startScore: number;
+}
+
+export class ManagerUserStartScoreListResponseDto {
+  @ApiProperty()
+  total: number;
+
+  @ApiProperty({ type: [ManagerUserStartScoreItemResponseDto] })
+  data: ManagerUserStartScoreItemResponseDto[];
+}
+
 export class WorkStatusCountsResponseDto {
   @ApiProperty()
   total: number;

@@ -38,6 +38,7 @@ import {
   FixedTaskDurationBalanceResponseDto,
   UserScoreResponseDto,
   UserDailyProgressListResponseDto,
+  ManagerUserStartScoreListResponseDto,
 } from './dto/manager-response.dto';
 import { MongoIdParamDto } from './dto/mongo-id-param.dto';
 import { MonthlyPerformanceQueryDto } from './dto/monthly-performance-query.dto';
@@ -104,6 +105,18 @@ export class ManagerController {
       managerId,
       query,
     );
+  }
+
+  @Get('users/daily-progress/start-scores')
+  @ApiOperation({
+    summary: 'Get all-time start scores for users in the manager work field',
+    description:
+      'Returns only identity fields and the all-time 0-5 decimal startScore for every specialist and supervisor in the authenticated manager work field, including inactive users.',
+  })
+  @ApiOkResponse({ type: ManagerUserStartScoreListResponseDto })
+  @ApiNotFoundResponse({ description: 'Manager not found' })
+  getAllTimeStartScores(@CurrentUserId() managerId: string) {
+    return this.managerService.getAllTimeStartScores(managerId);
   }
 
   @Get('users/by-name')
