@@ -197,6 +197,7 @@ export class UserRepository {
       .find({
         workField,
         roles: { $in: [UserRole.SPECIALIST, UserRole.SUPERVISOR] },
+        isActive: true,
       })
       .select('_id firstName lastName email roles isActive')
       .sort({ firstName: 1, lastName: 1, _id: 1 })
