@@ -111,7 +111,7 @@ export class ManagerController {
   @ApiOperation({
     summary: 'Get all-time start scores for users in the manager work field',
     description:
-      'Returns only identity fields and the all-time 0-5 decimal startScore for every active specialist and supervisor in the authenticated manager work field.',
+      'Returns active specialists and supervisors in the authenticated manager work field, ranked by all-time 0-5 decimal startScore. Equal start scores are ordered by higher average manager rating.',
   })
   @ApiOkResponse({ type: ManagerUserStartScoreListResponseDto })
   @ApiNotFoundResponse({ description: 'Manager not found' })

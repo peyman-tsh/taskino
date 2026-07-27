@@ -143,6 +143,9 @@ export class UserProgressResponseDto {
 }
 
 export class ManagerUserStartScoreItemResponseDto {
+  @ApiProperty({ example: 1 })
+  rank: number;
+
   @ApiProperty()
   userId: string;
 
@@ -163,6 +166,15 @@ export class ManagerUserStartScoreItemResponseDto {
 
   @ApiProperty({ minimum: 0, maximum: 5, example: 3.75 })
   startScore: number;
+
+  @ApiProperty({
+    minimum: 0,
+    maximum: 5,
+    example: 4.25,
+    description:
+      'Average manager rating across all completed regular and fixed tasks; an unrated completed task counts as zero.',
+  })
+  managerRatingAverage: number;
 }
 
 export class ManagerUserStartScoreListResponseDto {

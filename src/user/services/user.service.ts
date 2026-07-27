@@ -306,11 +306,27 @@ export class UserService {
         return {
           ...user,
           startScore: this.calculateStartScore(progressPercentage),
+          managerRatingAverage: this.calculateManagerRatingAverage([
+            ...work.tasks.filter((task) => task.status === TaskStatus.DONE),
+            ...work.fixedTasks.filter(
+              (task) => task.status === FixedTaskStatus.DONE,
+            ),
+          ]),
         };
       }),
     );
 
-    return { total: data.length, data };
+    const rankedData = data
+      .sort(
+        (first, second) =>
+          second.startScore - first.startScore ||
+          second.managerRatingAverage - first.managerRatingAverage ||
+          first.firstName.localeCompare(second.firstName) ||
+          first.lastName.localeCompare(second.lastName),
+      )
+      .map((user, index) => ({ ...user, rank: index + 1 }));
+
+    return { total: rankedData.length, data: rankedData };
   }
 
   findIdsByWorkField(workField: WorkField): Promise<string[]> {
@@ -578,6 +594,20 @@ export class UserService {
     }, 0);
 
     return Number(((totalRating / (items.length * 5)) * 100).toFixed(2));
+  }
+
+  private calculateManagerRatingAverage(
+    items: Array<{ ratingScore?: number | null }>,
+  ): number {
+    if (items.length === 0) return 0;
+
+    const totalRating = items.reduce((sum, item) => {
+      const rating = Number(item.ratingScore);
+      return sum +
+        (Number.isFinite(rating) ? Math.min(Math.max(rating, 0), 5) : 0);
+    }, 0);
+
+    return Number((totalRating / items.length).toFixed(2));
   }
 
   private calculateWorkProgressPercentage(

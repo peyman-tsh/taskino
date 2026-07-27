@@ -237,6 +237,8 @@ describe('UserService user progress', () => {
         expect.objectContaining({
           userId,
           startScore: 2.5,
+          managerRatingAverage: 0,
+          rank: 1,
         }),
       ],
     });
@@ -248,6 +250,59 @@ describe('UserService user progress', () => {
       new Date(0),
       expect.any(Date),
     );
+  });
+
+  it('ranks equal start scores by higher manager rating average', async () => {
+    const managerId = new Types.ObjectId().toString();
+    const firstUserId = new Types.ObjectId().toString();
+    const secondUserId = new Types.ObjectId().toString();
+    repository.findRawById.mockResolvedValue({ workField: 'it' });
+    repository.findSpecialistsAndSupervisorsByWorkField.mockResolvedValue([
+      {
+        userId: firstUserId,
+        firstName: 'Ali',
+        lastName: 'Ahmadi',
+        email: 'ali@example.com',
+        role: UserRole.SPECIALIST,
+        isActive: true,
+      },
+      {
+        userId: secondUserId,
+        firstName: 'Sara',
+        lastName: 'Ahmadi',
+        email: 'sara@example.com',
+        role: UserRole.SUPERVISOR,
+        isActive: true,
+      },
+    ]);
+    repository.findWorkForDailyProgressRange
+      .mockResolvedValueOnce({
+        tasks: [{ status: TaskStatus.DONE, ratingScore: 3 }],
+        fixedTasks: [],
+      })
+      .mockResolvedValueOnce({
+        tasks: [{ status: TaskStatus.DONE, ratingScore: 5 }],
+        fixedTasks: [],
+      });
+
+    await expect(
+      service.getAllTimeStartScoresForManager(managerId),
+    ).resolves.toMatchObject({
+      data: [
+        {
+          userId: secondUserId,
+          startScore: 5,
+          managerRatingAverage: 5,
+          rank: 1,
+        },
+        {
+          userId: firstUserId,
+          startScore: 5,
+          managerRatingAverage: 3,
+          rank: 2,
+        },
+      ],
+    });
   });
 
   it('ranks users by all-time completed regular and fixed tasks', async () => {
