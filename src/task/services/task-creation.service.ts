@@ -75,9 +75,11 @@ export class TaskCreationService {
     taskData.extraTaskApprovalStatus = ExtraTaskApprovalStatus.PENDING;
 
     const task = await this.repository.create(taskData);
-    const managerIds =
-      await this.userService.findActiveManagerIdsForUser(specialistId);
-    await this.runPostCreationActions(task, assignedTo, managerIds, true);
+    const reviewerIds =
+      await this.userService.findActiveManagerAndSupervisorIdsForUser(
+        specialistId,
+      );
+    await this.runPostCreationActions(task, assignedTo, reviewerIds, true);
     return task;
   }
 

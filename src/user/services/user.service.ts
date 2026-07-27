@@ -131,6 +131,21 @@ export class UserService {
     return this.findActiveManagerIdsByWorkField(user.workField);
   }
 
+  async findActiveManagerAndSupervisorIdsForUser(
+    userId: string,
+  ): Promise<string[]> {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new NotFoundException('Invalid user ID');
+    }
+
+    const user = await this.userRepository.findRawById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.findActiveManagerAndSupervisorIdsByWorkField(user.workField);
+  }
+
   async findProfilesByIds(userIds: string[]) {
     return this.userRepository.findProfilesByIds(userIds);
   }

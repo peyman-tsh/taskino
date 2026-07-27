@@ -31,7 +31,9 @@ describe('TaskCreationService', () => {
     notifyManagersWhenCreated: jest.fn(),
   };
   const scoreService = { adjustCompletedTaskScore: jest.fn() };
-  const userService = { findActiveManagerIdsForUser: jest.fn() };
+  const userService = {
+    findActiveManagerAndSupervisorIdsForUser: jest.fn(),
+  };
   const service = new TaskCreationService(
     repository as unknown as TaskRepository,
     excelService as unknown as ExcelService,
@@ -45,7 +47,10 @@ describe('TaskCreationService', () => {
     jest.clearAllMocks();
     notificationService.notifyAssignedUsers.mockResolvedValue(undefined);
     notificationService.notifyManagersWhenCreated.mockResolvedValue(undefined);
-    userService.findActiveManagerIdsForUser.mockResolvedValue(['manager-id']);
+    userService.findActiveManagerAndSupervisorIdsForUser.mockResolvedValue([
+      'manager-id',
+      'supervisor-id',
+    ]);
   });
 
   it('creates an extra task only for the current specialist without Excel', async () => {
@@ -73,7 +78,7 @@ describe('TaskCreationService', () => {
       task.title,
     );
     expect(notificationService.notifyManagersWhenCreated).toHaveBeenCalledWith(
-      ['manager-id'],
+      ['manager-id', 'supervisor-id'],
       task._id.toString(),
       task.title,
       true,
