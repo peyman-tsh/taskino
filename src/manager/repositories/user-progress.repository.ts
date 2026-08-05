@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection, Types } from 'mongoose';
-import { FixedTaskRecurrence } from '../../fixedTask/fixed-task.schema';
 import {
   UserPerformanceStatus,
   UserRole,
@@ -13,10 +12,6 @@ import {
   ProgressUser,
 } from '../types/user-progress.types';
 import { DailyProgressRecord } from '../../common/utils/daily-progress-range.util';
-import {
-  getTehranDateParts,
-  getTehranPersianDateParts,
-} from '../../common/utils/tehran-time.util';
 
 @Injectable()
 export class UserProgressRepository {
@@ -68,7 +63,6 @@ export class UserProgressRepository {
     tasks: ProgressTask[];
     fixedTasks: ProgressFixedTask[];
   }> {
-    const todayScheduleFilter = this.buildTodayScheduleFilter(periodStart);
     const taskDateFilter = {
       startDate: { $lte: periodEnd },
       endDate: { $type: 'date', $gte: periodStart },
@@ -95,7 +89,8 @@ export class UserProgressRepository {
         .find({
           assignedTo: userId,
           isActive: true,
-          $or: todayScheduleFilter,
+          isTemplate: { $ne: true },
+          startDate: { $gte: periodStart, $lt: periodEnd },
         })
         .project({
           status: 1,
@@ -112,29 +107,6 @@ export class UserProgressRepository {
       tasks: tasks as unknown as ProgressTask[],
       fixedTasks: fixedTasks as unknown as ProgressFixedTask[],
     };
-  }
-
-  private buildTodayScheduleFilter(date: Date): Record<string, unknown>[] {
-    const tehranParts = getTehranDateParts(date);
-    const weekday = new Date(
-      Date.UTC(tehranParts.year, tehranParts.month - 1, tehranParts.day),
-    ).getUTCDay();
-    const persianParts = getTehranPersianDateParts(date);
-
-    return [
-      {
-        recurrence: FixedTaskRecurrence.DAILY,
-        'scheduleConfig.weekdays': weekday,
-      },
-      {
-        recurrence: FixedTaskRecurrence.WEEKLY,
-        'scheduleConfig.weekdays': weekday,
-      },
-      {
-        recurrence: FixedTaskRecurrence.MONTHLY,
-        'scheduleConfig.monthDays': persianParts.day,
-      },
-    ];
   }
 
   async saveEvaluation(

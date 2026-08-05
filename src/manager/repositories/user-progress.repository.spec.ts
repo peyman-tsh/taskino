@@ -1,9 +1,8 @@
 import { Connection, Types } from 'mongoose';
-import { FixedTaskRecurrence } from '../../fixedTask/fixed-task.schema';
 import { UserProgressRepository } from './user-progress.repository';
 
 describe('UserProgressRepository', () => {
-  it('loads tasks overlapping today and active fixed tasks scheduled for today', async () => {
+  it('loads tasks overlapping today and active fixed-task occurrences that start today', async () => {
     const toArray = jest.fn().mockResolvedValue([]);
     const project = jest.fn().mockReturnValue({ toArray });
     const find = jest.fn().mockReturnValue({ project });
@@ -27,20 +26,8 @@ describe('UserProgressRepository', () => {
     expect(find).toHaveBeenCalledWith({
       assignedTo: userId,
       isActive: true,
-      $or: [
-        {
-          recurrence: FixedTaskRecurrence.DAILY,
-          'scheduleConfig.weekdays': expect.any(Number),
-        },
-        {
-          recurrence: FixedTaskRecurrence.WEEKLY,
-          'scheduleConfig.weekdays': expect.any(Number),
-        },
-        {
-          recurrence: FixedTaskRecurrence.MONTHLY,
-          'scheduleConfig.monthDays': expect.any(Number),
-        },
-      ],
+      isTemplate: { $ne: true },
+      startDate: { $gte: periodStart, $lt: periodEnd },
     });
   });
 });

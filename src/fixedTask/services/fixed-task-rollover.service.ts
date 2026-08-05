@@ -117,11 +117,9 @@ export class FixedTaskRolloverService {
       createdCount += await this.runForRecurrence(recurrence, now);
     }
 
-    if (createdCount > 0) {
-      await this.repository.deactivateActiveOccurrencesOutsideDay(
-        this.getTehranDayStart(now),
-      );
-    }
+    await this.repository.deactivateActiveOccurrencesOutsideDay(
+      this.getTehranDayStart(now),
+    );
 
     return createdCount;
   }

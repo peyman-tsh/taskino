@@ -149,6 +149,20 @@ describe('FixedTaskRolloverService', () => {
     ).toHaveBeenCalledWith(new Date('2026-06-18T20:30:00.000Z'));
   });
 
+  it('deactivates old active occurrences even when rollover creates none', async () => {
+    repository.findDailyRolloverCandidates.mockResolvedValue([]);
+    repository.findConfiguredRolloverCandidates.mockResolvedValue([]);
+
+    await expect(service.runOnce(now)).resolves.toBe(0);
+
+    expect(
+      repository.deactivateActiveOccurrencesOutsideDay,
+    ).toHaveBeenCalledTimes(1);
+    expect(
+      repository.deactivateActiveOccurrencesOutsideDay,
+    ).toHaveBeenCalledWith(new Date('2026-06-18T20:30:00.000Z'));
+  });
+
   it('rolls over a completed occurrence regardless of its deadline', async () => {
     const task = createTask(FixedTaskRecurrence.DAILY, FixedTaskStatus.DONE);
     task.scheduleConfig = { weekdays: [5] };
