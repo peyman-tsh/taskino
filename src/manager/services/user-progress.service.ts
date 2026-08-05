@@ -7,6 +7,7 @@ import {
   buildDailyProgressRange,
   getTehranDayRange,
   parseTehranDayBoundary,
+  parseTehranDailyProgressRangeEnd,
 } from '../../common/utils/daily-progress-range.util';
 
 @Injectable()
@@ -87,7 +88,7 @@ export class UserProgressService {
     }
 
     const from = parseTehranDayBoundary(fromValue);
-    const to = parseTehranDayBoundary(toValue);
+    const to = parseTehranDailyProgressRangeEnd(toValue);
     if (to.getTime() < from.getTime()) {
       throw new BadRequestException('to must be on or after from');
     }

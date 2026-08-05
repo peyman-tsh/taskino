@@ -35,6 +35,30 @@ export function parseTehranDayBoundary(value: string): Date {
   return tehranDateTimeToUtc(parts.year, parts.month, parts.day);
 }
 
+/**
+ * Parses the inclusive end day for a daily-progress range.
+ *
+ * A date-only value represents that Tehran calendar day. An ISO timestamp at
+ * exactly 00:00 Tehran represents the exclusive end of the preceding day,
+ * which is how date-range pickers commonly serialize their end boundary.
+ */
+export function parseTehranDailyProgressRangeEnd(value: string): Date {
+  const boundary = parseTehranDayBoundary(value);
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return boundary;
+  }
+
+  const timestamp = new Date(value);
+  if (timestamp.getTime() !== boundary.getTime()) {
+    return boundary;
+  }
+
+  return parseTehranDayBoundary(
+    new Date(timestamp.getTime() - 1).toISOString(),
+  );
+}
+
 export function getTehranDayRange(date: Date): {
   periodStart: Date;
   periodEnd: Date;

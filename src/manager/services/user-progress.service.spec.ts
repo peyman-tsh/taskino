@@ -98,4 +98,30 @@ describe('UserProgressService', () => {
       expect.any(Date),
     );
   });
+
+  it('treats an ISO Tehran-midnight end value as the previous day\'s end boundary', async () => {
+    const userId = new Types.ObjectId();
+    repository.findDailyProgressByUser = jest.fn().mockResolvedValue([]);
+
+    const result = await service.getDailyProgress(
+      userId.toString(),
+      '2026-08-04',
+      '2026-08-04T20:30:00.000Z',
+    );
+
+    expect(repository.findDailyProgressByUser).toHaveBeenCalledWith(
+      userId,
+      new Date('2026-08-03T20:30:00.000Z'),
+      new Date('2026-08-03T20:30:00.000Z'),
+    );
+    expect(result).toMatchObject({
+      dayCount: 1,
+      total: 1,
+      data: [
+        expect.objectContaining({
+          date: new Date('2026-08-03T20:30:00.000Z'),
+        }),
+      ],
+    });
+  });
 });
