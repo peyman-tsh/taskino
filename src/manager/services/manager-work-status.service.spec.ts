@@ -155,6 +155,69 @@ describe('ManagerWorkStatusService', () => {
     );
   });
 
+  it('excludes regular and fixed tasks that start at the next Tehran midnight', async () => {
+    const userId = '6a39043bfc4f15b8c14eb3df';
+    const user = { userId, firstName: 'Ali', lastName: 'Test', email: 'ali@test.com' };
+    const from = new Date('2026-08-03T20:30:00.000Z');
+    const to = new Date('2026-08-04T20:30:00.000Z');
+    repository.findByDateRangeForUsers.mockResolvedValue({
+      tasks: [
+        { status: TaskStatus.DONE, startDate: from, endDate: to, user },
+        { status: TaskStatus.DONE, startDate: to, endDate: new Date('2026-08-05T20:30:00.000Z'), user },
+      ],
+      fixedTasks: [
+        { status: FixedTaskStatus.DONE, startDate: from, endDate: to, user },
+        { status: FixedTaskStatus.DONE, startDate: to, endDate: new Date('2026-08-05T20:30:00.000Z'), user },
+      ],
+    });
+
+    const result = await service.getUserStatusCounts(
+      '6a39043bfc4f15b8c14eb3de',
+      '2026-08-04',
+      '2026-08-04T20:30:00.000Z',
+      userId,
+    );
+
+    expect(repository.findByDateRangeForUsers).toHaveBeenCalledWith(
+      from,
+      to,
+      '6a39043bfc4f15b8c14eb3de',
+      userId,
+    );
+    expect(result.users[0].tasks).toEqual({
+      total: 1,
+      done: 1,
+      inProgress: 0,
+      todo: 0,
+      overdueUnfinished: 0,
+    });
+    expect(result.users[0].fixedTasks).toEqual({
+      total: 1,
+      done: 1,
+      inProgress: 0,
+      todo: 0,
+      overdueUnfinished: 0,
+    });
+  });
+
+  it('treats an ISO Tehran-midnight end value as the selected day\'s exclusive boundary', async () => {
+    const userId = '6a39043bfc4f15b8c14eb3df';
+    repository.findDoneFixedTasks.mockResolvedValue([]);
+
+    await service.getDoneFixedTasks(
+      '6a39043bfc4f15b8c14eb3de',
+      '2026-08-04',
+      '2026-08-04T20:30:00.000Z',
+      userId,
+    );
+
+    expect(repository.findDoneFixedTasks).toHaveBeenCalledWith(
+      new Date('2026-08-03T20:30:00.000Z'),
+      new Date('2026-08-04T20:30:00.000Z'),
+      userId,
+    );
+  });
+
   it('counts per-user overdue items only when their deadline is inside the range', async () => {
     const user = {
       userId: '6a39043bfc4f15b8c14eb3df',
@@ -392,7 +455,7 @@ describe('ManagerWorkStatusService', () => {
           status: FixedTaskStatus.TODO,
           isActive: true,
           startDate,
-          endDate: new Date('2026-07-30T10:00:00.000Z'),
+          endDate: new Date('2030-07-30T10:00:00.000Z'),
           actualDurationMinutes: 120,
           approvedDurationMinutes: 60,
           user,
@@ -415,7 +478,7 @@ describe('ManagerWorkStatusService', () => {
     });
   });
 
-  it('only counts in-progress fixed tasks when they are inside the date range', async () => {
+  it('only counts in-progress tasks and fixed tasks when they are inside the date range', async () => {
     const user = {
       userId: '6a39043bfc4f15b8c14eb3df',
       firstName: 'Ali',
@@ -448,7 +511,7 @@ describe('ManagerWorkStatusService', () => {
       '2026-06-29T20:29:59.999Z',
     );
 
-    expect(result.users[0].tasks.inProgress).toBe(1);
+    expect(result.users[0].tasks.inProgress).toBe(0);
     expect(result.users[0].fixedTasks.inProgress).toBe(0);
   });
 

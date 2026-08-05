@@ -2,7 +2,10 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { FixedTaskStatus } from '../../fixedTask/fixed-task.schema';
 import { TaskStatus } from '../../task/task.schema';
 import { ManagerWorkStatusRepository } from '../repositories/manager-work-status.repository';
-import { parseTehranDayBoundary } from '../../common/utils/daily-progress-range.util';
+import {
+  parseTehranDailyProgressRangeEnd,
+  parseTehranDayBoundary,
+} from '../../common/utils/daily-progress-range.util';
 import {
   addTehranCalendarPeriod,
   tehranDateTimeToUtc,
@@ -20,11 +23,7 @@ export class ManagerWorkStatusService {
   constructor(private readonly repository: ManagerWorkStatusRepository) {}
 
   async getStatusCounts(managerId: string, fromValue: string, toValue: string) {
-    const from = this.parseBoundary(fromValue, false);
-    const to = this.parseBoundary(toValue, true);
-    if (to.getTime() < from.getTime()) {
-      throw new BadRequestException('to must be on or after from');
-    }
+    const { from, to } = this.parseWorkStatusRange(fromValue, toValue);
 
     const { tasks, fixedTasks } = await this.repository.findByDateRange(
       from,
@@ -62,11 +61,7 @@ export class ManagerWorkStatusService {
     toValue: string,
     userId?: string,
   ) {
-    const from = this.parseBoundary(fromValue, false);
-    const to = this.parseBoundary(toValue, true);
-    if (to.getTime() < from.getTime()) {
-      throw new BadRequestException('to must be on or after from');
-    }
+    const { from, to } = this.parseWorkStatusRange(fromValue, toValue);
 
     const { tasks, fixedTasks } = await this.repository.findByDateRangeForUsers(
       from,
@@ -203,16 +198,16 @@ export class ManagerWorkStatusService {
     };
 
     for (const item of items) {
+      const isInRange = isFixedTask
+        ? this.isStartedInSelectedRange(item, from, to)
+        : this.isInSelectedRange(item, from, to);
+      if (!isInRange) continue;
+
       if (this.isInProgress(item)) {
         counts.total += 1;
         counts.inProgress += 1;
         continue;
       }
-
-      const isInRange = isFixedTask
-        ? this.isStartedInSelectedRange(item, from, to)
-        : this.isInSelectedRange(item, from, to);
-      if (!isInRange) continue;
 
       counts.total += 1;
 
@@ -307,6 +302,8 @@ export class ManagerWorkStatusService {
     from: Date,
     to: Date,
   ): void {
+    if (!this.isInSelectedRange(item, from, to)) return;
+
     if (
       item.status !== TaskStatus.DONE &&
       this.isOverdueInRange(item, now, from, to)
@@ -321,8 +318,6 @@ export class ManagerWorkStatusService {
       counts.inProgress += 1;
       return;
     }
-
-    if (!this.isInSelectedRange(item, from, to)) return;
 
     counts.total += 1;
 
@@ -440,6 +435,7 @@ export class ManagerWorkStatusService {
 
     return (
       item.startDate.getTime() >= from.getTime() &&
+      item.startDate.getTime() < to.getTime() &&
       deadline.getTime() <= to.getTime()
     );
   }
@@ -452,7 +448,7 @@ export class ManagerWorkStatusService {
     return (
       item.startDate instanceof Date &&
       item.startDate.getTime() >= from.getTime() &&
-      item.startDate.getTime() <= to.getTime()
+      item.startDate.getTime() < to.getTime()
     );
   }
 
@@ -495,12 +491,28 @@ export class ManagerWorkStatusService {
     return { from, to };
   }
 
+  private parseWorkStatusRange(
+    fromValue: string,
+    toValue: string,
+  ): { from: Date; to: Date } {
+    const from = parseTehranDayBoundary(fromValue);
+    const selectedTo = parseTehranDailyProgressRangeEnd(toValue);
+    if (selectedTo.getTime() < from.getTime()) {
+      throw new BadRequestException('to must be on or after from');
+    }
+
+    const nextDay = addTehranCalendarPeriod(selectedTo, 1, 0);
+    const to = tehranDateTimeToUtc(nextDay.year, nextDay.month, nextDay.day);
+
+    return { from, to };
+  }
+
   private parseDoneFixedTaskDateRange(
     fromValue: string,
     toValue: string,
   ): { from: Date; to: Date } {
     const from = parseTehranDayBoundary(fromValue);
-    const selectedTo = parseTehranDayBoundary(toValue);
+    const selectedTo = parseTehranDailyProgressRangeEnd(toValue);
     if (selectedTo.getTime() < from.getTime()) {
       throw new BadRequestException('to must be on or after from');
     }

@@ -315,7 +315,7 @@ export class ManagerWorkStatusRepository {
 
   private buildFixedTaskDateFilter(from: Date, to: Date) {
     return {
-      startDate: { $gte: from, $lte: to },
+      startDate: { $gte: from, $lt: to },
     };
   }
 

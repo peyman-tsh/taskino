@@ -123,7 +123,7 @@ describe('ManagerWorkStatusRepository', () => {
       ],
     };
     const fixedFilter = {
-      startDate: { $gte: from, $lte: to },
+      startDate: { $gte: from, $lt: to },
     };
     const fixedTaskFilter = {
       $and: [
